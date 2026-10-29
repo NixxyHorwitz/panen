@@ -2,62 +2,75 @@
 
   <style>
   /* ══════════════════════════════════════════════════════
-     DOCK NAVIGASI: satu-satunya elemen kaca, melayang, tombol tengah "Sawah"
-     menonjol, penanda aktif meluncur dari tab sebelumnya.
+     NAVBAR BERLEKUK — bar menempel di bawah dengan cekungan
+     di tengah; tombol Sawah bulat duduk di cekungan itu.
      ══════════════════════════════════════════════════════ */
-  .pc-dock {
-    position: fixed; z-index: 9999; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom));
-    transform: translateX(-50%); width: calc(100% - 20px); max-width: 420px; height: 64px;
-    display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
-    padding: 0 6px; border-radius: 24px;
-    background: rgba(255, 255, 255, .86); backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .95) inset, 0 12px 32px rgba(28, 60, 24, .18), 0 2px 6px rgba(28, 60, 24, .08);
-    animation: pcDockIn .55s cubic-bezier(.34, 1.56, .64, 1) both;
+  .pc-nav {
+    --notch: 40px;
+    position: fixed; z-index: 9999; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 100%; max-width: 440px; height: calc(70px + env(safe-area-inset-bottom)); padding: 0 8px env(safe-area-inset-bottom);
+    animation: pcNavIn .7s var(--pc-ease, cubic-bezier(.34,1.56,.64,1)) both;
   }
-  @keyframes pcDockIn { from { transform: translate(-50%, 30px); opacity: 0; } }
-  body { padding-bottom: 104px !important; }
-
-  /* Penanda aktif yang meluncur */
-  .pc-dock-ind {
-    position: absolute; top: 8px; left: 6px; width: calc((100% - 12px) / 5); height: 48px; pointer-events: none;
-    display: flex; justify-content: center;
-    transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), opacity .2s;
+  @keyframes pcNavIn { from { transform: translate(-50%, 100%); } }
+  .pc-nav-bg {
+    position: absolute; inset: 0; border-radius: 26px 26px 0 0; background: #fff;
+    -webkit-mask: radial-gradient(circle var(--notch) at 50% 0, transparent calc(var(--notch) - .5px), #000 var(--notch));
+            mask: radial-gradient(circle var(--notch) at 50% 0, transparent calc(var(--notch) - .5px), #000 var(--notch));
+    box-shadow: 0 -10px 30px rgba(60, 40, 10, .12);
   }
-  .pc-dock-ind::before { content: ''; width: 54px; height: 100%; border-radius: 16px; background: linear-gradient(180deg, #ecfdf3, #dcfce7); box-shadow: inset 0 0 0 1.5px rgba(34, 163, 90, .18); }
-  .pc-dock-ind.hide { opacity: 0; }
+  .pc-nav-bg::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, #22c55e, #f6b70a, #fb923c, #f6b70a, #22c55e); background-size: 200% 100%; animation: pcNavLine 6s linear infinite; opacity: .8; }
+  @keyframes pcNavLine { to { background-position: -200% 0; } }
+  body { padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important; }
 
+  .pc-nav-row { position: relative; height: 70px; display: grid; grid-template-columns: 1fr 1fr 92px 1fr 1fr; align-items: center; }
   .pc-tab {
-    position: relative; z-index: 1; height: 52px; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    text-decoration: none; color: #5f6f62; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 10.5px; font-weight: 600;
-    -webkit-tap-highlight-color: transparent; transition: color .2s;
+    position: relative; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    text-decoration: none; color: #8a8f80; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 11px; font-weight: 600;
+    -webkit-tap-highlight-color: transparent; transition: color .25s;
   }
-  .pc-tab i { font-size: 22px; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
-  .pc-tab:active i { transform: scale(.82); }
+  .pc-tab-ic { position: relative; width: 44px; height: 30px; display: grid; place-items: center; }
+  .pc-tab-ic::before {
+    content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(135deg, #bbf7d0, #dcfce7);
+    transform: scale(0) translateY(8px); transition: transform .45s var(--pc-ease, cubic-bezier(.34,1.56,.64,1));
+  }
+  .pc-tab i { position: relative; font-size: 22px; transition: transform .4s var(--pc-ease, cubic-bezier(.34,1.56,.64,1)); }
+  .pc-tab:active i { transform: scale(.75); }
   .pc-tab.active { color: #15803d; }
-  .pc-tab.active i { transform: translateY(-1px) scale(1.08); animation: pcTabPop .5s cubic-bezier(.34, 1.56, .64, 1); }
-  @keyframes pcTabPop { 0% { transform: scale(.7); } 60% { transform: scale(1.18); } 100% { transform: translateY(-1px) scale(1.08); } }
+  .pc-tab.active .pc-tab-ic::before { transform: none; }
+  .pc-tab.active i { animation: pcTabHop .6s var(--pc-ease, cubic-bezier(.34,1.56,.64,1)); }
+  @keyframes pcTabHop { 0% { transform: translateY(0) scale(.7); } 45% { transform: translateY(-7px) scale(1.15); } 100% { transform: none; } }
+  .pc-tab.active::after { content: ''; position: absolute; bottom: 2px; width: 5px; height: 5px; border-radius: 50%; background: #f6b70a; animation: pcDot .5s var(--pc-ease, cubic-bezier(.34,1.56,.64,1)) .15s both; }
+  @keyframes pcDot { from { transform: scale(0); } }
 
-  /* Tombol tengah: Sawah */
-  .pc-fab { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-decoration: none; margin-top: -30px; -webkit-tap-highlight-color: transparent; }
+  /* Tombol tengah Sawah di cekungan */
+  .pc-fab { position: relative; justify-self: center; display: flex; flex-direction: column; align-items: center; margin-top: -46px; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  .pc-fab-halo {
+    position: absolute; top: -6px; left: 50%; width: 76px; height: 76px; margin-left: -38px; border-radius: 50%;
+    background: conic-gradient(from 0deg, #f6b70a, #22c55e, #38bdf8, #fb923c, #f6b70a); filter: blur(1px);
+    animation: pcHalo 4s linear infinite; opacity: .9;
+  }
+  @keyframes pcHalo { to { transform: rotate(360deg); } }
   .pc-fab-ring {
-    position: relative; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
-    background: linear-gradient(170deg, #22a35a, #15803d);
-    box-shadow: 0 0 0 5px #fff, 0 8px 18px rgba(21, 128, 61, .35);
-    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1);
+    position: relative; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 28%, #86efac 0%, #22c55e 45%, #15803d 100%);
+    box-shadow: 0 0 0 4px #fff, 0 12px 24px rgba(21, 128, 61, .45);
+    transition: transform .25s var(--pc-ease, cubic-bezier(.34,1.56,.64,1));
   }
-  .pc-fab-ring img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .25)); animation: pcFabSway 1.6s ease-in-out .6s 3; transform-origin: 50% 90%; }
-  @keyframes pcFabSway { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-8deg); } 70% { transform: rotate(8deg) translateY(-2px); } }
-  .pc-fab:active .pc-fab-ring { transform: scale(.9); }
-  .pc-fab span { margin-top: 3px; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 10.5px; font-weight: 700; color: #15803d; }
+  .pc-fab:active .pc-fab-ring { transform: scale(.88) rotate(-8deg); }
+  .pc-fab-ring img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .25)); animation: pcFabSway 2.6s ease-in-out infinite; transform-origin: 50% 90%; }
+  @keyframes pcFabSway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg) translateY(-2px); } }
+  .pc-fab > span:last-child { margin-top: 6px; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 11px; font-weight: 700; color: #15803d; }
   .pc-fab-badge {
-    position: absolute; top: -2px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center;
-    background: #f5b301; color: #3d2a00; font-size: 10px; font-weight: 900; box-shadow: 0 0 0 2px #fff;
+    position: absolute; top: -4px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-style: normal;
+    background: linear-gradient(180deg, #ffd54f, #f6b70a); color: #4a3000; font-size: 11px; font-weight: 900; box-shadow: 0 0 0 2px #fff, 0 4px 10px rgba(246, 183, 10, .5);
+    animation: pcBadgeBounce 1.8s ease-in-out infinite;
   }
+  @keyframes pcBadgeBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px) scale(1.08); } }
 
-  @media (max-width: 350px) { .pc-tab { font-size: 9.5px; } .pc-tab i { font-size: 20px; } }
-  @media (prefers-reduced-motion: reduce) { .pc-dock, .pc-fab-ring img, .pc-tab.active i { animation: none !important; } .pc-dock-ind { transition: none; } }
+  @media (max-width: 350px) { .pc-nav-row { grid-template-columns: 1fr 1fr 84px 1fr 1fr; } .pc-tab { font-size: 10px; } }
+  @media (prefers-reduced-motion: reduce) { .pc-nav, .pc-nav-bg::before, .pc-fab-halo, .pc-fab-ring img, .pc-fab-badge, .pc-tab.active i, .pc-tab.active::after { animation: none !important; } }
 
-  .float-contact-wrap { bottom: 96px !important; }
+  .float-contact-wrap { bottom: calc(96px + env(safe-area-inset-bottom)) !important; }
   </style>
 
   <?php
@@ -69,8 +82,6 @@
       ['referral', '/referral', 'ph-users-three', 'Undang'],
       ['profile', '/profile', 'ph-user-circle', 'Profil'],
     ];
-    $_tab_idx = -1;
-    foreach ($_tabs as $_i => $_t) if ($_t[0] === $_ap) $_tab_idx = $_i;
     // Jumlah petak siap panen (badge di tombol Sawah)
     $_ready_badge = 0;
     if (!empty($user['id'])) {
@@ -81,42 +92,27 @@
       } catch (\Throwable) {}
     }
   ?>
-  <nav class="pc-dock" id="pc-dock" data-active="<?= $_tab_idx ?>" aria-label="Navigasi utama">
-    <span class="pc-dock-ind<?= $_tab_idx < 0 || $_tab_idx === 2 ? ' hide' : '' ?>" id="pc-dock-ind"></span>
-    <?php foreach ($_tabs as $_i => [$_key, $_url, $_ic, $_lbl]): $_on = $_key === $_ap; ?>
-      <?php if ($_key === 'farm'): ?>
-      <a href="/farm" class="pc-fab" aria-label="Sawah PanenCuan<?= $_ready_badge > 0 ? ', ' . $_ready_badge . ' petak siap panen' : '' ?>">
-        <span class="pc-fab-ring">
-          <img src="/assets/img/icons3d/padi.png" alt="" width="44" height="44">
-          <?php if ($_ready_badge > 0): ?><em class="pc-fab-badge"><?= $_ready_badge > 9 ? '9+' : $_ready_badge ?></em><?php endif; ?>
-        </span>
-        <span>Sawah</span>
-      </a>
-      <?php else: ?>
-      <a href="<?= $_url ?>" class="pc-tab<?= $_on ? ' active' : '' ?>" data-i="<?= $_i ?>">
-        <i class="<?= $_on ? 'ph-fill' : 'ph-bold' ?> <?= $_ic ?>"></i><?= $_lbl ?>
-      </a>
-      <?php endif; ?>
-    <?php endforeach; ?>
+  <nav class="pc-nav" aria-label="Navigasi utama">
+    <span class="pc-nav-bg" aria-hidden="true"></span>
+    <div class="pc-nav-row">
+      <?php foreach ($_tabs as [$_key, $_url, $_ic, $_lbl]): $_on = $_key === $_ap; ?>
+        <?php if ($_key === 'farm'): ?>
+        <a href="/farm" class="pc-fab" aria-label="Sawah PanenCuan<?= $_ready_badge > 0 ? ', ' . $_ready_badge . ' petak siap panen' : '' ?>">
+          <span class="pc-fab-halo" aria-hidden="true"></span>
+          <span class="pc-fab-ring">
+            <img src="/assets/img/icons3d/padi.png" alt="" width="46" height="46">
+            <?php if ($_ready_badge > 0): ?><em class="pc-fab-badge"><?= $_ready_badge > 9 ? '9+' : $_ready_badge ?></em><?php endif; ?>
+          </span>
+          <span>Sawah</span>
+        </a>
+        <?php else: ?>
+        <a href="<?= $_url ?>" class="pc-tab<?= $_on ? ' active' : '' ?>"<?= $_on ? ' aria-current="page"' : '' ?>>
+          <span class="pc-tab-ic"><i class="<?= $_on ? 'ph-fill' : 'ph-bold' ?> <?= $_ic ?>"></i></span><?= $_lbl ?>
+        </a>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    </div>
   </nav>
-  <script>
-  // Penanda aktif meluncur dari tab terakhir yang dibuka ke tab sekarang
-  (function () {
-    const dock = document.getElementById('pc-dock'), ind = document.getElementById('pc-dock-ind');
-    if (!dock || !ind) return;
-    const cur = +dock.dataset.active;
-    const place = (i, anim) => { ind.style.transition = anim ? '' : 'none'; ind.style.transform = 'translateX(' + (i * 100) + '%)'; };
-    let prev = cur;
-    try { prev = +(sessionStorage.getItem('pc_dock_prev') ?? cur); } catch (e) {}
-    if (cur >= 0 && cur !== 2) {
-      place(prev >= 0 && prev !== 2 ? prev : cur, false);
-      requestAnimationFrame(() => requestAnimationFrame(() => place(cur, true)));
-    }
-    dock.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => {
-      try { sessionStorage.setItem('pc_dock_prev', String(cur)); } catch (e) {}
-    }));
-  })();
-  </script>
 </div>
 
 <?php
