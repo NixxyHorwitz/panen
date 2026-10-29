@@ -399,7 +399,7 @@ $other_videos = $others->fetchAll();
 <!-- Fonts & Phosphor Icons -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 <link rel="stylesheet" href="/assets/css/app.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/app.css') ?: time() ?>">
 
@@ -410,133 +410,126 @@ $other_videos = $others->fetchAll();
    Seragam dengan /videos.
    ══════════════════════════════════════════════════════════ */
 :root {
-  --ink: #1e1b2e; --muted: #6b6478;
-  --card: linear-gradient(160deg, #ffffff 0%, #fff7ed 58%, #ffedd5 100%);
-  --clay: 0 14px 30px rgba(244, 63, 94, .10), 0 6px 14px rgba(8, 145, 178, .10), inset 3px 3px 6px rgba(255, 255, 255, .95), inset -4px -4px 9px rgba(251, 146, 60, .16);
-  --chip-sh: inset 1.5px 1.5px 3px rgba(255, 255, 255, .55), inset -1.5px -1.5px 3px rgba(0, 0, 0, .15);
+  --ink: #1b2a1e; --muted: #5c6b5f; --pc-font: 'Fredoka', 'Nunito', sans-serif;
+  --ease: cubic-bezier(.34, 1.56, .64, 1); --out: cubic-bezier(.22, 1, .36, 1);
+  --panel: linear-gradient(180deg, #fffaf0, #fff);
+  --panel-sh: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c, 0 10px 20px rgba(120, 70, 10, .08);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; overflow-x: hidden; }
 body {
-  font-family: 'Nunito', -apple-system, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100vh;
-  background:
-    radial-gradient(circle at 10% 4%, rgba(253, 164, 175, .24) 0, transparent 34%),
-    radial-gradient(circle at 92% 22%, rgba(192, 132, 252, .16) 0, transparent 36%),
-    linear-gradient(180deg, #ecfeff 0%, #f0f9ff 40%, #fff7ed 100%) fixed;
+  min-height: 100vh; font-family: 'Nunito', -apple-system, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased;
+  background: radial-gradient(120% 40% at 50% 0%, #ffd59a 0%, transparent 60%), linear-gradient(180deg, #fff0cf 0%, #fff8e8 40%, #eef7e2 100%) fixed;
 }
 i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: center; }
 .watch-container { width: 100%; max-width: 480px; margin: 0 auto; padding: 0 0 28px; }
 
 /* ── Topbar ── */
 .watch-topbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 8px; padding: 9px 12px;
-  background: rgba(255, 255, 255, .86); backdrop-filter: blur(10px); border-bottom: 1.5px solid rgba(255, 255, 255, .9); box-shadow: 0 6px 16px rgba(8, 145, 178, .08); }
-.back-btn { width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
-  background: #fff; color: var(--ink); font-size: 16px; border: 1.5px solid #fff; box-shadow: 0 3px 8px rgba(30, 27, 46, .08); }
+  background: linear-gradient(180deg, #ffb46b, #ffd08a); border-radius: 0 0 20px 20px; box-shadow: 0 4px 0 #e59a4a, 0 10px 22px rgba(120, 70, 10, .18); }
+.back-btn { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; text-decoration: none; color: #4a2b00; font-size: 17px; background: rgba(255, 255, 255, .85); box-shadow: 0 3px 0 rgba(120, 70, 10, .25); }
 .back-btn span { display: none; }
-.back-btn:active { transform: scale(.92); }
+.back-btn:active { transform: translateY(2px); box-shadow: none; }
 .wt-title { flex: 1; min-width: 0; line-height: 1.15; }
-.wt-title small { display: block; font-size: 9.5px; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; color: #0891b2; }
-.wt-title b { display: block; font-size: 12.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.watch-topbar__bal { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background: #d1fae5; color: #065f46; font-size: 11px; font-weight: 900; border: 1.5px solid #fff; white-space: nowrap; }
+.wt-title small { display: block; font-size: 11px; font-weight: 900; color: #7a4f00; }
+.wt-title b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #4a2b00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.watch-topbar__bal { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 4px; border-radius: 999px; white-space: nowrap; font-family: var(--pc-font); font-size: 13px; font-weight: 700; color: #4a3000; background: rgba(255, 255, 255, .88); }
+.watch-topbar__bal img { width: 22px; height: 22px; object-fit: contain; }
 
-/* ── Bingkai akuarium ── */
-.tank { margin: 10px 12px 0; padding: 6px; border-radius: 22px; border: 2px solid #fff; background: var(--card); box-shadow: var(--clay); }
-.tank-in { position: relative; border-radius: 17px; overflow: hidden; background: linear-gradient(180deg, #0e7490, #164e63);
-  box-shadow: inset 0 0 0 2px rgba(165, 243, 252, .25); }
-.tank-in::before, .tank-in::after { content: ''; position: absolute; z-index: 2; pointer-events: none; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .15); }
-.tank-in::before { width: 9px; height: 9px; right: 12px; top: 10px; }
-.tank-in::after { width: 5px; height: 5px; right: 24px; top: 4px; }
-.player-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #0b2530; }
+/* ── Layar bioskop ── */
+.tank { margin: 12px 12px 0; padding: 7px; border-radius: 24px; background: linear-gradient(180deg, #a0652a, #7a4a1c); box-shadow: 0 5px 0 #5a3412, 0 14px 26px rgba(90, 52, 18, .3), inset 0 2px 0 rgba(255, 255, 255, .25); }
+.tank-in { position: relative; overflow: hidden; border-radius: 18px; background: #1b1206; box-shadow: inset 0 0 0 2px rgba(255, 213, 79, .35); }
+.player-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #1b1206; }
 .player-frame iframe, .player-frame #yt-player { position: absolute; inset: 0; width: 100% !important; height: 100% !important; border: 0; }
-.watch-track { height: 7px; background: rgba(8, 51, 68, .55); }
-.watch-fill { height: 100%; width: 0; background: linear-gradient(90deg, #22d3ee, #34d399); box-shadow: 0 0 10px rgba(52, 211, 153, .6); transition: width .4s linear; }
-.watch-fill.done { background: linear-gradient(90deg, #34d399, #10b981); }
+.watch-track { height: 8px; background: rgba(0, 0, 0, .45); }
+.watch-fill { width: 0; height: 100%; background: repeating-linear-gradient(-45deg, #ffd54f 0 6px, #f6b70a 6px 12px); background-size: 200% 100%; animation: wtStripes 1.4s linear infinite; box-shadow: 0 0 10px rgba(255, 213, 79, .6); transition: width .4s linear; }
+.watch-fill.done { background: linear-gradient(90deg, #4ade80, #16a34a); animation: none; }
+@keyframes wtStripes { to { background-position: -34px 0; } }
 
-/* ── Dock misi ── */
-.watch-status-box { margin: 10px 12px 0; display: flex; align-items: center; gap: 11px; padding: 10px 11px; border-radius: 20px; border: 2px solid #fff; background: var(--card); box-shadow: var(--clay); }
+/* ── Dock quest ── */
+.watch-status-box { margin: 12px 12px 0; display: flex; align-items: center; gap: 11px; padding: 10px 11px; border-radius: 22px; background: var(--panel); box-shadow: var(--panel-sh); }
 .watch-timer-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 11px; }
 .watch-timer-wrap > div:last-child { min-width: 0; }
-.timer-pill { width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900; color: #fff;
-  background: radial-gradient(circle at 32% 28%, #a5f3fc 0, #06b6d4 45%, #0e7490 100%); border: 3px solid #fff;
-  box-shadow: 0 6px 14px rgba(8, 145, 178, .35), inset 2px 2px 4px rgba(255, 255, 255, .45), inset -3px -3px 6px rgba(8, 51, 68, .3); font-variant-numeric: tabular-nums; }
-.timer-pill.done { background: radial-gradient(circle at 32% 28%, #a7f3d0 0, #10b981 45%, #047857 100%); box-shadow: 0 6px 14px rgba(5, 150, 105, .35), inset 2px 2px 4px rgba(255, 255, 255, .45); font-size: 22px; }
-.watch-status-text { font-size: 12.5px; font-weight: 900; color: var(--ink); line-height: 1.25; }
+.timer-pill { width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-family: var(--pc-font); font-size: 19px; font-weight: 700; color: #4a3000; font-variant-numeric: tabular-nums;
+  background: radial-gradient(circle at 35% 30%, #fff7c2 0, #ffd54f 50%, #f6b70a 100%); box-shadow: 0 0 0 3px #fff, 0 4px 0 #b07800, 0 8px 16px rgba(246, 183, 10, .35); }
+.timer-pill.done { color: #fff; font-size: 24px; background: radial-gradient(circle at 35% 30%, #bbf7d0 0, #22c55e 50%, #15803d 100%); box-shadow: 0 0 0 3px #fff, 0 4px 0 #11622f, 0 8px 16px rgba(22, 163, 74, .35); }
+.watch-status-text { font-size: 13px; font-weight: 900; line-height: 1.25; color: var(--ink); }
 .watch-status-text i { vertical-align: -2px; }
-.watch-status-hint { margin-top: 2px; font-size: 10.5px; font-weight: 700; color: var(--muted); line-height: 1.35; }
-.btn-claim { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 11px 14px; border-radius: 15px; border: 2px solid #fff; cursor: pointer; text-decoration: none; white-space: nowrap;
-  background: linear-gradient(135deg, #34d399, #059669); color: #fff; font: 900 12.5px/1 'Nunito', sans-serif; text-shadow: 0 1px 2px rgba(4, 120, 87, .4);
-  box-shadow: 0 8px 16px rgba(5, 150, 105, .3), 0 4px 0 #047857, inset 1.5px 1.5px 3px rgba(255, 255, 255, .5); animation: pulseClaim 1.4s ease-in-out infinite; }
-.btn-claim:active { transform: translateY(3px); box-shadow: 0 2px 6px rgba(5, 150, 105, .3), 0 1px 0 #047857; }
+.watch-status-hint { margin-top: 2px; font-size: 11.5px; font-weight: 700; line-height: 1.35; color: var(--muted); }
+.btn-claim { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 14px; cursor: pointer; text-decoration: none; white-space: nowrap;
+  font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #4a3000; text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+  background: linear-gradient(135deg, #ffd54f, #f6b70a); box-shadow: 0 4px 0 #b07800, 0 8px 14px rgba(246, 183, 10, .4), inset 0 2px 0 rgba(255, 255, 255, .45); animation: pulseClaim 1.4s var(--ease) infinite; }
+.btn-claim:active { transform: translateY(3px); box-shadow: 0 1px 0 #b07800; }
 .btn-claim:disabled { opacity: .8; animation: none; }
-.btn-claim.up { background: linear-gradient(135deg, #fef08a, #f59e0b); color: #78350f; text-shadow: none; box-shadow: 0 6px 14px rgba(245, 158, 11, .3), 0 4px 0 #b45309; animation: none; }
-@keyframes pulseClaim { 50% { transform: scale(1.05); } }
+.btn-claim.up { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 4px 0 #11622f, 0 8px 14px rgba(22, 163, 74, .3); animation: none; }
+@keyframes pulseClaim { 0%, 60%, 100% { transform: none; } 70% { transform: translateY(-4px) scale(1.05); } 80% { transform: none; } }
 
 /* ── Lanjutkan ── */
-.resume-banner { margin: 10px 12px 0; display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 16px; background: #fffbeb; border: 1.5px solid #fff; box-shadow: 0 3px 10px rgba(245, 158, 11, .12); }
-.resume-banner__icon { width: 30px; height: 30px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px;
-  background: linear-gradient(145deg, #fde68a, #f59e0b); box-shadow: 0 3px 6px rgba(245, 158, 11, .3), var(--chip-sh); }
+.resume-banner { margin: 10px 12px 0; display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 18px; background: #fff7d1; box-shadow: 0 0 0 2px #fcd34d, 0 3px 0 #e9b949; }
+.resume-banner__icon { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 11px; color: #4a3000; font-size: 16px; background: linear-gradient(135deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
 .resume-banner__content { flex: 1; min-width: 0; }
-.resume-banner__title { font-size: 11.5px; font-weight: 900; color: #78350f; }
-.resume-banner__desc { font-size: 10px; font-weight: 700; color: #92400e; }
-.resume-banner__btn-reset { flex-shrink: 0; border: 1.5px solid #fde68a; background: #fff; color: #b45309; border-radius: 10px; padding: 6px 9px; font: 900 10.5px/1 'Nunito', sans-serif; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+.resume-banner__title { font-size: 12.5px; font-weight: 900; color: #4a2b00; }
+.resume-banner__desc { font-size: 11px; font-weight: 700; color: #7a4f00; }
+.resume-banner__btn-reset { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; padding: 6px 10px; border: 0; border-radius: 10px; cursor: pointer; font: 900 11.5px/1 'Nunito', sans-serif; color: #8a5a00; background: #fff; box-shadow: 0 2px 0 #ecd59c; }
 
 /* ── Konten ── */
-.watch-content { padding: 12px 12px 0; display: flex; flex-direction: column; gap: 10px; }
-.video-title { margin: 0 2px; font-size: 15px; font-weight: 900; line-height: 1.3; letter-spacing: -.2px; }
-.action-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.watch-content { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 0; }
+.video-title { margin: 0 2px; font-family: var(--pc-font); font-size: 18px; font-weight: 600; line-height: 1.25; color: #4a2b00; }
+.action-strip { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 5px; scrollbar-width: none; }
 .action-strip::-webkit-scrollbar { display: none; }
-.btn-action, .action-stat { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 7px 11px; border-radius: 999px; border: 1.5px solid #fff; background: #fff;
-  font: 900 11px/1 'Nunito', sans-serif; color: var(--ink); box-shadow: 0 3px 8px rgba(30, 27, 46, .06); white-space: nowrap; }
+.btn-action, .action-stat { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 7px 11px; border: 0; border-radius: 999px; white-space: nowrap; font: 900 12px/1 'Nunito', sans-serif; color: var(--ink); background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; }
 .btn-action { cursor: pointer; }
-.btn-action:active { transform: scale(.95); }
-.btn-action i, .action-stat i { font-size: 14px; color: #0891b2; }
-.btn-action--liked { background: linear-gradient(135deg, #fb7185, #e11d48); color: #fff; }
+.btn-action:active { transform: translateY(2px); }
+.btn-action i, .action-stat i { font-size: 15px; color: #15803d; }
+.btn-action--liked { color: #fff; background: linear-gradient(135deg, #fb7185, #e11d48); box-shadow: 0 3px 0 #9f1239; }
 .btn-action--liked i { color: #fff; }
-.action-pill { padding: 2px 7px; border-radius: 999px; background: #ecfeff; color: #0e7490; font-size: 10px; }
-.btn-action--liked .action-pill { background: rgba(255, 255, 255, .25); color: #fff; }
+.action-pill { padding: 2px 7px; border-radius: 999px; font-size: 10.5px; color: #14532d; background: #dcfce7; }
+.btn-action--liked .action-pill { color: #fff; background: rgba(255, 255, 255, .25); }
 .action-stat { color: var(--muted); }
-.action-stat--reward { background: #ecfdf5; color: #047857; }
-.action-stat--reward i { color: #059669; }
+.action-stat--reward { color: #6b4300; background: linear-gradient(180deg, #fff3c4, #ffe9a0); box-shadow: inset 0 0 0 1.5px rgba(246, 183, 10, .5); }
+.action-stat--reward img { width: 18px; height: 18px; object-fit: contain; }
 
-.guide-card { border-radius: 18px; border: 2px solid #fff; background: var(--card); box-shadow: var(--clay); padding: 10px; }
-.guide-card__header { display: flex; align-items: center; gap: 6px; margin: 0 2px 8px; font-size: 11.5px; font-weight: 900; color: var(--ink); }
-.guide-card__header i { color: #059669; }
-.guide-card__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; counter-reset: g; }
-.guide-card__list li { counter-increment: g; position: relative; padding: 24px 7px 8px; border-radius: 13px; background: #fff; font-size: 10px; font-weight: 700; color: var(--muted); line-height: 1.35;
-  box-shadow: 0 2px 6px rgba(30, 27, 46, .05); }
-.guide-card__list li::before { content: counter(g); position: absolute; top: 6px; left: 7px; width: 16px; height: 16px; border-radius: 50%; font-size: 9.5px; font-weight: 900; color: #fff;
-  display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 32% 28%, #a5f3fc, #0891b2 70%); }
-.guide-card__list b { color: #047857; }
+.guide-card { padding: 11px; border-radius: 20px; background: var(--panel); box-shadow: var(--panel-sh); }
+.guide-card__header { display: flex; align-items: center; gap: 6px; margin: 0 2px 9px; font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #4a2b00; }
+.guide-card__header img { width: 22px; height: 22px; object-fit: contain; }
+.guide-card__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; counter-reset: g; }
+.guide-card__list li { counter-increment: g; position: relative; padding: 28px 8px 9px; border-radius: 14px; font-size: 11px; font-weight: 700; line-height: 1.35; color: var(--muted); background: #fff; box-shadow: inset 0 0 0 1.5px #f1dfb4; }
+.guide-card__list li::before { content: counter(g); position: absolute; top: 6px; left: 8px; width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center; font-family: var(--pc-font); font-size: 11.5px; font-weight: 700; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.guide-card__list b { color: #15803d; }
 
-.banner-watched { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 15px; background: #ecfdf5; border: 1.5px solid #fff; color: #065f46; font-size: 11.5px; font-weight: 900; box-shadow: 0 3px 10px rgba(16, 185, 129, .12); }
-.btn-more-vids { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px; border-radius: 14px; border: 2px solid #fff; text-decoration: none;
-  background: linear-gradient(135deg, #22d3ee, #0891b2); color: #fff; font-size: 12px; font-weight: 900; box-shadow: 0 3px 0 #0e7490, 0 6px 14px rgba(8, 145, 178, .22); }
+.banner-watched { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 16px; font-size: 12.5px; font-weight: 900; color: #14532d; background: #dcfce7; box-shadow: inset 0 0 0 2px #bbf7d0; }
+.banner-watched img { width: 26px; height: 26px; object-fit: contain; }
+.btn-more-vids { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border-radius: 14px; text-decoration: none; font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .15);
+  background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 4px 0 #11622f, 0 8px 14px rgba(22, 163, 74, .3); }
+.btn-more-vids:active { transform: translateY(3px); box-shadow: 0 1px 0 #11622f; }
+.btn-more-vids img { width: 22px; height: 22px; object-fit: contain; }
 
-/* Rekomendasi: baris sama seperti /videos */
-.recom-section { display: flex; flex-direction: column; gap: 7px; }
-.recom-title { display: flex; align-items: center; gap: 6px; margin: 4px 2px 1px; font-size: 12.5px; font-weight: 900; color: var(--ink); }
-.recom-title i { color: #0891b2; }
-.recom-card { display: flex; gap: 10px; align-items: center; padding: 6px; border-radius: 17px; border: 2px solid #fff; background: #fff; text-decoration: none; color: inherit;
-  box-shadow: 0 4px 12px rgba(30, 27, 46, .06), inset -2px -2px 5px rgba(251, 146, 60, .08); }
-.recom-card:active { transform: scale(.98); }
-.recom-thumb { position: relative; width: 112px; aspect-ratio: 16 / 9; flex-shrink: 0; border-radius: 12px; overflow: hidden; background: #0b2530; }
-.recom-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Rekomendasi */
+.recom-section { display: flex; flex-direction: column; gap: 8px; }
+.recom-title { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; margin: 4px 0 0 8px; padding: 4px 16px 5px 12px; border-radius: 6px 10px 10px 6px; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .25); background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; }
+.recom-title img { width: 22px; height: 22px; margin: -5px 0; object-fit: contain; }
+.recom-card { display: flex; align-items: center; gap: 10px; padding: 7px; border-radius: 18px; text-decoration: none; color: inherit; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; transition: transform .15s var(--ease); }
+.recom-card:active { transform: translateY(2px); }
+.recom-thumb { position: relative; width: 112px; aspect-ratio: 16 / 9; flex-shrink: 0; overflow: hidden; border-radius: 12px; background: #1b1206; }
+.recom-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .recom-info { flex: 1; min-width: 0; }
-.recom-name { font-size: 11.5px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.recom-meta { margin-top: 4px; display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 900; }
+.recom-name { font-size: 12.5px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.recom-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 11px; font-weight: 900; }
+.recom-meta .coin { padding: 1px 8px; border-radius: 999px; color: #6b4300; background: #fff3c4; }
 
 /* Loader & popup */
-#page-loader { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-  background: linear-gradient(180deg, #ecfeff, #fff7ed); transition: opacity .35s; }
+#page-loader { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(180deg, #fff0cf, #eef7e2); transition: opacity .35s; }
 #page-loader.hidden { opacity: 0; pointer-events: none; }
-.loader-spinner { width: 46px; height: 46px; border-radius: 50%; border: 4px solid #cffafe; border-top-color: #0891b2; animation: spin .8s linear infinite; }
+.loader-art { width: 84px; height: 84px; object-fit: contain; animation: wtBob 1.2s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(120, 70, 10, .25)); }
+@keyframes wtBob { 50% { transform: translateY(-8px) rotate(-6deg); } }
+.loader-label { font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #7a4f00; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loader-label { font-size: 12px; font-weight: 900; color: #0e7490; }
-.reward-popup { position: fixed; left: 50%; top: 16px; z-index: 10000; transform: translate(-50%, -220%); visibility: hidden; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 16px; border: 2px solid #fff;
-  background: linear-gradient(135deg, #34d399, #059669); color: #fff; font-size: 13px; font-weight: 900; text-align: center; box-shadow: 0 14px 30px rgba(5, 150, 105, .35);
-  transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), visibility .35s; }
+.reward-popup { position: fixed; left: 50%; top: 16px; z-index: 10000; max-width: calc(100% - 32px); padding: 10px 18px; border-radius: 16px; transform: translate(-50%, -220%); visibility: hidden; text-align: center;
+  font-family: var(--pc-font); font-size: 16px; font-weight: 600; color: #4a3000; background: linear-gradient(135deg, #ffd54f, #f6b70a); box-shadow: 0 4px 0 #b07800, 0 14px 30px rgba(246, 183, 10, .4);
+  transition: transform .35s var(--ease), visibility .35s; }
 .reward-popup.show { transform: translate(-50%, 0); visibility: visible; }
 
+@media (max-width: 350px) { .guide-card__list { grid-template-columns: 1fr; } .guide-card__list li { padding: 8px 8px 8px 34px; } .recom-thumb { width: 96px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
 
 /* ── MODE DEBUG TESTER STYLES ── */
@@ -756,8 +749,8 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
 
 <!-- Page Loader -->
 <div id="page-loader">
-  <div class="loader-spinner"></div>
-  <div class="loader-label"><i class="ph-bold ph-film-strip"></i> Menyiapkan bioskop...</div>
+  <img class="loader-art" src="/assets/img/icons3d/watch.png" alt="">
+  <div class="loader-label">Menyiapkan bioskop...</div>
 </div>
 
 <div class="watch-container">
@@ -765,11 +758,11 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
   <!-- ── TOPBAR ── -->
   <div class="watch-topbar">
     <a href="/videos" class="back-btn" title="Kembali ke Video"><i class="ph-bold ph-caret-left"></i><span>Kembali ke Video</span></a>
-    <div class="wt-title"><small>Bioskop Cuan</small><b><?= htmlspecialchars($video['title']) ?></b></div>
+    <div class="wt-title"><small>Bioskop Sawah</small><b><?= htmlspecialchars($video['title']) ?></b></div>
     <?php if ($is_debug_user): ?>
       <span class="debug-badge-top" title="Akun ini berada dalam Mode Debug Tester"><i class="ph-bold ph-wrench"></i> DEBUG</span>
     <?php endif; ?>
-    <div class="watch-topbar__bal" title="Saldo Siap Tarik"><i class="ph-fill ph-wallet"></i><span><?= format_rp((float)$user['balance_wd']) ?></span></div>
+    <div class="watch-topbar__bal" title="Saldo Siap Tarik"><img src="/assets/img/icons3d/coins.png" alt=""><span><?= format_rp((float)$user['balance_wd']) ?></span></div>
   </div>
 
   <?php if ($is_debug_user): ?>
@@ -884,7 +877,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
           <?php elseif ($watch_today >= $watch_limit && !$is_debug_user): ?>
             <span style="color:#dc2626;"><i class="ph-bold ph-warning-circle"></i> Kuota harian habis</span>
           <?php else: ?>
-            <span>Putar video untuk mulai misi <?= $is_debug_user ? '(Mode Debug)' : '' ?></span>
+            <span>Putar video untuk mulai quest <?= $is_debug_user ? '(Mode Debug)' : '' ?></span>
           <?php endif; ?>
         </div>
         <div class="watch-status-hint" id="status-hint">
@@ -900,7 +893,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
         <button type="button" class="btn-claim" id="claim-btn" onclick="claimReward()"><i class="ph-bold ph-coins"></i><span>Klaim Cuan</span></button>
       </div>
     <?php elseif ($watch_today >= $watch_limit): ?>
-      <a href="/upgrade" class="btn-claim up"><i class="ph-fill ph-crown"></i><span>Upgrade</span></a>
+      <a href="/upgrade" class="btn-claim up"><i class="ph-fill ph-crown"></i><span>Level Up</span></a>
     <?php endif; ?>
   </div>
 
@@ -914,15 +907,15 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
         <span id="likeTxt"><?= $user_has_liked ? 'Disukai' : 'Suka' ?></span>
         <span class="action-pill" id="likeCnt"><?= number_format((int)($video['total_likes'] ?? 0)) ?></span>
       </button>
-      <div class="action-stat action-stat--reward" title="Reward"><i class="ph-bold ph-coins"></i><span>+<?= format_rp((float)$active_reward) ?></span></div>
+      <div class="action-stat action-stat--reward" title="Reward"><img src="/assets/img/icons3d/coins.png" alt=""><span>+<?= format_rp((float)$active_reward) ?></span></div>
       <div class="action-stat" title="Total Tayangan"><i class="ph-bold ph-eye"></i><span><?= number_format((int)$video['total_watches']) ?></span></div>
       <button type="button" class="btn-action" onclick="shareVideo()" title="Bagikan Video"><i class="ph-bold ph-share-network"></i><span>Bagikan</span></button>
     </div>
 
     <?php if ($already_watched): ?>
       <div class="banner-watched">
-        <i class="ph-fill ph-check-circle" style="font-size:18px;"></i>
-        <span>Misi video ini sudah selesai hari ini!</span>
+        <img src="/assets/img/icons3d/chest_open.png" alt="">
+        <span>Quest video ini sudah beres hari ini!</span>
         <?php if ($is_debug_user): ?>
           <button type="button" class="resume-banner__btn-reset" onclick="resetDebugVideoStatus()" style="margin-left:auto;"><i class="ph-bold ph-arrow-counter-clockwise"></i> Reset</button>
         <?php endif; ?>
@@ -930,7 +923,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
     <?php endif; ?>
 
     <div class="guide-card">
-      <div class="guide-card__header"><i class="ph-fill ph-shield-check"></i><span>Cara klaim reward</span></div>
+      <div class="guide-card__header"><img src="/assets/img/icons3d/compass.png" alt=""><span>Cara klaim reward</span></div>
       <ol class="guide-card__list">
         <li>Putar video, timer mulai jalan.</li>
         <li>Tonton sampai timer habis, jangan dijeda.</li>
@@ -940,7 +933,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
 
     <?php if (!empty($other_videos)): ?>
     <div class="recom-section">
-      <div class="recom-title"><i class="ph-fill ph-film-strip"></i><span>Tonton berikutnya</span></div>
+      <div class="recom-title"><img src="/assets/img/icons3d/watch.png" alt=""><span>Tonton berikutnya</span></div>
       <?php foreach ($other_videos as $ov):
         $ov_done    = (bool)$ov['watched_today'];
         $ov_blocked = !$ov_done && ($watch_today >= $watch_limit);
@@ -950,7 +943,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
         <div class="recom-thumb">
           <img src="<?= yt_thumb($ov['youtube_id']) ?>" alt="" onerror="this.src='https://img.youtube.com/vi/<?= $ov['youtube_id'] ?>/hqdefault.jpg'">
           <?php if ($ov_done): ?>
-            <div style="position:absolute;inset:0;background:rgba(16,185,129,.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;"><i class="ph-bold ph-check"></i></div>
+            <div style="position:absolute;inset:0;background:rgba(22,163,74,.75);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;"><i class="ph-bold ph-check"></i></div>
           <?php endif; ?>
         </div>
         <div class="recom-info">
@@ -959,9 +952,9 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
             <?php if ($ov_done): ?>
               <span style="color:#059669;"><i class="ph-bold ph-check-circle"></i> Selesai</span>
             <?php else: ?>
-              <span style="color:#047857;background:#ecfdf5;padding:2px 7px;border-radius:999px;">+<?= format_rp((float)$ov['reward_amount']) ?></span>
+              <span class="coin">+<?= format_rp((float)$ov['reward_amount']) ?></span>
             <?php endif; ?>
-            <span style="color:#6b6478;"><i class="ph-bold ph-clock"></i> <?= (int)$ov['watch_duration'] ?>s</span>
+            <span style="color:#5c6b5f;"><i class="ph-bold ph-clock"></i> <?= (int)$ov['watch_duration'] ?>s</span>
           </div>
         </div>
       </a>
@@ -969,7 +962,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
     </div>
     <?php endif; ?>
 
-    <a href="/videos" class="btn-more-vids"><i class="ph-bold ph-squares-four"></i>Semua Video</a>
+    <a href="/videos" class="btn-more-vids"><img src="/assets/img/icons3d/watch.png" alt="">Semua Video</a>
   </div>
 
 </div>

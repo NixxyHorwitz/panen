@@ -20,7 +20,7 @@ $wd_free_1day = setting($pdo, 'wd_free_require_1day', '1') === '1';
 $wd_lock_s    = setting($pdo, 'wd_lock_start', '');
 $wd_lock_e    = setting($pdo, 'wd_lock_end', '');
 
-$panduan_intro    = setting($pdo, 'panduan_intro', 'Semua cara panen cuan di PanenCuan: nonton video, mancing, misi, sampai tarik saldo.');
+$panduan_intro    = setting($pdo, 'panduan_intro', 'Semua cara panen cuan: nonton video, bertani, quest, sampai withdraw.');
 $panduan_faq      = setting($pdo, 'panduan_faq_custom', '');
 $panduan_cta_text = setting($pdo, 'panduan_cta_text', 'Mulai Nonton Video');
 $panduan_cta_url  = setting($pdo, 'panduan_cta_url', '/videos');
@@ -59,166 +59,109 @@ require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══ PANDUAN — Peta Harta Samudra · living coral reef clay ══ */
-.pd { width: 100%; max-width: 440px; margin: 0 auto; padding: 6px 12px 28px; display: flex; flex-direction: column; gap: 12px; }
-.pd-top { display: flex; align-items: center; gap: 8px; }
-.pd-back { width: 34px; height: 34px; border-radius: 11px; border: 1.5px solid #fff; background: #fff; display: inline-flex; align-items: center; justify-content: center; color: var(--reef-ink); font-size: 16px; text-decoration: none; box-shadow: 0 3px 8px rgba(30, 27, 46, .06); flex-shrink: 0; }
-.pd-top h1 { flex: 1; margin: 0; font-size: 15px; font-weight: 900; color: var(--reef-ink); }
-.pd-chipx { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 999px; font-size: 10px; font-weight: 900; color: #7e22ce; background: #f3e8ff; border: 1.5px solid #fff; }
-
-.ico { width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; color: #fff;
-  box-shadow: 0 3px 6px var(--sh, rgba(0, 0, 0, .12)), inset 1.5px 1.5px 3px rgba(255, 255, 255, .55), inset -1.5px -1.5px 3px rgba(0, 0, 0, .15); }
-.i-coral  { background: linear-gradient(145deg, #fda4af, #f43f5e); --sh: rgba(244, 63, 94, .32); }
-.i-lagoon { background: linear-gradient(145deg, #a5f3fc, #0891b2); --sh: rgba(8, 145, 178, .3); }
-.i-kelp   { background: linear-gradient(145deg, #6ee7b7, #059669); --sh: rgba(5, 150, 105, .3); }
-.i-violet { background: linear-gradient(145deg, #c084fc, #7c3aed); --sh: rgba(124, 58, 237, .32); }
-.i-sun    { background: linear-gradient(145deg, #fde68a, #f59e0b); --sh: rgba(245, 158, 11, .32); }
-.i-sand   { background: linear-gradient(145deg, #fed7aa, #ea580c); --sh: rgba(234, 88, 12, .3); }
-
-/* Hero */
-.pd-hero { border: 2px solid #fff; border-radius: 24px; padding: 6px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); }
-.pd-hero-in { position: relative; overflow: hidden; border-radius: 19px; padding: 14px; color: #fff;
-  background: radial-gradient(circle at 90% 115%, rgba(254, 240, 138, .5) 0, transparent 45%), radial-gradient(circle at 0 0, rgba(192, 132, 252, .55) 0, transparent 50%),
-    linear-gradient(135deg, #0e7490 0%, #7c3aed 45%, #db2777 80%, #fb923c 100%);
-  box-shadow: inset 2px 2px 6px rgba(255, 255, 255, .3), inset -3px -4px 10px rgba(30, 10, 60, .25); }
-.pd-hero-in::before { content: ''; position: absolute; top: 5px; left: 14px; width: 40%; height: 9px; border-radius: 999px; background: linear-gradient(90deg, rgba(255, 255, 255, .3), transparent); }
-.pd-hero small { font-size: 9.5px; font-weight: 900; letter-spacing: .7px; text-transform: uppercase; opacity: .85; }
-.pd-hero h2 { margin: 2px 0 4px; font-size: 20px; font-weight: 900; letter-spacing: -.5px; line-height: 1.1; text-shadow: 0 2px 8px rgba(30, 10, 60, .3); max-width: 72%; }
-.pd-hero p { margin: 0; font-size: 11px; font-weight: 700; line-height: 1.45; opacity: .92; max-width: 74%; }
-.pd-hero-art { position: absolute; right: -6px; bottom: -6px; width: 112px; height: 112px; opacity: .95; }
-.pd-tour { position: relative; z-index: 2; margin-top: 11px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px 7px 7px; border-radius: 13px; border: 0; cursor: pointer;
-  background: #fff; color: #7c3aed; font: 900 11.5px/1 'Nunito', sans-serif; box-shadow: 0 4px 10px rgba(30, 10, 60, .25); }
-.pd-tour .ico { width: 24px; height: 24px; border-radius: 8px; font-size: 12px; }
-.pd-tour em { font-style: normal; font-size: 9px; padding: 2px 6px; border-radius: 6px; background: #f3e8ff; }
-.pd-tour em.done { background: #d1fae5; color: #047857; }
+/* ══ PANDUAN — Buku Petani · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.pd-tour.g-btn { margin-top: 10px; min-height: 36px; padding: 0 12px; font-size: 13.5px; border-radius: 12px; }
+.pd-tour em { font-style: normal; padding: 1px 7px; border-radius: 999px; font-family: 'Nunito', sans-serif; font-size: 10.5px; font-weight: 900; background: rgba(255, 255, 255, .3); }
+.pd-tour em.done { background: #dcfce7; color: #14532d; }
 
 /* Jalur 3 langkah */
-.pd-path { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 4px; }
-.pd-path a { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 4px; border-radius: 16px; border: 2px solid #fff; background: #fff; text-decoration: none;
-  box-shadow: 0 4px 10px rgba(30, 27, 46, .05), inset -2px -2px 4px rgba(251, 146, 60, .1); }
-.pd-path b { font-size: 10.5px; font-weight: 900; color: var(--reef-ink); text-align: center; line-height: 1.15; }
-.pd-path > i { color: #94a3b8; font-size: 13px; }
+.pd-path { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 4px; }
+.pd-path a { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 4px 8px; border-radius: 18px; text-decoration: none; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .15s var(--pc-ease); }
+.pd-path a:active { transform: translateY(3px); }
+.pd-path img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .2)); }
+.pd-path b { font-family: var(--pc-font); font-size: 13px; font-weight: 600; color: #4a2b00; text-align: center; line-height: 1.1; }
+.pd-path > i { font-size: 16px; color: #d9b25a; }
 
 /* Navigasi bab */
-.pd-nav { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px; margin: -2px -2px; scrollbar-width: none; }
+.pd-nav { display: flex; gap: 6px; overflow-x: auto; margin: 0 -12px; padding: 4px 12px 6px; scrollbar-width: none; }
 .pd-nav::-webkit-scrollbar { display: none; }
-.pd-nav a { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; border-radius: 999px; background: rgba(255, 255, 255, .92); border: 1.5px solid #fff;
-  font-size: 11px; font-weight: 900; color: var(--reef-muted); text-decoration: none; box-shadow: 0 2px 6px rgba(30, 27, 46, .06); backdrop-filter: blur(6px); }
-.pd-nav a.on { background: linear-gradient(135deg, #22d3ee, #0891b2); color: #fff; }
+.pd-nav a { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 34px; padding: 0 13px; border-radius: 12px; text-decoration: none; font-family: var(--pc-font); font-size: 13.5px; font-weight: 600; color: #8a6a3a; background: #f2e6c8; box-shadow: inset 0 -2px 0 rgba(120, 70, 10, .12); }
+.pd-nav a.on { color: #fff; background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; }
 
-/* Bab */
-.pd-sec { scroll-margin-top: 70px; }
-.pd-h { display: flex; align-items: center; gap: 8px; margin: 2px 2px 8px; }
-.pd-h h3 { flex: 1; margin: 0; font-size: 13.5px; font-weight: 900; color: var(--reef-ink); letter-spacing: -.2px; }
-.pd-h span { font-size: 10px; font-weight: 800; color: var(--reef-muted); }
-.pd-card { border: 2px solid #fff; border-radius: 20px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); padding: 11px; }
+.pd-sec { scroll-margin-top: 80px; display: flex; flex-direction: column; gap: 10px; }
+.pd-sec .g-sec small { white-space: nowrap; }
 
-/* Bento sumber cuan */
+/* Sumber cuan */
 .pd-bento { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pd-tile { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 17px; border: 2px solid #fff; background: #fff; text-decoration: none; color: inherit;
-  box-shadow: 0 6px 14px rgba(30, 27, 46, .05), inset -2px -2px 5px rgba(251, 146, 60, .1); transition: transform .14s cubic-bezier(.34, 1.56, .64, 1); }
-.pd-tile:active { transform: scale(.97); }
+.pd-tile { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 20px; text-decoration: none; color: inherit; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .15s var(--pc-ease); min-width: 0; }
+.pd-tile:active { transform: translateY(3px); }
 .pd-tile.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; }
-.pd-tile b { font-size: 12px; font-weight: 900; color: var(--reef-ink); line-height: 1.2; }
-.pd-tile p { margin: 0; font-size: 10px; font-weight: 700; color: var(--reef-muted); line-height: 1.35; }
-.pd-tile .amt { position: absolute; top: 9px; right: 9px; font-size: 9px; font-weight: 900; padding: 2px 7px; border-radius: 999px; background: #ecfdf5; color: #047857; }
+.pd-tile b { font-size: 13px; font-weight: 900; color: var(--pc-ink); line-height: 1.2; }
+.pd-tile p { margin: 0; font-size: 11px; font-weight: 700; color: var(--pc-muted); line-height: 1.35; }
+.pd-tile .g-coin { position: absolute; top: 9px; right: 8px; font-size: 11px; padding: 1px 8px; }
 .pd-tile.wide .tx { flex: 1; min-width: 0; }
-.pd-tile.wide .amt { position: static; flex-shrink: 0; }
+.pd-tile.wide .g-coin { position: static; flex-shrink: 0; }
 
 /* Alur bertani */
-.pd-flow { position: relative; display: flex; flex-direction: column; gap: 9px; padding-left: 4px; }
-.pd-flow::before { content: ''; position: absolute; left: 18px; top: 14px; bottom: 14px; width: 2px; background: repeating-linear-gradient(180deg, #a5f3fc 0 5px, transparent 5px 9px); }
-.pd-st { position: relative; display: flex; gap: 10px; align-items: flex-start; }
-.pd-st .ico { position: relative; z-index: 1; }
-.pd-st b { display: block; font-size: 12px; font-weight: 900; color: var(--reef-ink); }
-.pd-st p { margin: 1px 0 0; font-size: 10.5px; font-weight: 700; color: var(--reef-muted); line-height: 1.4; }
-.pd-st p strong { color: var(--reef-ink); }
+.pd-flow { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.pd-flow::before { content: ''; position: absolute; left: 18px; top: 20px; bottom: 20px; width: 3px; background: repeating-linear-gradient(180deg, #ecd59c 0 6px, transparent 6px 11px); }
+.pd-st { position: relative; display: flex; align-items: flex-start; gap: 10px; }
+.pd-st b { display: block; font-size: 13px; font-weight: 900; color: var(--pc-ink); }
+.pd-st p { margin: 1px 0 0; font-size: 11.5px; font-weight: 700; color: var(--pc-muted); line-height: 1.45; }
+.pd-st p strong { color: #15803d; }
 .pd-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.pd-pills span { font-size: 9.5px; font-weight: 900; padding: 2px 7px; border-radius: 7px; background: #fff; border: 1.5px solid #fff; box-shadow: 0 1px 3px rgba(30, 27, 46, .08); }
-
 
 /* Dua saldo */
 .pd-wallets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pd-wal { border-radius: 17px; padding: 10px; color: #fff; position: relative; overflow: hidden; box-shadow: inset 2px 2px 5px rgba(255, 255, 255, .3), inset -3px -3px 8px rgba(0, 0, 0, .15), 0 8px 16px var(--sh); }
-.pd-wal.wd { background: linear-gradient(145deg, #34d399, #047857); --sh: rgba(4, 120, 87, .25); }
-.pd-wal.dep { background: linear-gradient(145deg, #38bdf8, #4f46e5); --sh: rgba(79, 70, 229, .25); }
-.pd-wal i.big { position: absolute; right: -6px; bottom: -8px; font-size: 54px; opacity: .18; }
-.pd-wal b { display: block; font-size: 12.5px; font-weight: 900; }
-.pd-wal small { display: block; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; opacity: .85; margin: 6px 0 2px; }
-.pd-wal ul { margin: 0; padding: 0; list-style: none; font-size: 10px; font-weight: 800; line-height: 1.45; }
+.pd-wal { position: relative; overflow: hidden; padding: 11px; border-radius: 20px; min-width: 0; }
+.pd-wal.wd { color: #fff; background: linear-gradient(160deg, #22c55e, #15803d); box-shadow: 0 4px 0 #11622f, 0 10px 18px rgba(22, 163, 74, .22); }
+.pd-wal.dep { color: #4a3000; background: linear-gradient(160deg, #ffe58a, #f6b70a); box-shadow: 0 4px 0 #b07800, 0 10px 18px rgba(246, 183, 10, .22); }
+.pd-wal img.big { position: absolute; right: -8px; bottom: -8px; width: 62px; height: 62px; object-fit: contain; opacity: .9; }
+.pd-wal b { display: block; font-family: var(--pc-font); font-size: 16px; font-weight: 700; }
+.pd-wal small { display: block; margin: 6px 0 2px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; opacity: .85; }
+.pd-wal ul { position: relative; margin: 0; padding: 0; list-style: none; font-size: 11.5px; font-weight: 800; line-height: 1.45; max-width: 78%; }
 .pd-wal li::before { content: '• '; opacity: .7; }
 
-/* Tabel pangkat */
-.pd-rank { display: flex; flex-direction: column; gap: 6px; }
-.pd-rk { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 10px; border-radius: 14px; background: #fff; box-shadow: 0 2px 6px rgba(30, 27, 46, .05); }
-.pd-rk b { font-size: 12px; font-weight: 900; color: var(--reef-ink); }
-.pd-rk .pr { font-size: 11px; font-weight: 900; color: #e11d48; text-align: right; }
-.pd-rk .pr.free { color: #059669; }
-.pd-rk .meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
-.pd-rk .meta span { font-size: 9.5px; font-weight: 800; color: var(--reef-muted); background: #fff7ed; padding: 2px 7px; border-radius: 7px; display: inline-flex; align-items: center; gap: 3px; }
+/* Pangkat */
+.pd-rank { display: flex; flex-direction: column; gap: 7px; }
+.pd-rk { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1dfb4; }
+.pd-rk .tx { flex: 1; min-width: 0; }
+.pd-rk b { display: block; font-size: 13px; font-weight: 900; color: var(--pc-ink); }
+.pd-rk .meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.pd-rk .pr { flex-shrink: 0; font-family: var(--pc-font); font-size: 14px; font-weight: 700; color: #be123c; }
+.pd-rk .pr.free { color: #15803d; }
 
 /* Aturan */
-.pd-rules { display: flex; flex-direction: column; gap: 7px; }
-.pd-rule { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; font-weight: 700; color: var(--reef-muted); line-height: 1.4; }
-.pd-rule .ico { width: 24px; height: 24px; border-radius: 8px; font-size: 12px; }
-.pd-rule strong { color: var(--reef-ink); }
-
-.pd-btn { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 10px; border-radius: 13px; border: 2px solid #fff; font-size: 11.5px; font-weight: 900; text-decoration: none; }
-.pd-btn.lag { background: linear-gradient(135deg, #22d3ee, #0891b2); color: #fff; box-shadow: 0 3px 0 #0e7490; }
-.pd-btn.sun { background: linear-gradient(135deg, #fef08a, #f59e0b); color: #78350f; box-shadow: 0 3px 0 #b45309; }
+.pd-rules { display: flex; flex-direction: column; gap: 8px; }
+.pd-rule { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; color: var(--pc-muted); line-height: 1.4; }
+.pd-rule strong { color: var(--pc-ink); }
 
 /* FAQ */
-.pd-faq { display: flex; flex-direction: column; gap: 6px; }
-.pd-q { border-radius: 14px; background: #fff; box-shadow: 0 2px 6px rgba(30, 27, 46, .05); overflow: hidden; }
-.pd-q summary { list-style: none; cursor: pointer; padding: 10px 11px; display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 900; color: var(--reef-ink); }
+.pd-faq { display: flex; flex-direction: column; gap: 7px; }
+.pd-q { border-radius: 16px; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; overflow: hidden; }
+.pd-q summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 11px 12px; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); }
 .pd-q summary::-webkit-details-marker { display: none; }
-.pd-q summary i { margin-left: auto; color: #0891b2; transition: transform .2s; }
+.pd-q summary i { margin-left: auto; flex-shrink: 0; color: #15803d; transition: transform .25s var(--pc-ease); }
 .pd-q[open] summary i { transform: rotate(180deg); }
-.pd-q div { padding: 0 11px 10px; font-size: 11px; font-weight: 700; color: var(--reef-muted); line-height: 1.5; }
+.pd-q div { padding: 0 12px 11px; font-size: 12px; font-weight: 700; color: var(--pc-muted); line-height: 1.5; }
+.pd-q a { color: #15803d; font-weight: 900; }
 
 .pd-cta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pd-cta a { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 8px; border-radius: 15px; border: 2px solid #fff; font-size: 12px; font-weight: 900; text-decoration: none; color: #fff; }
-.pd-cta .a1 { background: linear-gradient(135deg, #fb7185, #e11d48); box-shadow: 0 4px 0 #be123c, 0 8px 16px rgba(225, 29, 72, .25); }
-.pd-cta .a2 { background: linear-gradient(135deg, #22d3ee, #0891b2); box-shadow: 0 4px 0 #0e7490, 0 8px 16px rgba(8, 145, 178, .25); }
+.pd-cta .g-btn { min-width: 0; padding: 0 8px; }
+@media (max-width: 350px) { .pd-path b { font-size: 11.5px; } .pd-path img { width: 32px; height: 32px; } }
 </style>
 
-<div class="pd">
+<?php $ic = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png'; ?>
+<div class="g-page">
 
-  <div class="pd-top">
-    <a href="/home" class="pd-back" title="Kembali"><i class="ph-bold ph-caret-left"></i></a>
-    <h1>Panduan</h1>
-    <span class="pd-chipx"><i class="ph-fill ph-book-open-text"></i>Resmi</span>
-  </div>
-
-  <!-- HERO -->
-  <section class="pd-hero">
-    <div class="pd-hero-in">
-      <small>Peta Harta Samudra</small>
-      <h2>Cara panen cuan di PanenCuan</h2>
-      <p><?= htmlspecialchars($panduan_intro) ?></p>
-      <button type="button" class="pd-tour" onclick="startPanduanTour('watch')">
-        <span class="ico i-violet"><i class="ph-fill ph-compass"></i></span>Tur interaktif <em id="badge-tour-watch">Mulai</em>
-      </button>
-      <svg class="pd-hero-art" viewBox="0 0 112 112" aria-hidden="true">
-        <circle cx="56" cy="56" r="44" fill="#fff" opacity=".12"/>
-        <circle cx="56" cy="56" r="30" fill="#fff" opacity=".12"/>
-        <g transform="translate(56 56)">
-          <path d="M0 -34 L7 -7 L0 0 L-7 -7 Z" fill="#fef08a"/><path d="M0 34 L7 7 L0 0 L-7 7 Z" fill="#fff" opacity=".8"/>
-          <path d="M-34 0 L-7 -7 L0 0 L-7 7 Z" fill="#fff" opacity=".8"/><path d="M34 0 L7 -7 L0 0 L7 7 Z" fill="#fff" opacity=".8"/>
-          <circle r="5" fill="#fb923c" stroke="#fff" stroke-width="2"/>
-        </g>
-        <circle cx="20" cy="22" r="3" fill="#fff" opacity=".7"/><circle cx="92" cy="30" r="2" fill="#fff" opacity=".6"/>
-      </svg>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Buku Petani</h1>
+        <p><?= htmlspecialchars($panduan_intro) ?></p>
+        <button type="button" class="g-btn violet pd-tour" onclick="startPanduanTour('watch')"><i class="ph-fill ph-compass"></i>Tur interaktif <em id="badge-tour-watch">Mulai</em></button>
+      </div>
+      <div class="g-hero-art"><img src="<?= $ic('compass') ?>" alt=""></div>
     </div>
   </section>
 
-  <!-- 3 LANGKAH -->
-  <div class="pd-path">
-    <a href="/videos"><span class="ico i-coral"><i class="ph-fill ph-play"></i></span><b>Nonton &amp; Bertani</b></a>
+  <div class="pd-path" data-rv style="--d:.05s">
+    <a href="/videos"><img src="<?= $ic('watch') ?>" alt=""><b>Nonton &amp; Bertani</b></a>
     <i class="ph-bold ph-caret-right"></i>
-    <a href="/missions"><span class="ico i-sun"><i class="ph-fill ph-target"></i></span><b>Kejar Misi</b></a>
+    <a href="/missions"><img src="<?= $ic('missions') ?>" alt=""><b>Kejar Quest</b></a>
     <i class="ph-bold ph-caret-right"></i>
-    <a href="/withdraw"><span class="ico i-kelp"><i class="ph-fill ph-hand-coins"></i></span><b>Withdraw</b></a>
+    <a href="/withdraw"><img src="<?= $ic('moneybag') ?>" alt=""><b>Withdraw</b></a>
   </div>
 
   <nav class="pd-nav" id="pd-nav">
@@ -226,58 +169,58 @@ require dirname(__DIR__) . '/partials/header.php';
     <a href="#sawah">Sawah</a>
     <a href="#saldo">Saldo</a>
     <a href="#pangkat">Pangkat</a>
-    <a href="#tarik">Penarikan</a>
+    <a href="#tarik">Withdraw</a>
     <a href="#faq">Tanya Jawab</a>
   </nav>
 
   <!-- 1. SUMBER CUAN -->
   <section class="pd-sec" id="cuan">
-    <div class="pd-h"><span class="ico i-coral"><i class="ph-fill ph-coins"></i></span><h3>Sumber Cuan</h3><span>semua masuk Saldo Tarik</span></div>
+    <div class="g-sec"><span class="g-ribbon gold"><img src="<?= $ic('coins') ?>" alt="">Sumber Cuan</span><small>masuk Saldo Tarik</small></div>
     <div class="pd-bento">
-      <a href="/videos" class="pd-tile"><span class="ico i-coral"><i class="ph-fill ph-film-strip"></i></span><b>Nonton Video</b><p>Tonton sampai hitungan selesai, reward langsung masuk.</p></a>
-      <a href="/farm" class="pd-tile"><span class="ico i-kelp"><i class="ph-fill ph-plant"></i></span><b>Sawah Panen Cuan</b><p>Tanam, panen, jual ke Pasar Pengepul jadi saldo.</p></a>
-      <a href="/missions" class="pd-tile"><?php if (!empty($mission_sum)): ?><span class="amt"><?= count($mission_sum) ? array_sum(array_column($mission_sum, 'n')) : 0 ?> misi</span><?php endif; ?>
-        <span class="ico i-sun"><i class="ph-fill ph-target"></i></span><b>Misi</b><p>Harian, mingguan &amp; sekali seumur akun.</p></a>
-      <a href="/checkin" class="pd-tile"><span class="amt"><?= $rp_short($ci_min) ?>–<?= $rp_short($ci_max) ?></span>
-        <span class="ico i-kelp"><i class="ph-fill ph-calendar-check"></i></span><b>Check-in</b><p>Klaim hadiah acak sekali sehari.</p></a>
-      <a href="/referral" class="pd-tile"><span class="amt"><?= $rp_short($ref_bonus) ?>/kawan</span>
-        <span class="ico i-violet"><i class="ph-fill ph-users-three"></i></span><b>Referral</b><p>+<?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari deposit mereka.</p></a>
-      <a href="/redeem" class="pd-tile"><span class="ico i-sand"><i class="ph-fill ph-ticket"></i></span><b>Kode Redeem</b><p>Tukar kode dari event &amp; pengumuman.</p></a>
-      <a href="/threads" class="pd-tile wide"><span class="ico i-violet"><i class="ph-fill ph-megaphone"></i></span>
+      <a href="/videos" class="pd-tile" data-rv><span class="g-slot sm"><img src="<?= $ic('watch') ?>" alt=""></span><b>Nonton Video</b><p>Tonton sampai timer habis, reward langsung masuk.</p></a>
+      <a href="/farm" class="pd-tile" data-rv style="--d:.04s"><span class="g-slot sm"><img src="<?= $ic('padi') ?>" alt=""></span><b>Sawah Panen Cuan</b><p>Tanam, panen, jual ke Pasar Pengepul.</p></a>
+      <a href="/missions" class="pd-tile" data-rv style="--d:.08s"><?php if (!empty($mission_sum)): ?><span class="g-coin"><?= array_sum(array_column($mission_sum, 'n')) ?> quest</span><?php endif; ?>
+        <span class="g-slot sm"><img src="<?= $ic('missions') ?>" alt=""></span><b>Quest</b><p>Harian, mingguan &amp; pencapaian.</p></a>
+      <a href="/checkin" class="pd-tile" data-rv style="--d:.12s"><span class="g-coin"><?= $rp_short($ci_min) ?>–<?= $rp_short($ci_max) ?></span>
+        <span class="g-slot sm"><img src="<?= $ic('checkin') ?>" alt=""></span><b>Bonus Harian</b><p>Klaim hadiah acak sekali sehari.</p></a>
+      <a href="/referral" class="pd-tile" data-rv style="--d:.16s"><span class="g-coin"><?= $rp_short($ref_bonus) ?>/teman</span>
+        <span class="g-slot sm"><img src="<?= $ic('referral') ?>" alt=""></span><b>Referral</b><p>+<?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari deposit mereka.</p></a>
+      <a href="/redeem" class="pd-tile" data-rv style="--d:.2s"><span class="g-slot sm"><img src="<?= $ic('redeem') ?>" alt=""></span><b>Kode Redeem</b><p>Tukar kode dari event &amp; pengumuman.</p></a>
+      <a href="/threads" class="pd-tile wide" data-rv style="--d:.24s"><span class="g-slot sm"><img src="<?= $ic('megaphone') ?>" alt=""></span>
         <div class="tx"><b>Event Threads</b><p>Promosikan PanenCuan di Threads, kirim bukti, tunggu verifikasi.</p></div>
-        <span class="amt"><?= $rp_short($thr_reward) ?>–<?= $rp_short($thr_reward2) ?></span></a>
+        <span class="g-coin"><?= $rp_short($thr_reward) ?>–<?= $rp_short($thr_reward2) ?></span></a>
     </div>
   </section>
 
-  <!-- 2. SAWAH PANEN CUAN -->
+  <!-- 2. SAWAH -->
   <section class="pd-sec" id="sawah">
-    <div class="pd-h"><span class="ico i-kelp"><i class="ph-fill ph-plant"></i></span><h3>Cara Bertani</h3><span>dari bibit sampai cuan</span></div>
-    <div class="pd-card">
+    <div class="g-sec"><span class="g-ribbon"><img src="<?= $ic('padi') ?>" alt="">Cara Bertani</span><small>bibit sampai cuan</small></div>
+    <div class="g-panel" data-rv>
       <div class="pd-flow">
-        <div class="pd-st"><span class="ico i-sand"><i class="ph-fill ph-plant"></i></span><div><b>1. Tanam bibit</b>
+        <div class="pd-st"><span class="g-slot sm"><img src="<?= $ic('seed') ?>" alt=""></span><div><b>1. Tanam bibit</b>
           <p>Ketuk petak kosong, pilih bibit. Bibit di kantong dipakai dulu; kalau kosong, 1 bibit dibeli otomatis pakai <strong>Saldo Beli</strong>.</p>
-          <?php if ($farm_crops): ?><div class="pd-pills"><?php foreach ($farm_crops as $c): ?><span><?= htmlspecialchars($c['name']) ?> · <?= $rp_short((float)$c['seed_price']) ?></span><?php endforeach; ?></div><?php endif; ?></div></div>
-        <div class="pd-st"><span class="ico i-lagoon"><i class="ph-fill ph-timer"></i></span><div><b>2. Tunggu tumbuh</b>
+          <?php if ($farm_crops): ?><div class="pd-pills"><?php foreach ($farm_crops as $c): ?><span class="g-chip"><?= htmlspecialchars($c['name']) ?> · <?= $rp_short((float)$c['seed_price']) ?></span><?php endforeach; ?></div><?php endif; ?></div></div>
+        <div class="pd-st"><span class="g-slot sm"><img src="<?= $ic('speed') ?>" alt=""></span><div><b>2. Tunggu tumbuh</b>
           <p>Timer di atas petak menunjukkan sisa waktu. Tanaman tetap tumbuh walau aplikasi ditutup. Mau cepat? Pakai <strong>Pupuk Kilat</strong>.</p></div></div>
-        <div class="pd-st"><span class="ico i-coral"><i class="ph-fill ph-bug"></i></span><div><b>3. Awas hama</b>
-          <p>Kadang ulat datang<?= $farm_cfg['pest_chance'] > 0 ? ' (peluang ' . (int)$farm_cfg['pest_chance'] . '%)' : '' ?>. Semprot <strong>Pestisida</strong> supaya hasil panen tetap penuh; kalau dibiarkan, hasilnya tinggal separuh.</p></div></div>
-        <div class="pd-st"><span class="ico i-violet"><i class="ph-fill ph-scissors"></i></span><div><b>4. Panen ke Lumbung</b>
+        <div class="pd-st"><span class="g-slot sm"><img src="<?= $ic('cure') ?>" alt=""></span><div><b>3. Awas hama</b>
+          <p>Kadang ulat datang<?= $farm_cfg['pest_chance'] > 0 ? ' (peluang ' . (int)$farm_cfg['pest_chance'] . '%)' : '' ?>. Semprot <strong>Pestisida</strong> agar panen tetap penuh; kalau dibiarkan hasilnya tinggal separuh.</p></div></div>
+        <div class="pd-st"><span class="g-slot sm"><img src="<?= $ic('barn') ?>" alt=""></span><div><b>4. Panen ke Lumbung</b>
           <p>Ketuk tanaman yang berkilau emas. Hasil panen masuk <strong>Lumbung</strong> dan memberi XP untuk naik level petani &amp; membuka bibit baru.</p></div></div>
-        <div class="pd-st"><span class="ico i-kelp"><i class="ph-fill ph-storefront"></i></span><div><b>5. Jual di Pasar Pengepul</b>
+        <div class="pd-st"><span class="g-slot sm"><img src="<?= $ic('shop') ?>" alt=""></span><div><b>5. Jual di Pasar Pengepul</b>
           <p>Jual semua isi lumbung sekali ketuk, uangnya masuk <strong>Saldo Tarik</strong>. Petak baru bisa dibuka mulai <?= format_rp(farm_plot_cost($farm_cfg, $farm_cfg['free_plots'])) ?>.</p></div></div>
       </div>
-      <a href="/farm" class="pd-btn lag"><i class="ph-fill ph-plant"></i>Mulai Bertani</a>
+      <a href="/farm" class="g-btn full shine" style="margin-top:12px"><img src="<?= $ic('padi') ?>" alt="">Mulai Bertani</a>
     </div>
   </section>
 
   <!-- 3. SALDO -->
   <section class="pd-sec" id="saldo">
-    <div class="pd-h"><span class="ico i-kelp"><i class="ph-fill ph-wallet"></i></span><h3>Dua Jenis Saldo</h3></div>
-    <div class="pd-wallets">
-      <div class="pd-wal wd"><i class="ph-fill ph-hand-coins big"></i><b>Saldo Tarik</b>
-        <small>Dari</small><ul><li>Video &amp; jual panen</li><li>Misi &amp; check-in</li><li>Referral &amp; event</li></ul>
+    <div class="g-sec"><span class="g-ribbon sky"><img src="<?= $ic('piggy') ?>" alt="">Dua Jenis Saldo</span></div>
+    <div class="pd-wallets" data-rv>
+      <div class="pd-wal wd"><img class="big" src="<?= $ic('moneybag') ?>" alt=""><b>Saldo Tarik</b>
+        <small>Dari</small><ul><li>Video &amp; jual panen</li><li>Quest &amp; bonus harian</li><li>Referral &amp; event</li></ul>
         <small>Untuk</small><ul><li>Dicairkan ke rekening</li></ul></div>
-      <div class="pd-wal dep"><i class="ph-fill ph-vault big"></i><b>Saldo Beli</b>
+      <div class="pd-wal dep"><img class="big" src="<?= $ic('piggy') ?>" alt=""><b>Saldo Beli</b>
         <small>Dari</small><ul><li>Deposit</li></ul>
         <small>Untuk</small><ul><li>Level up</li><li>Beli bibit &amp; pupuk</li><li>Buka petak sawah</li></ul></div>
     </div>
@@ -286,60 +229,63 @@ require dirname(__DIR__) . '/partials/header.php';
   <!-- 4. PANGKAT -->
   <?php if ($memberships): ?>
   <section class="pd-sec" id="pangkat">
-    <div class="pd-h"><span class="ico i-violet"><i class="ph-fill ph-crown"></i></span><h3>Pangkat</h3><span>lebih tinggi = lebih banyak cuan</span></div>
-    <div class="pd-card">
+    <div class="g-sec"><span class="g-ribbon gold"><img src="<?= $ic('upgrade') ?>" alt="">Pangkat</span><small>makin tinggi makin cuan</small></div>
+    <div class="g-panel" data-rv>
       <div class="pd-rank">
         <?php foreach ($memberships as $m): $free = (float)$m['price'] <= 0; ?>
           <div class="pd-rk">
-            <b><?= htmlspecialchars($m['name']) ?></b>
-            <span class="pr <?= $free ? 'free' : '' ?>"><?= $free ? 'Gratis' : format_rp((float)$m['price']) ?></span>
-            <div class="meta">
-              <span><i class="ph-fill ph-film-strip"></i><?= (int)$m['watch_limit'] ?> video/hari</span>
-              <span><i class="ph-fill ph-hand-coins"></i>WD <?= $rp_short((float)$m['min_wd']) ?><?= (float)$m['max_wd'] > 0 ? '–' . $rp_short((float)$m['max_wd']) : '+' ?></span>
-              <?php if (!$free): ?><span><i class="ph-fill ph-clock"></i><?= (int)$m['duration_days'] ?> hari</span><?php endif; ?>
+            <span class="g-slot sm"><img src="<?= $ic($free ? 'seed' : 'upgrade') ?>" alt=""></span>
+            <div class="tx">
+              <b><?= htmlspecialchars($m['name']) ?></b>
+              <div class="meta">
+                <span class="g-chip"><?= (int)$m['watch_limit'] ?> video/hari</span>
+                <span class="g-chip">WD <?= $rp_short((float)$m['min_wd']) ?><?= (float)$m['max_wd'] > 0 ? '–' . $rp_short((float)$m['max_wd']) : '+' ?></span>
+                <?php if (!$free): ?><span class="g-chip"><?= (int)$m['duration_days'] ?> hari</span><?php endif; ?>
+              </div>
             </div>
+            <span class="pr <?= $free ? 'free' : '' ?>"><?= $free ? 'Gratis' : $rp_short((float)$m['price']) ?></span>
           </div>
         <?php endforeach; ?>
       </div>
-      <a href="/upgrade" class="pd-btn sun"><i class="ph-fill ph-crown"></i>Lihat Benefit &amp; Level Up</a>
+      <a href="/upgrade" class="g-btn gold full shine" style="margin-top:12px"><img src="<?= $ic('upgrade') ?>" alt="">Lihat Benefit &amp; Level Up</a>
     </div>
   </section>
   <?php endif; ?>
 
-  <!-- 5. PENARIKAN -->
+  <!-- 5. WITHDRAW -->
   <section class="pd-sec" id="tarik">
-    <div class="pd-h"><span class="ico i-sun"><i class="ph-fill ph-bank"></i></span><h3>Aturan Penarikan</h3></div>
-    <div class="pd-card pd-rules">
-      <div class="pd-rule"><span class="ico i-kelp"><i class="ph-bold ph-scales"></i></span><span>Batas minimal &amp; maksimal sekali tarik <strong>mengikuti pangkatmu</strong> (lihat tabel di atas).</span></div>
-      <div class="pd-rule"><span class="ico i-lagoon"><i class="ph-bold ph-hourglass-medium"></i></span><span>Hanya <strong>1 penarikan diproses</strong> dalam satu waktu. Tunggu selesai sebelum tarik lagi.</span></div>
+    <div class="g-sec"><span class="g-ribbon"><img src="<?= $ic('moneybag') ?>" alt="">Aturan Withdraw</span></div>
+    <div class="g-panel pd-rules" data-rv>
+      <div class="pd-rule"><span class="g-slot sm"><img src="<?= $ic('coins') ?>" alt=""></span><span>Batas minimal &amp; maksimal sekali tarik <strong>mengikuti pangkatmu</strong>.</span></div>
+      <div class="pd-rule"><span class="g-slot sm"><img src="<?= $ic('speed') ?>" alt=""></span><span>Hanya <strong>1 withdraw diproses</strong> dalam satu waktu. Tunggu selesai sebelum tarik lagi.</span></div>
       <?php if ($wd_lock_s && $wd_lock_e): ?>
-        <div class="pd-rule"><span class="ico i-coral"><i class="ph-bold ph-moon"></i></span><span>Penarikan <strong>tutup pukul <?= htmlspecialchars(date('H:i', strtotime($wd_lock_s))) ?>–<?= htmlspecialchars(date('H:i', strtotime($wd_lock_e))) ?></strong>.</span></div>
+        <div class="pd-rule"><span class="g-slot sm"><img src="<?= $ic('lock') ?>" alt=""></span><span>Withdraw <strong>tutup pukul <?= htmlspecialchars(date('H:i', strtotime($wd_lock_s))) ?>–<?= htmlspecialchars(date('H:i', strtotime($wd_lock_e))) ?></strong>.</span></div>
       <?php endif; ?>
       <?php if ($free_name && ($wd_free_dana || $wd_free_1x || $wd_free_1day)): ?>
-        <div class="pd-rule"><span class="ico i-sand"><i class="ph-bold ph-info"></i></span><span>Pangkat <strong><?= htmlspecialchars($free_name) ?></strong>:
-          <?= implode(', ', array_filter([$wd_free_dana ? 'hanya ke DANA' : '', $wd_free_1x ? 'maksimal 1x penarikan' : '', $wd_free_1day ? 'akun minimal 1 hari' : ''])) ?>.</span></div>
+        <div class="pd-rule"><span class="g-slot sm"><img src="<?= $ic('seed') ?>" alt=""></span><span>Pangkat <strong><?= htmlspecialchars($free_name) ?></strong>:
+          <?= implode(', ', array_filter([$wd_free_dana ? 'hanya ke DANA' : '', $wd_free_1x ? 'maksimal 1x withdraw' : '', $wd_free_1day ? 'akun minimal 1 hari' : ''])) ?>.</span></div>
       <?php endif; ?>
-      <div class="pd-rule"><span class="ico i-violet"><i class="ph-bold ph-identification-card"></i></span><span>Rekening harus <strong>atas nama sendiri</strong>.<?= $wallets ? ' Tersedia: ' . htmlspecialchars(implode(', ', $wallets)) . '.' : '' ?></span></div>
-      <a href="/withdraw" class="pd-btn lag" style="margin-top:4px"><i class="ph-fill ph-hand-coins"></i>Withdraw</a>
+      <div class="pd-rule"><span class="g-slot sm"><img src="<?= $ic('piggy') ?>" alt=""></span><span>Rekening harus <strong>atas nama sendiri</strong>.<?= $wallets ? ' Tersedia: ' . htmlspecialchars(implode(', ', $wallets)) . '.' : '' ?></span></div>
+      <a href="/withdraw" class="g-btn full" style="margin-top:4px"><img src="<?= $ic('moneybag') ?>" alt="">Withdraw</a>
     </div>
   </section>
 
   <!-- 6. FAQ -->
   <section class="pd-sec" id="faq">
-    <div class="pd-h"><span class="ico i-coral"><i class="ph-fill ph-chat-circle-dots"></i></span><h3>Tanya Jawab</h3></div>
+    <div class="g-sec"><span class="g-ribbon sky"><img src="<?= $ic('chat') ?>" alt="">Tanya Jawab</span></div>
     <div class="pd-faq">
       <details class="pd-q" open><summary>Kenapa saldo tidak bisa ditarik?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Cek: saldo sudah mencapai minimal pangkatmu, tidak ada penarikan lain yang diproses, rekening sudah diisi, dan sedang di luar jam tutup.</div></details>
+        <div>Cek: saldo sudah mencapai minimal pangkatmu, tidak ada withdraw lain yang diproses, rekening sudah diisi, dan sedang di luar jam tutup.</div></details>
       <details class="pd-q"><summary>Kuota video habis, lalu apa?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Kuota video reset tiap hari. Sambil menunggu, kamu tetap bisa bertani, kejar misi, dan check-in. Kuota lebih banyak tersedia di pangkat lebih tinggi.</div></details>
+        <div>Kuota video reset tiap hari. Sambil menunggu, kamu tetap bisa bertani, kejar quest, dan klaim bonus harian. Kuota lebih banyak ada di pangkat lebih tinggi.</div></details>
       <details class="pd-q"><summary>Bibit habis, bisa tanam gratis?<i class="ph-bold ph-caret-down"></i></summary>
         <div>Setiap tanam butuh 1 bibit. Bibit dibeli dengan Saldo Beli lewat Deposit, lalu hasil jual panennya masuk Saldo Tarik.</div></details>
       <details class="pd-q"><summary>Kapan bonus referral cair?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Bonus <?= format_rp($ref_bonus) ?> per kawan yang daftar<?= $ref_hold > 0 ? ' ditahan ' . $ref_hold . ' hari dulu' : '' ?>, plus <?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari setiap deposit mereka. Akun palsu atau daftar sendiri terdeteksi otomatis dan bonusnya tidak diberikan.</div></details>
+        <div>Bonus <?= format_rp($ref_bonus) ?> per teman yang daftar<?= $ref_hold > 0 ? ' ditahan ' . $ref_hold . ' hari dulu' : '' ?>, plus <?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari setiap deposit mereka. Akun palsu atau daftar sendiri terdeteksi otomatis dan bonusnya tidak diberikan.</div></details>
       <details class="pd-q"><summary>Bagaimana ganti rekening?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Buka <a href="/edit-rekening" style="color:#0891b2;font-weight:900">Edit Rekening</a>. Pengajuan dicek admin dulu. Fitur ini tersedia untuk pangkat tertentu dan butuh Saldo Beli mengendap.</div></details>
+        <div>Buka <a href="/edit-rekening">Bank Saya</a>. Pengajuan dicek admin dulu. Fitur ini tersedia untuk pangkat tertentu dan butuh Saldo Beli mengendap.</div></details>
       <details class="pd-q"><summary>Butuh bantuan?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Ngobrol dengan pemain lain di <a href="/global-chat" style="color:#0891b2;font-weight:900">Global Chat</a>, atau hubungi CS lewat <a href="/livechat" style="color:#0891b2;font-weight:900">Live Chat</a>.</div></details>
+        <div>Ngobrol dengan petani lain di <a href="/global-chat">Komunitas</a>, atau hubungi CS lewat <a href="/livechat">Live Chat</a>.</div></details>
       <?php if (!empty($panduan_faq)): ?>
         <details class="pd-q"><summary>Info tambahan<i class="ph-bold ph-caret-down"></i></summary><div><?= nl2br(htmlspecialchars($panduan_faq)) ?></div></details>
       <?php endif; ?>
@@ -347,8 +293,8 @@ require dirname(__DIR__) . '/partials/header.php';
   </section>
 
   <div class="pd-cta">
-    <a href="/farm" class="a2"><i class="ph-fill ph-plant"></i>Bertani</a>
-    <a href="<?= htmlspecialchars($panduan_cta_url) ?>" class="a1"><i class="ph-fill ph-play-circle"></i><?= htmlspecialchars($panduan_cta_text) ?></a>
+    <a href="/farm" class="g-btn"><img src="<?= $ic('padi') ?>" alt="">Bertani</a>
+    <a href="<?= htmlspecialchars($panduan_cta_url) ?>" class="g-btn gold"><img src="<?= $ic('watch') ?>" alt=""><?= htmlspecialchars($panduan_cta_text) ?></a>
   </div>
 
 </div>
@@ -379,7 +325,7 @@ function startPanduanTour(track) {
   links.forEach(a => a.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     const t = document.querySelector(a.getAttribute('href'));
-    if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' });
+    if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 76, behavior: 'smooth' });
   }));
   const nav = document.getElementById('pd-nav');
   const io = new IntersectionObserver(entries => {

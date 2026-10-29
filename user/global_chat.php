@@ -106,91 +106,95 @@ $_title = setting($pdo, 'site_name', 'PanenCuan');
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
-<meta name="theme-color" content="#0891b2">
-<title>Global Chat — <?= htmlspecialchars($_title) ?></title>
+<meta name="theme-color" content="#ffb46b">
+<title>Komunitas — <?= htmlspecialchars($_title) ?></title>
 <link rel="icon" href="<?= htmlspecialchars('/' . ltrim((string)$_fav, '/')) ?>">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>
-:root { --ink: #1e1b2e; --muted: #6b6478; --lagoon: #0891b2; --coral: #e11d48;
-  --card: linear-gradient(160deg, #ffffff 0%, #fff7ed 70%, #ffedd5 100%);
-  --clay: 0 8px 18px rgba(8, 145, 178, 0.09), inset 2px 2px 5px #fff, inset -3px -3px 7px rgba(251, 146, 60, 0.12); }
+/* ══ KOMUNITAS — Golden Hour game UI (tema sama dengan assets/css/pc-game.css) ══ */
+:root { --ink: #1b2a1e; --muted: #5c6b5f; --pc-font: 'Fredoka', 'Nunito', sans-serif; --ease: cubic-bezier(.34, 1.56, .64, 1); }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body { overflow: hidden; color: var(--ink); font-family: 'Nunito', -apple-system, sans-serif;
-  background: radial-gradient(circle at 12% 8%, rgba(253, 164, 175, 0.2), transparent 38%), radial-gradient(circle at 90% 30%, rgba(192, 132, 252, 0.12), transparent 40%), linear-gradient(180deg, #ecfeff 0%, #f0f9ff 40%, #fff7ed 100%); }
-.gc-top { position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 0 12px;
-  background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 0 0 18px 18px; box-shadow: 0 6px 18px rgba(30, 27, 46, 0.07); }
-.gc-back { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--ink); text-decoration: none; background: #fff; box-shadow: 0 3px 8px rgba(30, 27, 46, 0.08); font-size: 18px; }
-.gc-ava { width: 36px; height: 36px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; color: #fff; background: linear-gradient(145deg, #22d3ee, #0891b2); box-shadow: 0 4px 10px rgba(8, 145, 178, 0.28); }
+  background: radial-gradient(120% 50% at 50% 0%, #ffd59a 0%, transparent 60%), linear-gradient(180deg, #fff0cf 0%, #fff8e8 45%, #eef7e2 100%); }
+.gc-top { position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 20; display: flex; align-items: center; gap: 9px; padding: 0 12px;
+  background: linear-gradient(180deg, #ffb46b, #ffd08a); border-radius: 0 0 20px 20px; box-shadow: 0 4px 0 #e59a4a, 0 10px 22px rgba(120, 70, 10, .18); }
+.gc-back { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; color: #4a2b00; text-decoration: none; background: rgba(255, 255, 255, .85); box-shadow: 0 3px 0 rgba(120, 70, 10, .25); font-size: 18px; }
+.gc-back:active { transform: translateY(2px); box-shadow: none; }
+.gc-ava { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; }
+.gc-ava img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(120, 70, 10, .3)); animation: gcBob 3s ease-in-out infinite; }
+@keyframes gcBob { 50% { transform: translateY(-3px) rotate(-5deg); } }
 .gc-ti { flex: 1; min-width: 0; line-height: 1.15; }
-.gc-ti b { display: block; font-size: 14px; font-weight: 900; }
-.gc-ti small { display: block; font-size: 10.5px; font-weight: 800; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gc-ti b { display: block; font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: #4a2b00; }
+.gc-ti small { display: block; font-size: 11px; font-weight: 800; color: #7a4f00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gc-quota { flex-shrink: 0; display: flex; gap: 4px; }
-.gc-quota span { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 900; background: #ecfeff; color: #0e7490; }
-.gc-quota span.img { background: #f5f3ff; color: #6d28d9; }
-#gc-root { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
-.gc-page { display: flex; flex-direction: column; width: 100%; max-width: 560px; height: 100%; margin: 0 auto; min-height: 0; }
+.gc-quota span { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 900; color: #14532d; background: rgba(255, 255, 255, .85); }
+.gc-quota span.img { color: #6d28d9; }
+#gc-root { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
+.gc-page { display: flex; flex-direction: column; width: 100%; max-width: 560px; height: 100%; min-height: 0; margin: 0 auto; }
 [hidden] { display: none !important; }
-.gc-notice { margin: 8px 12px 0; padding: 7px 11px; border: 2px solid #fff; border-radius: 14px; background: #fff7ed; font-size: 11px; font-weight: 800; color: #9a3412; display: flex; gap: 6px; align-items: center; }
-.gc-msgs { flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #a5f3fc transparent; }
-.gc-day { align-self: center; padding: 3px 10px; border-radius: 999px; font-size: 9.5px; font-weight: 900; color: var(--muted); background: rgba(255, 255, 255, 0.7); }
-.gc-row { display: flex; align-items: flex-end; gap: 6px; max-width: 86%; animation: gcPop 0.22s ease; }
-@keyframes gcPop { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+.gc-notice { display: flex; align-items: center; gap: 6px; margin: 10px 12px 0; padding: 8px 11px; border-radius: 14px; font-size: 12px; font-weight: 800; color: #7a4f00; background: #fff3c4; box-shadow: inset 0 0 0 2px #fde68a; }
+.gc-msgs { flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 12px 12px 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #ecd59c transparent; }
+.gc-day { align-self: center; padding: 3px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 900; color: #8a5a00; background: #fff3c4; }
+.gc-row { display: flex; align-items: flex-end; gap: 6px; max-width: 86%; animation: gcPop .3s var(--ease); }
+@keyframes gcPop { from { opacity: 0; transform: translateY(8px) scale(.96); } }
 .gc-row.mine { align-self: flex-end; flex-direction: row-reverse; }
-.gc-av { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #fff; border: 2px solid #fff; }
-.gc-av.c0 { background: #0891b2; } .gc-av.c1 { background: #e11d48; } .gc-av.c2 { background: #059669; } .gc-av.c3 { background: #7c3aed; } .gc-av.c4 { background: #d97706; }
-.gc-av.adm { background: linear-gradient(145deg, #fbbf24, #d97706); }
+.gc-av { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-family: var(--pc-font); font-size: 14px; font-weight: 700; color: #fff; box-shadow: 0 0 0 2px #fff, 0 2px 4px rgba(0, 0, 0, .15); }
+.gc-av.c0 { background: #16a34a; } .gc-av.c1 { background: #ea580c; } .gc-av.c2 { background: #0284c7; } .gc-av.c3 { background: #7c3aed; } .gc-av.c4 { background: #db2777; }
+.gc-av.adm { background: linear-gradient(145deg, #ffd54f, #f6b70a); color: #4a3000; }
 .gc-row.mine .gc-av, .gc-row.cont .gc-av { visibility: hidden; }
-.gc-bub { min-width: 0; padding: 6px 10px 5px; border: 2px solid #fff; border-radius: 15px 15px 15px 4px; background: var(--card); box-shadow: var(--clay); }
-.gc-row.mine .gc-bub { border: none; border-radius: 15px 15px 4px 15px; color: #fff; background: linear-gradient(145deg, #22d3ee, #0891b2); box-shadow: 0 5px 12px rgba(8, 145, 178, 0.22); }
-.gc-row.adm .gc-bub { background: linear-gradient(160deg, #fffbeb, #fef3c7); border-color: #fde68a; }
-.gc-name { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 900; color: var(--lagoon); white-space: nowrap; }
-.gc-name em { font-style: normal; padding: 0 5px; border-radius: 999px; font-size: 8.5px; background: #ecfeff; color: #0e7490; }
-.gc-row.adm .gc-name { color: #b45309; } .gc-row.adm .gc-name em { background: #fde68a; color: #78350f; }
+.gc-bub { min-width: 0; padding: 7px 11px 5px; border-radius: 16px 16px 16px 5px; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; }
+.gc-row.mine .gc-bub { border-radius: 16px 16px 5px 16px; color: #fff; background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f, 0 6px 12px rgba(22, 163, 74, .2); }
+.gc-row.adm .gc-bub { background: #fff7d1; box-shadow: 0 0 0 2px #fcd34d, 0 3px 0 #e9b949; }
+.gc-name { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 900; color: #15803d; white-space: nowrap; }
+.gc-name em { padding: 0 6px; border-radius: 999px; font-style: normal; font-size: 9.5px; color: #8a5a00; background: #fff3c4; }
+.gc-row.adm .gc-name { color: #b07800; } .gc-row.adm .gc-name em { background: #ffd54f; color: #4a3000; }
 .gc-row.mine .gc-name, .gc-row.cont .gc-name { display: none; }
-.gc-txt { font-size: 12.5px; font-weight: 700; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
-.gc-img { display: block; max-width: 200px; max-height: 220px; margin: 3px 0 2px; border-radius: 11px; object-fit: cover; cursor: zoom-in; }
-.gc-time { display: block; text-align: right; font-size: 8.5px; font-weight: 800; opacity: 0.7; margin-top: 1px; }
-.gc-empty { margin: auto; text-align: center; font-size: 11.5px; font-weight: 800; color: var(--muted); }
-.gc-empty i { display: block; font-size: 34px; color: #22d3ee; margin-bottom: 4px; }
-.gc-input { display: flex; align-items: flex-end; gap: 6px; flex-shrink: 0; margin: 0 10px calc(8px + env(safe-area-inset-bottom)); padding: 6px; border: 2px solid #fff; border-radius: 22px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 8px 20px rgba(30, 27, 46, 0.08); }
-.gc-input textarea { flex: 1; min-height: 38px; max-height: 110px; resize: none; border: none; outline: none; padding: 9px 6px; background: transparent; font-family: inherit; font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1.3; }
-.gc-ib { width: 38px; height: 38px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: none; border-radius: 13px; cursor: pointer; font-size: 18px; }
-.gc-ib.attach { color: var(--muted); background: #f1f5f9; }
-.gc-ib.send { color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 5px 12px rgba(225, 29, 72, 0.3); }
-.gc-ib:disabled { opacity: 0.45; cursor: not-allowed; }
+.gc-txt { font-size: 13.5px; font-weight: 700; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+.gc-img { display: block; max-width: 200px; max-height: 220px; margin: 3px 0 2px; border-radius: 12px; object-fit: cover; cursor: zoom-in; }
+.gc-time { display: block; margin-top: 1px; text-align: right; font-size: 9.5px; font-weight: 800; opacity: .65; }
+.gc-empty { margin: auto; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--muted); }
+.gc-empty img { display: block; width: 76px; height: 76px; margin: 0 auto 6px; object-fit: contain; animation: gcBob 3s ease-in-out infinite; }
+.gc-input { display: flex; align-items: flex-end; gap: 6px; flex-shrink: 0; margin: 0 10px calc(10px + env(safe-area-inset-bottom)); padding: 6px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c, 0 10px 22px rgba(120, 70, 10, .12); }
+.gc-input textarea { flex: 1; min-height: 38px; max-height: 110px; padding: 9px 6px; border: 0; outline: 0; resize: none; background: transparent; font-family: inherit; font-size: 16px; font-weight: 700; line-height: 1.3; color: var(--ink); }
+.gc-ib { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border: 0; border-radius: 13px; cursor: pointer; font-size: 18px; transition: transform .12s; }
+.gc-ib:active { transform: translateY(2px); }
+.gc-ib.attach { color: #8a6a3a; background: #f2e6c8; }
+.gc-ib.send { color: #fff; background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; }
+.gc-ib:disabled { opacity: .45; cursor: not-allowed; }
 .gc-prev { display: none; align-items: center; gap: 6px; padding: 3px 4px; }
 .gc-prev img { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; }
-.gc-prev span { flex: 1; min-width: 0; font-size: 10.5px; font-weight: 800; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gc-prev button { border: none; background: none; color: var(--coral); font-size: 17px; cursor: pointer; }
-.gc-count { align-self: center; flex-shrink: 0; font-size: 9px; font-weight: 800; color: var(--muted); padding-right: 2px; }
-.gc-lock { margin: 0 10px calc(8px + env(safe-area-inset-bottom)); padding: 10px 12px; border: 2px solid #fff; border-radius: 18px; background: #fff7ed; font-size: 11.5px; font-weight: 800; color: #9a3412; display: flex; align-items: center; gap: 8px; }
-.gc-lock a { margin-left: auto; flex-shrink: 0; padding: 5px 11px; border-radius: 999px; text-decoration: none; font-size: 10.5px; font-weight: 900; color: #fff; background: linear-gradient(145deg, #fbbf24, #d97706); }
-.gc-zoom { position: fixed; inset: 0; z-index: 99; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 23, 42, 0.85); }
+.gc-prev span { flex: 1; min-width: 0; font-size: 11px; font-weight: 800; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gc-prev button { border: 0; background: none; color: #e11d48; font-size: 17px; cursor: pointer; }
+.gc-count { align-self: center; flex-shrink: 0; padding-right: 2px; font-size: 9.5px; font-weight: 800; color: var(--muted); }
+.gc-lock { display: flex; align-items: center; gap: 8px; margin: 0 10px calc(10px + env(safe-area-inset-bottom)); padding: 10px 12px; border-radius: 18px; font-size: 12px; font-weight: 800; color: #7a4f00; background: #fff3c4; box-shadow: inset 0 0 0 2px #fde68a; }
+.gc-lock a { flex-shrink: 0; margin-left: auto; padding: 6px 12px; border-radius: 11px; text-decoration: none; font-family: var(--pc-font); font-size: 13px; font-weight: 600; color: #4a3000; background: linear-gradient(135deg, #ffd54f, #f6b70a); box-shadow: 0 3px 0 #b07800; }
+.gc-zoom { position: fixed; inset: 0; z-index: 99; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(40, 25, 5, .85); }
 .gc-zoom img { max-width: 100%; max-height: 100%; border-radius: 14px; }
 .gc-blocked { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-.gc-blocked > div { max-width: 320px; padding: 22px 18px; text-align: center; border: 2px solid #fff; border-radius: 24px; background: var(--card); box-shadow: 0 20px 40px rgba(30, 27, 46, 0.12); }
-.gc-blocked i { font-size: 40px; color: #0891b2; }
-.gc-blocked h2 { margin: 6px 0 4px; font-size: 16px; font-weight: 900; }
-.gc-blocked p { margin: 0 0 14px; font-size: 11.5px; font-weight: 700; color: var(--muted); }
-.gc-blocked a { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 14px; text-decoration: none; font-size: 12.5px; font-weight: 900; color: #fff; background: linear-gradient(145deg, #22d3ee, #0891b2); }
-@media (prefers-reduced-motion: reduce) { .gc-row { animation: none; } }
+.gc-blocked > div { max-width: 320px; padding: 20px 18px; text-align: center; border-radius: 24px; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 5px 0 #ecd59c, 0 20px 40px rgba(120, 70, 10, .15); }
+.gc-blocked img { width: 84px; height: 84px; object-fit: contain; animation: gcBob 3s ease-in-out infinite; }
+.gc-blocked h2 { margin: 6px 0 4px; font-family: var(--pc-font); font-size: 20px; font-weight: 700; color: #4a2b00; }
+.gc-blocked p { margin: 0 0 14px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.gc-blocked a { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 18px; border-radius: 14px; text-decoration: none; font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #4a3000; background: linear-gradient(135deg, #ffd54f, #f6b70a); box-shadow: 0 4px 0 #b07800; }
+@media (max-width: 360px) { .gc-quota span { padding: 3px 6px; } .gc-ti small { display: none; } }
+@media (prefers-reduced-motion: reduce) { .gc-row, .gc-ava img, .gc-empty img, .gc-blocked img { animation: none; } }
 </style>
 </head>
 <body>
 <?php if (!$perm['view']): ?>
 <div class="gc-blocked"><div>
-  <i class="ph-fill ph-lock-key"></i>
-  <h2>Global Chat terkunci</h2>
+  <img src="/assets/img/icons3d/lock.png" alt="">
+  <h2>Komunitas terkunci</h2>
   <p><?= htmlspecialchars($perm['reason']) ?></p>
   <a href="/upgrade"><i class="ph-bold ph-crown"></i> Lihat Pangkat</a>
 </div></div>
 <?php else: ?>
 <header class="gc-top">
   <a href="/home" class="gc-back" aria-label="Kembali"><i class="ph-bold ph-caret-left"></i></a>
-  <span class="gc-ava"><i class="ph-fill ph-chats-circle"></i></span>
-  <div class="gc-ti"><b>Global Chat</b><small id="gc-sub">Pangkatmu: <?= htmlspecialchars($perm['tier']['name']) ?> · reset <?= htmlspecialchars($perm['next_reset']) ?></small></div>
+  <span class="gc-ava"><img src="/assets/img/icons3d/chat.png" alt=""></span>
+  <div class="gc-ti"><b>Komunitas</b><small id="gc-sub">Pangkatmu: <?= htmlspecialchars($perm['tier']['name']) ?> · reset <?= htmlspecialchars($perm['next_reset']) ?></small></div>
   <div class="gc-quota">
     <span title="Sisa pesan hari ini"><i class="ph-bold ph-chat-text"></i><b id="gc-q-msg"><?= $perm['msg_left'] ?></b></span>
     <span class="img" id="gc-q-img-wrap" title="Sisa gambar hari ini" <?= $perm['image'] ? '' : 'hidden' ?>><i class="ph-bold ph-image"></i><b id="gc-q-img"><?= $perm['img_left'] ?></b></span>
@@ -199,8 +203,7 @@ body { overflow: hidden; color: var(--ink); font-family: 'Nunito', -apple-system
 
 <div id="gc-root"><div class="gc-page">
   <div class="gc-notice" id="gc-notice" <?= $cfg['enabled'] ? 'hidden' : '' ?>><i class="ph-fill ph-lock-simple"></i><span id="gc-notice-txt"><?= htmlspecialchars((string)$cfg['closed_message']) ?></span></div>
-  <div class="gc-msgs" id="gc-msgs"><div class="gc-empty" id="gc-empty"><i class="ph-fill ph-chats-circle"></i>Memuat obrolan...</div></div>
-
+  <div class="gc-msgs" id="gc-msgs"><div class="gc-empty" id="gc-empty"><img src="/assets/img/icons3d/chat.png" alt="">Memuat obrolan...</div></div>
   <div class="gc-lock" id="gc-lock" hidden><i class="ph-fill ph-lock-key"></i><span id="gc-lock-txt"></span><a href="/upgrade" id="gc-lock-up" hidden>Level Up</a></div>
   <form class="gc-input" id="gc-form" autocomplete="off" onsubmit="gcSend(event)">
     <button type="button" class="gc-ib attach" id="gc-attach" title="Kirim gambar" onclick="document.getElementById('gc-file').click()" <?= $perm['image'] ? '' : 'hidden' ?>><i class="ph-bold ph-image"></i></button>
@@ -262,7 +265,7 @@ async function gcPoll(first) {
     const stick = first || gcNearBottom();
     d.messages.forEach(gcRender);
     (d.deleted || []).forEach((id) => { const el = document.querySelector('[data-mid="' + id + '"]'); if (el) el.remove(); });
-    if (first && !d.messages.length) $('gc-msgs').innerHTML = '<div class="gc-empty" id="gc-empty"><i class="ph-fill ph-chats-circle"></i>Belum ada obrolan. Sapa yang lain duluan!</div>';
+    if (first && !d.messages.length) $('gc-msgs').innerHTML = '<div class="gc-empty" id="gc-empty"><img src="/assets/img/icons3d/chat.png" alt="">Belum ada obrolan. Sapa yang lain duluan!</div>';
     gcApplyPerm(d.perm, d.open);
     if (stick) gcScroll();
   } catch (e) {} finally { GC.busy = false; }

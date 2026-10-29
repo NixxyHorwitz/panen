@@ -367,122 +367,100 @@ $activePage = 'upgrade';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
 <style>
-/* ══════════════════════════════════════════════════════════
-   NAIK PANGKAT — Living Coral Reef, ringkas & minim teks
-   Token warna & latar laut dari partials/header.php (--reef-*)
-   ══════════════════════════════════════════════════════════ */
-.pk-wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 8px 12px 96px; color: var(--reef-ink); }
-.pk-flash { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 11px; border: 2px solid #fff; border-radius: 16px; font-size: 11.5px; font-weight: 800; box-shadow: var(--reef-clay-shadow); }
-.pk-flash.success { background: linear-gradient(145deg, #ecfdf5, #d1fae5); color: #065f46; }
-.pk-flash.error { background: linear-gradient(145deg, #fff1f2, #ffe4e6); color: #9f1239; }
+/* ══ LEVEL UP — Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.pk-flash { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; }
+.pk-flash.success { background: #dcfce7; color: #14532d; box-shadow: inset 0 0 0 2px #bbf7d0; }
+.pk-flash.error { background: #ffe4e6; color: #9f1239; box-shadow: inset 0 0 0 2px #fecdd3; }
 
-/* Strip status: saldo beli + pangkat sekarang */
-.pk-status { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.pk-st { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 9px; border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); }
-.pk-st .ic { width: 32px; height: 32px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), inset -2px -2px 4px rgba(0, 0, 0, 0.14); }
-.pk-st .ic.wal { background: linear-gradient(145deg, #c084fc, #7c3aed); }
-.pk-st .ic.rank { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.pk-st .tx { flex: 1; min-width: 0; }
-.pk-st small { display: block; font-size: 8.5px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase; color: var(--reef-muted); }
-.pk-st b { display: block; font-size: 12.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pk-st em { display: block; font-style: normal; font-size: 9px; font-weight: 800; color: var(--reef-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pk-st .add { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #fff; font-size: 14px; background: linear-gradient(145deg, #6ee7b7, #059669); border: 2px solid #fff; box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3); }
-.pk-refund { flex-shrink: 0; border: none; background: none; padding: 0; cursor: pointer; color: #e11d48; font-size: 16px; }
+/* Status di hero */
+.pk-status { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.pk-st { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 7px 7px 7px 8px; border-radius: 16px; background: rgba(255, 255, 255, .8); box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 6px 14px rgba(120, 70, 10, .1); }
+.pk-st .g-slot { width: 34px; height: 34px; border-radius: 11px; }
+.pk-st .tx { flex: 1; min-width: 0; line-height: 1.2; }
+.pk-st small { display: block; font-size: 10px; font-weight: 900; color: #8a5a00; }
+.pk-st b { display: block; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pk-st em { display: block; font-style: normal; font-size: 10px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pk-st .add { flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; text-decoration: none; color: #fff; font-size: 15px; background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 2px 0 #11622f; }
+.pk-refund { flex-shrink: 0; width: 28px; height: 28px; border: 0; border-radius: 9px; cursor: pointer; display: grid; place-items: center; color: #be123c; font-size: 15px; background: #ffe4e6; }
 
 /* Pemilih pangkat */
-.pk-tiers { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; margin: 10px 0 8px; padding: 4px; border: 2px solid #fff; border-radius: 18px; background: rgba(255, 255, 255, 0.6); box-shadow: inset 1.5px 1.5px 4px rgba(8, 145, 178, 0.12); }
-.pk-tier { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 5px; border: none; border-radius: 14px; background: none; cursor: pointer; font-family: inherit; color: var(--reef-muted); }
-.pk-tier i { font-size: 18px; }
-.pk-tier b { font-size: 10.5px; font-weight: 900; line-height: 1.1; text-align: center; }
-.pk-tier small { font-size: 9px; font-weight: 800; }
-.pk-tier .hot { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 6px; border-radius: 999px; font-size: 7.5px; font-weight: 900; letter-spacing: 0.4px; color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); border: 1.5px solid #fff; white-space: nowrap; }
-.pk-tier.on { color: #fff; box-shadow: 0 5px 12px rgba(30, 27, 46, 0.18), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.pk-tier.on.t0 { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.pk-tier.on.t1 { background: linear-gradient(145deg, #fb7185, #e11d48); }
-.pk-tier.on.t2 { background: linear-gradient(145deg, #fcd34d, #d97706); }
-.pk-tier .cur { position: absolute; top: 3px; right: 4px; font-size: 11px; color: #10b981; }
-.pk-tier.on .cur { color: #fff; }
+.pk-tiers { grid-auto-columns: minmax(0, 1fr); }
+.pk-tier.g-tier { position: relative; flex-direction: column; gap: 1px; min-height: 52px; padding: 5px 2px; line-height: 1.05; }
+.pk-tier b { font-size: 12.5px; font-weight: 600; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.pk-tier small { font-family: 'Nunito', sans-serif; font-size: 10.5px; font-weight: 900; opacity: .85; }
+.pk-tier .hot { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 7px; border-radius: 999px; font-family: 'Nunito', sans-serif; font-size: 9px; font-weight: 900; color: #fff; background: linear-gradient(180deg, #fb7185, #e11d48); box-shadow: 0 2px 0 #9f1239; white-space: nowrap; text-shadow: none; }
+.pk-tier .cur { position: absolute; top: 3px; right: 4px; font-size: 13px; color: #16a34a; }
+.pk-tier.on .cur { color: #ffd54f; }
+.pk-tiers .pk-tier.on { color: #fff; background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
 
-/* Kartu harga */
-.pk-card { display: none; position: relative; overflow: hidden; border: 2px solid #fff; border-radius: 24px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); }
-.pk-card.on { display: block; animation: pkIn 0.3s ease; }
-@keyframes pkIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.pk-top { position: relative; display: flex; align-items: center; gap: 11px; padding: 13px 14px 12px; color: #fff; }
-.pk-card.t0 .pk-top { background: linear-gradient(150deg, #0e7490, #22d3ee); }
-.pk-card.t1 .pk-top { background: linear-gradient(150deg, #be123c, #fb7185); }
-.pk-card.t2 .pk-top { background: linear-gradient(150deg, #b45309, #fbbf24); }
-.pk-top::after { content: ''; position: absolute; right: -24px; top: -34px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.25), transparent 70%); }
-.pk-emb { position: relative; width: 50px; height: 50px; flex-shrink: 0; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 26px; background: rgba(255, 255, 255, 0.22); border: 2px solid rgba(255, 255, 255, 0.75); box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.35); }
-.pk-name { position: relative; flex: 1; min-width: 0; }
-.pk-name b { display: block; font-size: 17px; font-weight: 900; line-height: 1.1; text-shadow: 0 2px 3px rgba(0, 0, 0, 0.2); }
-.pk-name span { display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; padding: 1px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 900; background: rgba(255, 255, 255, 0.25); }
-.pk-price { position: relative; text-align: right; flex-shrink: 0; }
-.pk-price s { display: block; font-size: 10px; font-weight: 800; opacity: 0.8; }
-.pk-price b { display: block; font-size: 19px; font-weight: 900; line-height: 1.1; text-shadow: 0 2px 3px rgba(0, 0, 0, 0.2); }
-.pk-price em { display: inline-block; margin-top: 2px; padding: 0 6px; border-radius: 999px; font-style: normal; font-size: 9px; font-weight: 900; background: #fff; color: #e11d48; }
+/* Kartu pangkat */
+.pk-card { display: none; overflow: hidden; border-radius: 24px; background: #fff; box-shadow: 0 0 0 2px #f6e2b0, 0 5px 0 #ecd59c, 0 14px 24px rgba(120, 70, 10, .1); }
+.pk-card.on { display: block; animation: pkIn .4s var(--pc-out); }
+@keyframes pkIn { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.pk-top { position: relative; overflow: hidden; display: flex; align-items: center; gap: 11px; padding: 13px 14px; }
+.pk-card.t0 .pk-top { color: #fff; background: radial-gradient(circle at 92% 120%, rgba(255, 230, 120, .5) 0, transparent 45%), linear-gradient(135deg, #15803d, #22c55e); }
+.pk-card.t1 .pk-top { color: #4a3000; background: radial-gradient(circle at 92% 120%, rgba(255, 255, 255, .55) 0, transparent 45%), linear-gradient(135deg, #f6b70a, #ffd54f); }
+.pk-card.t2 .pk-top { color: #fff; background: radial-gradient(circle at 92% 120%, rgba(255, 213, 79, .5) 0, transparent 45%), linear-gradient(135deg, #6d28d9, #a78bfa); }
+.pk-emb { position: relative; flex-shrink: 0; width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; background: rgba(255, 255, 255, .3); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .7); }
+.pk-emb img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .25)); animation: gBob 3s ease-in-out infinite; }
+.pk-name { flex: 1; min-width: 0; }
+.pk-name b { display: block; font-family: var(--pc-font); font-size: 19px; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pk-name span { display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 900; background: rgba(255, 255, 255, .3); }
+.pk-price { flex-shrink: 0; text-align: right; }
+.pk-price s { display: block; font-size: 11px; font-weight: 800; opacity: .8; }
+.pk-price b { display: block; font-family: var(--pc-font); font-size: 20px; font-weight: 700; line-height: 1.1; }
+.pk-price em { display: inline-block; margin-top: 2px; padding: 0 7px; border-radius: 999px; font-style: normal; font-size: 10px; font-weight: 900; color: #fff; background: #e11d48; }
 .pk-body { padding: 11px 12px 12px; }
 .pk-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.pk-num { display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 14px; background: rgba(255, 255, 255, 0.85); box-shadow: inset 1px 1px 3px rgba(251, 146, 60, 0.15); min-width: 0; }
-.pk-num i { font-size: 17px; flex-shrink: 0; }
-.pk-num b { display: block; font-size: 12.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pk-num small { display: block; font-size: 8.5px; font-weight: 800; color: var(--reef-muted); text-transform: uppercase; letter-spacing: 0.3px; }
-.pk-num.c1 i { color: #0891b2; } .pk-num.c2 i { color: #059669; } .pk-num.c3 i { color: #7c3aed; } .pk-num.c4 i { color: #e11d48; }
+.pk-num { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 7px 8px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1.5px #f1dfb4; }
+.pk-num img { width: 28px; height: 28px; flex-shrink: 0; object-fit: contain; }
+.pk-num > span { min-width: 0; }
+.pk-num b { display: block; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pk-num small { display: block; font-size: 10px; font-weight: 800; color: var(--pc-muted); }
 .pk-perks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-.pk-perks span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 900; color: #047857; background: #d1fae5; }
-.pk-cta { width: 100%; height: 46px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 2.5px solid #fff; border-radius: 16px; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 900; color: #fff;
-  box-shadow: 0 9px 18px rgba(30, 27, 46, 0.2), inset 3px 3px 5px rgba(255, 255, 255, 0.4), inset -3px -4px 8px rgba(0, 0, 0, 0.18); }
-.pk-cta i { font-size: 18px; }
-.pk-card.t0 .pk-cta { background: linear-gradient(145deg, #22d3ee, #0e7490); }
-.pk-card.t1 .pk-cta { background: linear-gradient(145deg, #fb7185, #be123c); }
-.pk-card.t2 .pk-cta { background: linear-gradient(145deg, #fbbf24, #b45309); }
-.pk-cta.low { background: linear-gradient(145deg, #e2e8f0, #cbd5e1) !important; color: #475569; box-shadow: inset 2px 2px 3px #fff; }
-.pk-cta.is-cur { background: linear-gradient(145deg, #6ee7b7, #059669) !important; }
-.pk-note { margin-top: 6px; text-align: center; font-size: 9.5px; font-weight: 700; color: var(--reef-muted); }
+.pk-perks .g-chip { background: #dcfce7; color: #14532d; }
+.pk-cta { margin-top: 10px; }
+.pk-note { margin-top: 6px; text-align: center; font-size: 10.5px; font-weight: 700; color: var(--pc-muted); }
 
-/* Jaminan (ikon saja) */
-.pk-trust { display: flex; justify-content: space-between; gap: 6px; margin-top: 10px; }
-.pk-trust span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 4px; border: 2px solid #fff; border-radius: 15px; background: rgba(255, 255, 255, 0.7); font-size: 9.5px; font-weight: 900; text-align: center; box-shadow: 0 3px 8px rgba(8, 145, 178, 0.06); }
-.pk-trust i { font-size: 18px; }
-.pk-trust span:nth-child(1) i { color: #059669; } .pk-trust span:nth-child(2) i { color: #f59e0b; } .pk-trust span:nth-child(3) i { color: #0891b2; }
-/* Panduan lipat */
-.pk-guide { margin-top: 8px; border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); overflow: hidden; }
-.pk-guide summary { display: flex; align-items: center; gap: 6px; padding: 10px 12px; cursor: pointer; list-style: none; font-size: 12px; font-weight: 900; }
+.pk-trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pk-trust span { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border-radius: 16px; text-align: center; font-size: 11px; font-weight: 900; color: var(--pc-ink); background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
+.pk-trust img { width: 30px; height: 30px; object-fit: contain; }
+
+.pk-guide { border-radius: 18px; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; overflow: hidden; }
+.pk-guide summary { display: flex; align-items: center; gap: 7px; padding: 11px 12px; cursor: pointer; list-style: none; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); }
 .pk-guide summary::-webkit-details-marker { display: none; }
-.pk-guide summary > i:first-child { font-size: 16px; color: #0891b2; }
-.pk-guide summary .chev { margin-left: auto; font-size: 13px; color: var(--reef-muted); transition: transform 0.2s; }
+.pk-guide summary img { width: 22px; height: 22px; }
+.pk-guide summary .chev { margin-left: auto; color: #15803d; transition: transform .25s var(--pc-ease); }
 .pk-guide[open] summary .chev { transform: rotate(180deg); }
-.pk-steps { list-style: none; margin: 0; padding: 0 12px 10px; display: flex; flex-direction: column; gap: 6px; }
-.pk-steps li { display: flex; align-items: center; gap: 9px; }
-.pk-steps li > span { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #fff; background: linear-gradient(145deg, #67e8f9, #0891b2); border: 2px solid #fff; box-shadow: 0 3px 6px rgba(8, 145, 178, 0.25); }
-.pk-steps b { font-weight: 900; color: var(--reef-ink); }
-.pk-steps small { font-size: 11px; font-weight: 700; color: var(--reef-muted); }
-.pk-empty { padding: 20px; text-align: center; border-radius: 20px; border: 2px dashed rgba(8, 145, 178, 0.35); background: rgba(255, 255, 255, 0.65); font-size: 11.5px; font-weight: 800; color: var(--reef-muted); }
+.pk-steps { list-style: none; margin: 0; padding: 0 12px 11px; display: flex; flex-direction: column; gap: 7px; }
+.pk-steps li { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 700; color: var(--pc-muted); }
+.pk-steps li > span { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-family: var(--pc-font); font-size: 13px; font-weight: 700; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.pk-steps b { color: var(--pc-ink); }
 
 /* Modal */
-.cg-modal { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 20px; background: rgba(30, 27, 46, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.cg-modal-card { width: 100%; max-width: 330px; padding: 16px; border: 2px solid #fff; border-radius: 24px; background: var(--reef-card); box-shadow: 0 24px 50px rgba(30, 27, 46, 0.3), inset 3px 3px 6px #fff; animation: pkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-@keyframes pkPop { from { transform: scale(0.88); opacity: 0; } to { transform: none; opacity: 1; } }
-.cg-mc-hdr { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; font-weight: 900; }
-.cg-mc-hdr i { color: #e11d48; font-size: 19px; }
-.cg-mc-box { margin: 10px 0; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.9); box-shadow: inset 1px 1px 3px rgba(251, 146, 60, 0.15); }
-.cg-mc-val { font-size: 16px; font-weight: 900; color: #0e7490; text-align: center; margin-bottom: 6px; }
-.cg-line { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11.5px; font-weight: 800; color: var(--reef-muted); }
-.cg-line b, .cg-line span { font-weight: 900; color: var(--reef-ink); }
-#discount-row { color: #059669; } #discount-row span { color: #059669; }
-#final-price-row { margin-top: 3px; padding-top: 6px; border-top: 1.5px dashed rgba(251, 146, 60, 0.3); font-size: 13px; }
-#final-price-row span { color: #e11d48; }
-.cg-voucher-btn { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: none; background: none; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 900; color: #0891b2; }
+.cg-modal { display: none; position: fixed; inset: 0; z-index: 10000; align-items: flex-end; justify-content: center; background: rgba(40, 25, 5, .5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.cg-modal-card { width: 100%; max-width: 440px; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 -10px 30px rgba(40, 25, 5, .25); animation: pkUp .35s var(--pc-out); }
+@keyframes pkUp { from { transform: translateY(100%); } }
+.cg-grab { width: 40px; height: 5px; margin: 0 auto 8px; border-radius: 5px; background: #ecd59c; }
+.cg-art { display: block; width: 70px; height: 70px; margin: 0 auto 2px; object-fit: contain; animation: gBob 3s ease-in-out infinite; }
+.cg-mc-hdr { text-align: center; font-family: var(--pc-font); font-size: 19px; font-weight: 700; color: #4a2b00; }
+.cg-mc-box { margin: 10px 0; padding: 10px 12px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1dfb4; }
+.cg-mc-val { margin-bottom: 6px; text-align: center; font-family: var(--pc-font); font-size: 17px; font-weight: 700; color: #15803d; }
+.cg-line { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; font-weight: 800; color: var(--pc-muted); }
+.cg-line b, .cg-line span { font-weight: 900; color: var(--pc-ink); }
+#discount-row, #discount-row span { color: #15803d; }
+#final-price-row { margin-top: 3px; padding-top: 6px; border-top: 1.5px dashed #f1dfb4; font-size: 13px; }
+#final-price-row span { color: #be123c; }
+.cg-voucher-btn { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; cursor: pointer; font: 900 12px/1 'Nunito', sans-serif; color: #15803d; }
 #voucher-box { margin-top: 6px; gap: 6px; }
-#voucher-input { flex: 1; min-width: 0; padding: 8px 10px; border: 2px solid #fff; border-radius: 12px; outline: none; font-family: inherit; font-size: 11.5px; font-weight: 900; text-transform: uppercase; background: #fff; box-shadow: inset 1px 1px 4px rgba(8, 145, 178, 0.18); }
-.cg-voucher-apply { padding: 8px 12px; border: 2px solid #fff; border-radius: 12px; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 900; color: #fff; background: linear-gradient(145deg, #67e8f9, #0891b2); }
-#voucher-msg { margin-top: 5px; font-size: 10.5px; font-weight: 800; display: none; }
-#modal-warn { display: none; margin: 8px 0; padding: 7px 9px; border-radius: 12px; background: #fff1f2; font-size: 10.5px; font-weight: 800; color: #be123c; }
-.cg-btn-row { display: flex; gap: 8px; margin-top: 10px; }
-.cg-btn { flex: 1; padding: 11px; border: 2px solid #fff; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 900; }
-.cg-btn--cancel { background: #fff; color: var(--reef-muted); box-shadow: inset 1.5px 1.5px 3px #fff, 0 3px 8px rgba(30, 27, 46, 0.08); }
-.cg-btn--confirm { color: #fff; background: linear-gradient(145deg, #6ee7b7, #059669); box-shadow: 0 6px 14px rgba(5, 150, 105, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.cg-btn--danger { color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 6px 14px rgba(225, 29, 72, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.cg-sub { margin-top: 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--reef-muted); line-height: 1.45; }
+#voucher-input { flex: 1; min-width: 0; padding: 9px 11px; border: 0; border-radius: 12px; outline: none; background: #fff; box-shadow: inset 0 0 0 2px #f1dfb4; font: 900 12.5px/1 'Nunito', sans-serif; text-transform: uppercase; color: var(--pc-ink); }
+#voucher-input:focus { box-shadow: inset 0 0 0 2px #22c55e; }
+.cg-voucher-apply.g-btn { min-height: 36px; padding: 0 13px; font-size: 13px; border-radius: 11px; }
+#voucher-msg { display: none; margin-top: 5px; font-size: 11.5px; font-weight: 800; }
+#modal-warn { display: none; margin: 8px 0; padding: 8px 10px; border-radius: 12px; background: #ffe4e6; font-size: 11.5px; font-weight: 800; color: #be123c; }
+.cg-btn-row { display: flex; gap: 8px; margin-top: 12px; }
+.cg-btn-row .g-btn { flex: 1; }
+.cg-sub { margin-top: 4px; text-align: center; font-size: 12px; font-weight: 700; color: var(--pc-muted); line-height: 1.45; }
 </style>
 
 <?php
@@ -495,44 +473,53 @@ $hot_idx    = count($paid) >= 3 ? 1 : -1;
 $sel_idx = $hot_idx >= 0 ? $hot_idx : 0;
 foreach ($paid as $i => $m) { if ((int)$m['id'] === $cur_id) { $sel_idx = min($i + 1, count($paid) - 1); break; } }
 $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_format($n / 1000000, 1, ',', '.'), '0'), ',') . 'jt' : ($n >= 1000 ? number_format($n / 1000, 0, ',', '.') . 'rb' : number_format($n, 0, ',', '.'));
+$ic = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png';
+$tier_art = ['padi', 'basket', 'barn', 'chest_open'];
 ?>
-<div class="pk-wrap">
+<div class="g-page">
 
   <?php if ($flash): ?>
     <div class="pk-flash <?= $flashType === 'error' ? 'error' : 'success' ?>"><span><?= htmlspecialchars($flash) ?></span></div>
   <?php endif; ?>
 
-  <!-- STATUS -->
-  <div class="pk-status">
-    <div class="pk-st">
-      <span class="ic wal"><i class="ph-fill ph-wallet"></i></span>
-      <span class="tx"><small>Saldo Beli</small><b><?= format_rp((float)$user['balance_dep']) ?></b></span>
-      <a href="/deposit" class="add" aria-label="Deposit Saldo Beli"><i class="ph-bold ph-plus"></i></a>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Level Up</h1>
+        <p>Naik pangkat, kuota video &amp; batas withdraw ikut naik.</p>
+      </div>
+      <div class="g-hero-art"><img src="<?= $ic('upgrade') ?>" alt=""></div>
     </div>
-    <div class="pk-st">
-      <span class="ic rank"><i class="ph-fill <?= htmlspecialchars((string)($active_membership['icon'] ?? ($free_rank['icon'] ?? 'ph-fish-simple'))) ?>"></i></span>
-      <span class="tx">
-        <small>Pangkatmu</small>
-        <b><?= htmlspecialchars((string)($active_membership['name'] ?? ($free_rank['name'] ?? 'Petani Pemula'))) ?></b>
-        <em><?= $active_membership ? 's/d ' . date('d M Y', strtotime($user['membership_expires_at'])) : 'Gratis' ?></em>
-      </span>
-      <?php if ($can_refund): ?>
-        <button type="button" class="pk-refund" onclick="document.getElementById('refund-modal').style.display='flex'" aria-label="Ajukan refund" title="Ajukan refund"><i class="ph-bold ph-arrow-u-up-left"></i></button>
-      <?php endif; ?>
+    <div class="pk-status">
+      <div class="pk-st">
+        <span class="g-slot"><img src="<?= $ic('piggy') ?>" alt=""></span>
+        <span class="tx"><small>Saldo Beli</small><b><?= format_rp((float)$user['balance_dep']) ?></b></span>
+        <a href="/deposit" class="add" aria-label="Deposit Saldo Beli"><i class="ph-bold ph-plus"></i></a>
+      </div>
+      <div class="pk-st">
+        <span class="g-slot"><img src="<?= $ic($active_membership ? 'upgrade' : 'seed') ?>" alt=""></span>
+        <span class="tx">
+          <small>Pangkatmu</small>
+          <b><?= htmlspecialchars((string)($active_membership['name'] ?? ($free_rank['name'] ?? 'Petani Pemula'))) ?></b>
+          <em><?= $active_membership ? 's/d ' . date('d M Y', strtotime($user['membership_expires_at'])) : 'Gratis' ?></em>
+        </span>
+        <?php if ($can_refund): ?>
+          <button type="button" class="pk-refund" onclick="document.getElementById('refund-modal').style.display='flex'" aria-label="Ajukan refund" title="Ajukan refund"><i class="ph-bold ph-arrow-u-up-left"></i></button>
+        <?php endif; ?>
+      </div>
     </div>
-  </div>
+  </section>
 
   <?php if (!$paid): ?>
-    <div class="pk-empty" style="margin-top:10px">Belum ada pangkat berbayar yang tersedia.</div>
+    <div class="g-panel g-empty"><img src="<?= $ic('upgrade') ?>" alt=""><b>Belum ada pangkat</b><p>Belum ada pangkat berbayar yang tersedia.</p></div>
   <?php else: ?>
 
-  <!-- PEMILIH PANGKAT -->
-  <div class="pk-tiers" role="tablist">
+  <div class="g-seg pk-tiers" role="tablist" data-rv style="--d:.05s">
     <?php foreach ($paid as $i => $m): ?>
-      <button type="button" class="pk-tier t<?= $i % 3 ?> <?= $i === $sel_idx ? 'on' : '' ?>" data-tier="<?= $i ?>" onclick="pickTier(<?= $i ?>)" role="tab">
+      <button type="button" class="pk-tier g-tier <?= $i === $sel_idx ? 'on' : '' ?>" data-tier="<?= $i ?>" onclick="pickTier(<?= $i ?>)" role="tab">
         <?php if ($i === $hot_idx): ?><span class="hot">FAVORIT</span><?php endif; ?>
         <?php if ((int)$m['id'] === $cur_id): ?><i class="ph-fill ph-check-circle cur"></i><?php endif; ?>
-        <i class="ph-fill <?= htmlspecialchars((string)$m['icon']) ?>"></i>
         <b><?= htmlspecialchars($m['name']) ?></b>
         <small><?= $short(get_active_price($m, $user)) ?></small>
       </button>
@@ -545,7 +532,6 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
     <input type="hidden" name="voucher_code" id="applied-voucher-code" value="">
   </form>
 
-  <!-- KARTU HARGA -->
   <?php foreach ($paid as $i => $m):
     $active_price = get_active_price($m, $user);
     $can_afford   = (float)$user['balance_dep'] >= $active_price;
@@ -557,7 +543,7 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
   ?>
     <div class="pk-card t<?= $i % 3 ?> <?= $i === $sel_idx ? 'on' : '' ?>" data-card="<?= $i ?>">
       <div class="pk-top">
-        <div class="pk-emb"><i class="ph-fill <?= htmlspecialchars((string)$m['icon']) ?>"></i></div>
+        <div class="pk-emb"><img src="<?= $ic($tier_art[min($i, count($tier_art) - 1)]) ?>" alt=""></div>
         <div class="pk-name">
           <b><?= htmlspecialchars($m['name']) ?></b>
           <span><i class="ph-bold ph-hourglass"></i> <?= (int)$m['duration_days'] ?> hari</span>
@@ -570,23 +556,23 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
       </div>
       <div class="pk-body">
         <div class="pk-nums">
-          <div class="pk-num c1"><i class="ph-fill ph-play-circle"></i><span><b><?= (int)$m['watch_limit'] ?> video</b><small>Per hari</small></span></div>
-          <div class="pk-num c2"><i class="ph-fill ph-trend-up"></i><span><b><?= $h ? '±' . format_rp(round($h['daily_income'] / 1000) * 1000) : '-' ?></b><small>Estimasi / hari</small></span></div>
-          <div class="pk-num c3"><i class="ph-fill ph-arrow-circle-down"></i><span><b><?= format_rp((float)$m['min_wd']) ?></b><small>Min tarik</small></span></div>
-          <div class="pk-num c4"><i class="ph-fill ph-arrow-circle-up"></i><span><b><?= (float)$m['max_wd'] > 0 ? format_rp((float)$m['max_wd']) : 'Tanpa batas' ?></b><small>Maks tarik</small></span></div>
+          <div class="pk-num"><img src="<?= $ic('watch') ?>" alt=""><span><b><?= (int)$m['watch_limit'] ?> video</b><small>Per hari</small></span></div>
+          <div class="pk-num"><img src="<?= $ic('coins') ?>" alt=""><span><b><?= $h ? '±' . format_rp(round($h['daily_income'] / 1000) * 1000) : '-' ?></b><small>Estimasi/hari</small></span></div>
+          <div class="pk-num"><img src="<?= $ic('piggy') ?>" alt=""><span><b><?= format_rp((float)$m['min_wd']) ?></b><small>Min withdraw</small></span></div>
+          <div class="pk-num"><img src="<?= $ic('moneybag') ?>" alt=""><span><b><?= (float)$m['max_wd'] > 0 ? format_rp((float)$m['max_wd']) : 'Tanpa batas' ?></b><small>Maks withdraw</small></span></div>
         </div>
         <?php if (!empty($m['allow_edit_bank']) || $is_top || ($h && $h['break_even_days'] > 0)): ?>
         <div class="pk-perks">
-          <?php if ($h && $h['break_even_days'] > 0): ?><span><i class="ph-bold ph-lightning"></i> Balik modal ±<?= (int)$h['break_even_days'] ?> hari</span><?php endif; ?>
-          <?php if (!empty($m['allow_edit_bank'])): ?><span><i class="ph-bold ph-pencil-simple"></i> Bebas ganti rekening</span><?php endif; ?>
-          <?php if ($is_top): ?><span><i class="ph-bold ph-crown"></i> Pencairan prioritas</span><?php endif; ?>
+          <?php if ($h && $h['break_even_days'] > 0): ?><span class="g-chip"><i class="ph-bold ph-lightning"></i>Balik modal ±<?= (int)$h['break_even_days'] ?> hari</span><?php endif; ?>
+          <?php if (!empty($m['allow_edit_bank'])): ?><span class="g-chip"><i class="ph-bold ph-pencil-simple"></i>Bebas ganti rekening</span><?php endif; ?>
+          <?php if ($is_top): ?><span class="g-chip"><i class="ph-bold ph-crown"></i>Pencairan prioritas</span><?php endif; ?>
         </div>
         <?php endif; ?>
-        <button type="button" class="pk-cta <?= $is_cur ? 'is-cur' : (!$can_afford ? 'low' : '') ?>"
+        <button type="button" class="g-btn full pk-cta <?= $is_cur ? '' : ($can_afford ? 'gold shine' : 'soft') ?>"
           onclick="<?= !$can_afford && !$is_cur ? "location.href='/deposit'" : 'openConfirm(' . (int)$m['id'] . ", '" . htmlspecialchars($m['name'], ENT_QUOTES) . "', " . $active_price . ', ' . (int)$m['duration_days'] . ')' ?>">
-          <?php if ($is_cur): ?><i class="ph-bold ph-arrows-clockwise"></i> Perpanjang Pangkat
-          <?php elseif ($can_afford): ?><i class="ph-fill ph-rocket-launch"></i> Naik ke <?= htmlspecialchars($m['name']) ?>
-          <?php else: ?><i class="ph-bold ph-plus-circle"></i> Deposit · kurang <?= format_rp($active_price - (float)$user['balance_dep']) ?><?php endif; ?>
+          <?php if ($is_cur): ?><i class="ph-bold ph-arrows-clockwise"></i>Perpanjang pangkat
+          <?php elseif ($can_afford): ?><img src="<?= $ic('upgrade') ?>" alt="">Naik ke <?= htmlspecialchars($m['name']) ?>
+          <?php else: ?><img src="<?= $ic('piggy') ?>" alt="">Deposit · kurang <?= format_rp($active_price - (float)$user['balance_dep']) ?><?php endif; ?>
         </button>
         <?php if ($h): ?><div class="pk-note">Estimasi dari rata-rata <?= format_rp($avg_video_reward) ?>/video</div><?php endif; ?>
       </div>
@@ -594,18 +580,18 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
   <?php endforeach; ?>
   <?php endif; ?>
 
-  <div class="pk-trust">
-    <span><i class="ph-fill ph-shield-check"></i>Garansi 12 jam</span>
-    <span><i class="ph-fill ph-lightning"></i>Aktif instan</span>
-    <span><i class="ph-fill ph-clock"></i>WD 1×24 jam</span>
+  <div class="pk-trust" data-rv>
+    <span><img src="<?= $ic('lock') ?>" alt="">Garansi 12 jam</span>
+    <span><img src="<?= $ic('speed') ?>" alt="">Aktif instan</span>
+    <span><img src="<?= $ic('moneybag') ?>" alt="">WD 1×24 jam</span>
   </div>
 
-  <details class="pk-guide">
-    <summary><i class="ph-fill ph-compass"></i> Cara level up <i class="ph-bold ph-caret-down chev"></i></summary>
+  <details class="pk-guide" data-rv>
+    <summary><img src="<?= $ic('compass') ?>" alt="">Cara level up <i class="ph-bold ph-caret-down chev"></i></summary>
     <ol class="pk-steps">
-      <li><span>1</span><small>Isi <b>Saldo Beli</b> lewat tombol +</small></li>
-      <li><span>2</span><small>Pilih pangkat, tekan tombol, konfirmasi</small></li>
-      <li><span>3</span><small>Pangkat aktif, kuota nonton &amp; bonus langsung berlaku</small></li>
+      <li><span>1</span><span>Isi <b>Saldo Beli</b> lewat tombol +</span></li>
+      <li><span>2</span><span>Pilih pangkat, tekan tombol, konfirmasi</span></li>
+      <li><span>3</span><span>Pangkat aktif, kuota nonton &amp; bonus langsung berlaku</span></li>
     </ol>
   </details>
 </div>
@@ -613,7 +599,9 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
 <!-- MODAL KONFIRMASI -->
 <div id="upgrade-modal" class="cg-modal">
   <div class="cg-modal-card">
-    <div class="cg-mc-hdr"><i class="ph-fill ph-rocket-launch"></i> Konfirmasi Pangkat</div>
+    <div class="cg-grab"></div>
+    <img class="cg-art" src="<?= $ic('upgrade') ?>" alt="">
+    <div class="cg-mc-hdr">Konfirmasi pangkat</div>
     <div class="cg-mc-box">
       <div class="cg-mc-val" id="modal-name">--</div>
       <div class="cg-line" id="price-row">Harga <span id="modal-price">--</span></div>
@@ -624,13 +612,13 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
     <button type="button" id="toggle-voucher-btn" class="cg-voucher-btn" onclick="toggleVoucher()"><i class="ph-bold ph-tag"></i> Punya voucher?</button>
     <div id="voucher-box" style="display:none">
       <input type="text" id="voucher-input" placeholder="KODE VOUCHER">
-      <button type="button" class="cg-voucher-apply" onclick="applyVoucher()">Pakai</button>
+      <button type="button" class="g-btn cg-voucher-apply" onclick="applyVoucher()">Pakai</button>
     </div>
     <div id="voucher-msg"></div>
     <div id="modal-warn"></div>
     <div class="cg-btn-row">
-      <button type="button" class="cg-btn cg-btn--cancel" onclick="closeConfirm()">Batal</button>
-      <button type="button" id="modal-confirm-btn" class="cg-btn cg-btn--confirm" onclick="submitUpgrade()">YA, AKTIFKAN!</button>
+      <button type="button" class="g-btn soft" onclick="closeConfirm()">Batal</button>
+      <button type="button" id="modal-confirm-btn" class="g-btn gold shine" onclick="submitUpgrade()">YA, AKTIFKAN!</button>
     </div>
   </div>
 </div>
@@ -638,14 +626,16 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
 <!-- MODAL REFUND -->
 <div id="refund-modal" class="cg-modal">
   <div class="cg-modal-card">
-    <div class="cg-mc-hdr"><i class="ph-bold ph-arrow-u-up-left"></i> Ajukan Refund?</div>
+    <div class="cg-grab"></div>
+    <img class="cg-art" src="<?= $ic('piggy') ?>" alt="">
+    <div class="cg-mc-hdr">Ajukan refund?</div>
     <div class="cg-sub">Saldo kembali ke <b>Saldo Beli</b> setelah dipotong biaya admin. Pangkat kembali ke <b><?= htmlspecialchars((string)($free_rank['name'] ?? 'pangkat awal')) ?></b>.</div>
     <form method="POST">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="refund_level">
       <div class="cg-btn-row">
-        <button type="button" class="cg-btn cg-btn--cancel" onclick="document.getElementById('refund-modal').style.display='none'">Batal</button>
-        <button type="submit" class="cg-btn cg-btn--danger">Ajukan Refund</button>
+        <button type="button" class="g-btn soft" onclick="document.getElementById('refund-modal').style.display='none'">Batal</button>
+        <button type="submit" class="g-btn red">Ajukan refund</button>
       </div>
     </form>
   </div>
@@ -743,7 +733,5 @@ function submitUpgrade() {
 document.getElementById('upgrade-modal').addEventListener('click', function(e){ if(e.target===this) closeConfirm(); });
 document.getElementById('refund-modal').addEventListener('click', function(e){ if(e.target===this) e.target.style.display='none'; });
 </script>
-
-<?php require dirname(__DIR__) . '/partials/footer.php'; ?>
 
 <?php require dirname(__DIR__) . '/partials/footer.php'; ?>

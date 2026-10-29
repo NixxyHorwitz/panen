@@ -218,141 +218,100 @@ require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══ PROMOTOR HUB — compact · living coral reef clay ══ */
-.pm { width: 100%; max-width: 460px; margin: 0 auto; padding: 6px 12px 30px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; }
-.pm *, .pm *::before, .pm *::after { box-sizing: border-box; }
-
-.pm-top { display: flex; align-items: center; gap: 8px; }
-.pm-top-ic { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; background: linear-gradient(135deg, #fb7185, #f97316); border: 2px solid #fff; box-shadow: 0 3px 0 #c2410c; flex-shrink: 0; }
-.pm-top-tx { flex: 1; min-width: 0; line-height: 1.2; }
-.pm-top-tx h1 { margin: 0; font-size: 15px; font-weight: 900; color: var(--reef-ink); letter-spacing: -.2px; }
-.pm-top-tx span { font-size: 10.5px; font-weight: 800; color: var(--reef-muted); }
-.pm-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 999px; font-size: 10px; font-weight: 900; color: #065f46; background: #d1fae5; border: 1.5px solid #fff; white-space: nowrap; }
-.pm-chip i { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
-
-.pm-card { border: 2px solid #fff; border-radius: 20px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); overflow: hidden; }
+/* ══ PROMOTOR HUB — Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.pm-chip { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; color: #14532d; background: #dcfce7; }
+.pm-chip i { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, .2); animation: gGlow 1.6s ease-in-out infinite; }
 
 /* Gaji hari ini */
-.pm-pay { padding: 14px 15px 12px; background: linear-gradient(140deg, #fff7ed 0%, #ffffff 65%); display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
-.pm-pay small { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 900; color: var(--reef-muted); }
-.pm-pay b { display: block; font-size: 27px; font-weight: 900; color: #9a3412; letter-spacing: -.7px; line-height: 1.15; margin: 2px 0 6px; }
-.pm-pay b em { font-style: normal; font-size: 14px; color: #f97316; margin-right: 3px; }
-.pm-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 900; border: 1.5px solid #fff; }
-.pm-tag.run  { background: #e0f2fe; color: #0369a1; }
-.pm-tag.paid { background: #d1fae5; color: #065f46; }
-.pm-tag.grt  { background: #ede9fe; color: #5b21b6; }
-.pm-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.pm-pay { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; margin-top: 12px; padding: 11px 12px; border-radius: 18px; background: rgba(255, 255, 255, .8); box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 8px 18px rgba(120, 70, 10, .12); }
+.pm-pay small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.pm-pay b { display: block; margin: 1px 0 5px; font-family: var(--pc-font); font-size: 26px; font-weight: 700; line-height: 1.1; color: #15803d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 900; }
+.pm-tag.run { background: #e0f2fe; color: #0369a1; } .pm-tag.paid { background: #dcfce7; color: #14532d; }
+.pm-ring { --p: 0; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#f6b70a calc(var(--p) * 1%), #f2e6c8 0); box-shadow: 0 4px 10px rgba(246, 183, 10, .3); }
+.pm-ring div { width: 58px; height: 58px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; line-height: 1.05; }
+.pm-ring strong { font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: #4a2b00; }
+.pm-ring span { font-size: 9.5px; font-weight: 900; color: #8a5a00; }
 
-.pm-ring { --p: 0; width: 82px; height: 82px; border-radius: 50%; background: conic-gradient(#f97316 calc(var(--p) * 1%), #ffedd5 0); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(249,115,22,.22); }
-.pm-ring div { width: 64px; height: 64px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; }
-.pm-ring strong { font-size: 17px; font-weight: 900; color: #9a3412; letter-spacing: -.4px; }
-.pm-ring span { font-size: 8.5px; font-weight: 900; color: var(--reef-muted); text-transform: uppercase; letter-spacing: .3px; }
+/* Target */
+.pm-meters { display: grid; gap: 10px; }
+.pm-m-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; color: var(--pc-ink); }
+.pm-m-head span { display: inline-flex; align-items: center; gap: 6px; }
+.pm-m-head img { width: 22px; height: 22px; object-fit: contain; }
+.pm-m-head em { font-style: normal; font-size: 11.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; }
+.pm-m-head em b { color: var(--pc-ink); }
+.pm-meters .g-bar { margin-top: 5px; }
+.pm-bar-sky i { background: linear-gradient(90deg, #7dd3fc, #0284c7); }
+.pm-cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.pm-cmp > div { min-width: 0; padding: 9px 10px; border-radius: 15px; background: #fffaf0; box-shadow: inset 0 0 0 1.5px #f1dfb4; }
+.pm-cmp small { display: block; font-size: 10.5px; font-weight: 900; color: var(--pc-muted); }
+.pm-cmp b { display: block; margin-top: 1px; font-family: var(--pc-font); font-size: 16px; font-weight: 700; color: #15803d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-cmp span { display: block; font-size: 10px; font-weight: 800; color: var(--pc-muted); }
 
-/* Meter target */
-.pm-meters { padding: 10px 15px 12px; border-top: 1.5px dashed #fed7aa; display: grid; gap: 9px; }
-.pm-m-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 11px; font-weight: 900; color: var(--reef-ink); }
-.pm-m-head span { display: inline-flex; align-items: center; gap: 4px; }
-.pm-m-head em { font-style: normal; font-size: 10.5px; font-weight: 800; color: var(--reef-muted); white-space: nowrap; }
-.pm-m-head em b { color: var(--reef-ink); }
-.pm-bar { height: 9px; border-radius: 999px; background: #f1f5f9; overflow: hidden; margin-top: 4px; box-shadow: inset 0 1px 2px rgba(30,27,46,.08); }
-.pm-bar i { display: block; height: 100%; border-radius: 999px; }
-.pm-bar.mem i { background: linear-gradient(90deg, #34d399, #10b981); }
-.pm-bar.dep i { background: linear-gradient(90deg, #38bdf8, #0284c7); }
-.pm-m-sub { font-size: 9.5px; font-weight: 800; color: var(--reef-muted); margin-top: 3px; }
-
-/* Perbandingan gaji target vs jaminan */
-.pm-cmp { display: grid; grid-template-columns: 1fr 1fr; border-top: 1.5px dashed #fed7aa; }
-.pm-cmp > div { padding: 9px 12px; position: relative; }
-.pm-cmp > div + div { border-left: 1.5px dashed #fed7aa; }
-.pm-cmp small { display: block; font-size: 9.5px; font-weight: 900; color: var(--reef-muted); }
-.pm-cmp b { display: block; font-size: 14px; font-weight: 900; color: var(--reef-ink); margin-top: 1px; }
-.pm-cmp span { display: block; font-size: 9px; font-weight: 800; color: var(--reef-muted); margin-top: 1px; }
-.pm-cmp .on { background: #fffbeb; }
-.pm-cmp .on b { color: #b45309; }
-.pm-cmp .on::after { content: 'DIPAKAI'; position: absolute; top: 8px; right: 9px; font-size: 8px; font-weight: 900; color: #fff; background: #f59e0b; padding: 2px 5px; border-radius: 5px; }
-
-/* Link referral */
-.pm-link { display: flex; align-items: center; gap: 8px; padding: 9px 10px 9px 12px; border: 2px solid #fff; border-radius: 16px; background: linear-gradient(135deg, #ecfeff, #ffffff); box-shadow: 0 2px 8px rgba(30,27,46,.05); }
+/* Link */
+.pm-link { display: flex; align-items: center; gap: 9px; }
 .pm-link-tx { flex: 1; min-width: 0; line-height: 1.25; }
-.pm-link-tx small { display: block; font-size: 9.5px; font-weight: 900; color: #0e7490; }
-.pm-link-tx code { display: block; font: 800 11px/1.3 inherit; font-family: inherit; color: var(--reef-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pm-copy { padding: 8px 11px; border-radius: 11px; border: 1.5px solid #fff; background: linear-gradient(135deg, #22d3ee, #0891b2); color: #fff; font: 900 11px/1 inherit; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; box-shadow: 0 2px 0 #0e7490; flex-shrink: 0; }
-.pm-copy:active { transform: translateY(2px); box-shadow: none; }
+.pm-link-tx small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.pm-link-tx code { display: block; margin-top: 2px; font: 800 12px/1.3 'Nunito', sans-serif; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-copy.g-btn { min-height: 36px; padding: 0 12px; font-size: 13px; border-radius: 11px; flex-shrink: 0; }
 
-/* Ringkasan angka */
+/* Angka */
 .pm-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.pm-st { padding: 8px 4px; border-radius: 14px; border: 1.5px solid #fff; background: #fff; text-align: center; box-shadow: 0 2px 6px rgba(30,27,46,.05); min-width: 0; }
-.pm-st b { display: block; font-size: 14px; font-weight: 900; letter-spacing: -.3px; }
-.pm-st span { display: block; font-size: 9px; font-weight: 800; color: var(--reef-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pm-st.a b { color: #d97706; } .pm-st.b b { color: #0284c7; } .pm-st.c b { color: #059669; } .pm-st.d b { color: #7c3aed; }
+.pm-st { min-width: 0; padding: 8px 3px 7px; border-radius: 16px; text-align: center; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
+.pm-st img { width: 26px; height: 26px; object-fit: contain; }
+.pm-st b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--pc-ink); }
+.pm-st span { display: block; font-size: 9.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Gaji pending */
-.pm-pend { padding: 11px 13px; display: flex; align-items: center; gap: 10px; }
-.pm-pend-ic { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; background: #fef3c7; color: #b45309; }
-.pm-pend-ic.ok { background: #d1fae5; color: #059669; }
+.pm-pend { display: flex; align-items: center; gap: 10px; }
 .pm-pend-tx { flex: 1; min-width: 0; line-height: 1.25; }
-.pm-pend-tx small { display: block; font-size: 10px; font-weight: 900; color: var(--reef-muted); }
-.pm-pend-tx b { display: block; font-size: 17px; font-weight: 900; color: var(--reef-ink); letter-spacing: -.3px; }
-.pm-pend-tx span { display: block; font-size: 9.5px; font-weight: 800; color: var(--reef-muted); }
-.pm-btn-sm { padding: 7px 10px; border-radius: 10px; border: 1.5px solid #fde68a; background: #fffbeb; color: #92400e; font: 900 10.5px/1 inherit; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.pm-pend-list { border-top: 1.5px dashed #fde68a; }
+.pm-pend-tx small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.pm-pend-tx b { display: block; font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: var(--pc-ink); }
+.pm-pend-tx span { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.pm-btn-sm.g-btn { min-height: 32px; padding: 0 10px; font-size: 12.5px; border-radius: 10px; flex-shrink: 0; }
+.pm-pend-list { margin-top: 8px; padding-top: 4px; border-top: 1.5px dashed #f1dfb4; }
 
 /* Tab */
-.pm-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 15px; background: rgba(255,255,255,.65); border: 1.5px solid #fff; }
-.pm-tab { padding: 8px 2px; border: 0; border-radius: 11px; background: transparent; font: 900 10.5px/1 inherit; font-family: inherit; color: var(--reef-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.pm-tab i { font-size: 15px; }
-.pm-tab.active { background: #fff; color: var(--reef-coral-500); box-shadow: 0 2px 6px rgba(30,27,46,.08); }
+.pm-tabs .pm-tab { flex-direction: column; gap: 1px; min-height: 48px; font-size: 12.5px; padding: 0 2px; }
+.pm-tabs .pm-tab img { width: 22px; height: 22px; object-fit: contain; }
 .pm-pane { display: none; flex-direction: column; gap: 8px; }
 .pm-pane.active { display: flex; }
 
 /* Baris daftar */
-.pm-list { border: 2px solid #fff; border-radius: 16px; background: #fff; box-shadow: 0 2px 8px rgba(30,27,46,.05); overflow: hidden; }
-.pm-row { display: flex; align-items: center; gap: 9px; padding: 9px 12px; }
-.pm-row + .pm-row { border-top: 1px solid #f1f5f9; }
-.pm-row-ic { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
-.pm-row-ic img { width: 22px; height: 22px; object-fit: contain; }
-.ic-paid { background: #d1fae5; color: #059669; }
-.ic-run  { background: #e0f2fe; color: #0284c7; }
-.ic-wait { background: #fef3c7; color: #b45309; }
-.ic-zero { background: #f1f5f9; color: #94a3b8; }
-.ic-user { background: #ede9fe; color: #7c3aed; }
+.pm-list { padding: 2px 10px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; }
+.pm-row { display: flex; align-items: center; gap: 9px; padding: 9px 0; }
+.pm-row + .pm-row { border-top: 1.5px dashed #f1dfb4; }
+.pm-row-ic { width: 34px; height: 34px; flex-shrink: 0; border-radius: 11px; display: grid; place-items: center; font-size: 16px; }
+.pm-row-ic img { width: 24px; height: 24px; object-fit: contain; }
+.ic-paid { background: #dcfce7; color: #15803d; } .ic-run { background: #e0f2fe; color: #0284c7; } .ic-wait { background: #fff3c4; color: #8a5a00; }
+.ic-zero { background: #f1f5f9; color: #94a3b8; } .ic-user { background: #ede9fe; color: #7c3aed; }
 .pm-row-tx { flex: 1; min-width: 0; line-height: 1.3; }
-.pm-row-tx b { display: block; font-size: 12px; font-weight: 900; color: var(--reef-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pm-row-tx span { display: block; font-size: 10px; font-weight: 750; color: var(--reef-muted); }
-.pm-row-r { text-align: right; flex-shrink: 0; line-height: 1.3; }
-.pm-row-r b { display: block; font-size: 12px; font-weight: 900; color: var(--reef-ink); }
-.pm-pill { display: inline-block; margin-top: 2px; padding: 2px 6px; border-radius: 6px; font-size: 8.5px; font-weight: 900; letter-spacing: .2px; }
-.pl-paid { background: #d1fae5; color: #065f46; }
-.pl-run  { background: #e0f2fe; color: #0369a1; }
-.pl-wait { background: #fef3c7; color: #92400e; }
-.pl-zero { background: #f1f5f9; color: #64748b; }
-.pl-off  { background: #fff1f2; color: #be123c; }
-.pl-tier { background: #f5f3ff; color: #6d28d9; }
-.pm-mini-bar { height: 4px; border-radius: 999px; background: #f1f5f9; margin-top: 4px; overflow: hidden; max-width: 160px; }
-.pm-mini-bar i { display: block; height: 100%; background: #f97316; border-radius: 999px; }
-
-.pm-empty { padding: 22px 12px; text-align: center; font-size: 11px; font-weight: 800; color: var(--reef-muted); border: 2px dashed #e2e8f0; border-radius: 16px; background: rgba(255,255,255,.6); }
-.pm-empty i { display: block; font-size: 26px; margin-bottom: 5px; color: #cbd5e1; }
+.pm-row-tx b { display: block; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-row-tx span { display: block; font-size: 10.5px; font-weight: 700; color: var(--pc-muted); }
+.pm-row-r { flex-shrink: 0; text-align: right; line-height: 1.3; }
+.pm-row-r b { display: block; font-family: var(--pc-font); font-size: 14px; font-weight: 700; color: var(--pc-ink); }
+.pm-pill { display: inline-block; margin-top: 2px; padding: 1px 7px; border-radius: 999px; font-size: 9.5px; font-weight: 900; }
+.pl-paid { background: #dcfce7; color: #14532d; } .pl-run { background: #e0f2fe; color: #0369a1; } .pl-wait { background: #fff3c4; color: #8a5a00; }
+.pl-zero { background: #f1f5f9; color: #64748b; } .pl-off { background: #ffe4e6; color: #be123c; } .pl-tier { background: #ede9fe; color: #6d28d9; }
 
 .pm-pager { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-.pm-pager a, .pm-pager button { padding: 7px 11px; border-radius: 10px; border: 1.5px solid #fff; background: #fff; font: 900 10.5px/1 inherit; font-family: inherit; color: var(--reef-ink); text-decoration: none; cursor: pointer; box-shadow: 0 2px 5px rgba(30,27,46,.05); }
+.pm-pager a, .pm-pager button { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border: 0; border-radius: 11px; cursor: pointer; text-decoration: none; font-family: var(--pc-font); font-size: 13px; font-weight: 600; color: #6b4f1d; background: #fff; box-shadow: inset 0 0 0 2px #f1dfb4, 0 3px 0 #ecd59c; }
 .pm-pager .off { opacity: .45; pointer-events: none; }
-.pm-pager span { font-size: 10.5px; font-weight: 800; color: var(--reef-muted); }
+.pm-pager span { font-size: 12px; font-weight: 900; color: #8a5a00; }
+.pm-m-sub { font-size: 11px; font-weight: 800; color: var(--pc-muted); }
 
-.pm-chart { padding: 11px 12px 8px; }
-.pm-chart h3 { margin: 0 0 6px; font-size: 11px; font-weight: 900; color: var(--reef-ink); display: flex; align-items: center; gap: 5px; }
+.pm-chart h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); }
+.pm-chart h3 img { width: 20px; height: 20px; }
 .pm-chart .cv { position: relative; height: 150px; }
 
-/* Bukti WD (fitur lama, tampilan disederhanakan) */
-.pm-note { padding: 8px 11px; border-radius: 13px; font-size: 11px; font-weight: 800; border: 1.5px solid #fff; }
-.pm-note.success { background: #ecfdf5; color: #065f46; }
-.pm-note.error { background: #fff1f2; color: #9f1239; }
-.pm-form { padding: 12px; display: grid; gap: 8px; }
-.pm-form label { font-size: 10px; font-weight: 900; color: var(--reef-muted); margin-bottom: -4px; }
-.pm-form input, .pm-form select { width: 100%; padding: 8px 11px; border-radius: 11px; border: 1.5px solid #e2e8f0; background: #fff; font: 700 12px/1.2 inherit; font-family: inherit; color: var(--reef-ink); outline: none; }
-.pm-form .acc { font-size: 11px; font-weight: 800; color: var(--reef-ink); padding: 8px 10px; border-radius: 11px; background: #f8fafc; }
-.pm-form button { padding: 10px; border-radius: 12px; border: 1.5px solid #fff; background: #334155; color: #fff; font: 900 12px/1 inherit; font-family: inherit; cursor: pointer; }
-.pm-sec { font-size: 11px; font-weight: 900; color: var(--reef-ink); padding: 2px 2px 0; }
+.pm-note { padding: 9px 11px; border-radius: 14px; font-size: 12px; font-weight: 800; }
+.pm-note.success { background: #dcfce7; color: #14532d; } .pm-note.error { background: #ffe4e6; color: #9f1239; }
+.pm-form { display: grid; gap: 8px; }
+.pm-form label { margin-bottom: -4px; font-size: 11px; font-weight: 900; color: var(--pc-muted); }
+.pm-form input, .pm-form select { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 12px; outline: none; background: #fff; box-shadow: inset 0 0 0 2px #f1dfb4; font: 700 13px/1.2 'Nunito', sans-serif; color: var(--pc-ink); }
+.pm-form input:focus, .pm-form select:focus { box-shadow: inset 0 0 0 2px #22c55e; }
+.pm-form .acc { padding: 9px 11px; border-radius: 12px; background: #fffaf0; font-size: 12px; font-weight: 800; color: var(--pc-ink); }
+@media (max-width: 350px) { .pm-pay b { font-size: 22px; } .pm-ring { width: 64px; height: 64px; } .pm-ring div { width: 48px; height: 48px; } }
 </style>
 
 <?php
@@ -364,95 +323,87 @@ $hist_status = static function (array $log) use ($log_earned): array {
     return ['zero', 'NIHIL', 'ph-minus-circle'];
 };
 $dl_pages = max(1, (int)ceil(count($downlines) / 5));
+$ic = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png';
 ?>
 
-<div class="pm">
+<div class="g-page">
 
-  <div class="pm-top">
-    <div class="pm-top-ic"><i class="ph-fill ph-megaphone-simple"></i></div>
-    <div class="pm-top-tx">
-      <h1>Promotor Hub</h1>
-      <span>ID #<?= (int)$user['id'] ?> &bull; <?= date('d M Y') ?></span>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Promotor Hub</h1>
+        <p>ID #<?= (int)$user['id'] ?> · <?= date('d M Y') ?></p>
+        <span class="pm-chip"><i></i>Aktif</span>
+      </div>
+      <div class="g-hero-art"><img src="<?= $ic('megaphone') ?>" alt=""></div>
     </div>
-    <span class="pm-chip"><i></i> Aktif</span>
-  </div>
-
-  <!-- GAJI HARI INI -->
-  <div class="pm-card">
     <div class="pm-pay">
-      <div>
-        <small><i class="ph-fill ph-coins"></i> Estimasi Gaji Hari Ini</small>
-        <b><em>Rp</em><?= number_format($today_earned, 0, ',', '.') ?></b>
-        <div class="pm-tags">
-          <?php if (!empty($today_target['is_paid'])): ?>
-            <span class="pm-tag paid"><i class="ph-bold ph-check"></i> Sudah cair</span>
-          <?php else: ?>
-            <span class="pm-tag run"><i class="ph-bold ph-clock"></i> Berjalan s/d 23:59</span>
-          <?php endif; ?>
-        </div>
+      <div style="min-width:0">
+        <small>Estimasi gaji hari ini</small>
+        <b><?= format_rp($today_earned) ?></b>
+        <?php if (!empty($today_target['is_paid'])): ?>
+          <span class="pm-tag paid"><i class="ph-bold ph-check"></i>Sudah cair</span>
+        <?php else: ?>
+          <span class="pm-tag run"><i class="ph-bold ph-clock"></i>Berjalan s/d 23:59</span>
+        <?php endif; ?>
       </div>
       <div class="pm-ring" style="--p: <?= round($today_pct, 1) ?>;">
         <div><strong><?= number_format($today_pct, 0) ?>%</strong><span>Target</span></div>
       </div>
     </div>
+  </section>
 
+  <div class="g-panel" data-rv style="--d:.05s">
     <div class="pm-meters">
       <div>
         <div class="pm-m-head">
-          <span><i class="ph-fill ph-users-three" style="color:#10b981"></i> Target Member</span>
+          <span><img src="<?= $ic('referral') ?>" alt="">Target member</span>
           <em><b><?= number_format($today_regs, 0, ',', '.') ?></b> / <?= $tg_regs > 0 ? number_format($tg_regs, 0, ',', '.') : '—' ?></em>
         </div>
-        <div class="pm-bar mem"><i style="width: <?= round($pct_regs, 1) ?>%"></i></div>
+        <div class="g-bar"><i style="width: <?= round($pct_regs, 1) ?>%"></i></div>
       </div>
       <div>
         <div class="pm-m-head">
-          <span><i class="ph-fill ph-wallet" style="color:#0284c7"></i> Target Deposit</span>
-          <em><b><?= number_format($pct_dep, 0) ?>%</b><?= $tg_dep > 0 ? '' : ' &bull; belum diatur' ?></em>
+          <span><img src="<?= $ic('piggy') ?>" alt="">Target deposit</span>
+          <em><b><?= number_format($pct_dep, 0) ?>%</b><?= $tg_dep > 0 ? '' : ' · belum diatur' ?></em>
         </div>
-        <div class="pm-bar dep"><i style="width: <?= round($pct_dep, 1) ?>%"></i></div>
+        <div class="g-bar pm-bar-sky"><i style="width: <?= round($pct_dep, 1) ?>%"></i></div>
       </div>
     </div>
-
     <div class="pm-cmp">
-      <div>
-        <small><i class="ph-fill ph-users-three" style="color:#10b981"></i> Komisi Member</small>
-        <b><?= format_rp($today_reg_comm) ?></b>
-        <span><?= format_rp($g_member) ?> per member</span>
-      </div>
-      <div>
-        <small><i class="ph-fill ph-wallet" style="color:#0284c7"></i> Komisi Deposit</small>
-        <b><?= format_rp($today_dep_comm) ?></b>
-        <span>dari deposit member</span>
-      </div>
+      <div><small>Komisi member</small><b><?= format_rp($today_reg_comm) ?></b><span><?= format_rp($g_member) ?> per member</span></div>
+      <div><small>Komisi deposit</small><b><?= format_rp($today_dep_comm) ?></b><span>dari deposit member</span></div>
     </div>
   </div>
 
-  <div class="pm-link">
+  <div class="g-panel pm-link" data-rv>
+    <span class="g-slot sm"><img src="<?= $ic('redeem') ?>" alt=""></span>
     <div class="pm-link-tx">
-      <small><i class="ph-bold ph-link"></i> Link Promosi &bull; <?= htmlspecialchars($user['referral_code']) ?></small>
+      <small>Link promosi · <?= htmlspecialchars($user['referral_code']) ?></small>
       <code id="pm-ref"><?= htmlspecialchars($ref_url) ?></code>
     </div>
-    <button type="button" class="pm-copy" onclick="pmCopy(this)"><i class="ph-bold ph-copy"></i> Salin</button>
+    <button type="button" class="g-btn gold pm-copy" onclick="pmCopy(this)"><i class="ph-bold ph-copy"></i> Salin</button>
   </div>
 
-  <div class="pm-stats">
-    <div class="pm-st a"><b><?= number_format($today_clicks, 0, ',', '.') ?></b><span>Klik hari ini</span></div>
-    <div class="pm-st b"><b><?= number_format($total_clicks, 0, ',', '.') ?></b><span>Total klik</span></div>
-    <div class="pm-st c"><b><?= number_format($downline_total, 0, ',', '.') ?></b><span>Total member</span></div>
-    <div class="pm-st d"><b><?= $total_paid >= 1000000 ? number_format($total_paid / 1000000, 1, ',', '.') . 'jt' : ($total_paid >= 1000 ? number_format($total_paid / 1000, 0, ',', '.') . 'rb' : number_format($total_paid, 0, ',', '.')) ?></b><span>Gaji cair</span></div>
+  <div class="pm-stats" data-rv>
+    <div class="pm-st"><img src="<?= $ic('flame') ?>" alt=""><b><?= number_format($today_clicks, 0, ',', '.') ?></b><span>Klik hari ini</span></div>
+    <div class="pm-st"><img src="<?= $ic('star') ?>" alt=""><b><?= number_format($total_clicks, 0, ',', '.') ?></b><span>Total klik</span></div>
+    <div class="pm-st"><img src="<?= $ic('referral') ?>" alt=""><b><?= number_format($downline_total, 0, ',', '.') ?></b><span>Member</span></div>
+    <div class="pm-st"><img src="<?= $ic('moneybag') ?>" alt=""><b><?= $total_paid >= 1000000 ? number_format($total_paid / 1000000, 1, ',', '.') . 'jt' : ($total_paid >= 1000 ? number_format($total_paid / 1000, 0, ',', '.') . 'rb' : number_format($total_paid, 0, ',', '.')) ?></b><span>Gaji cair</span></div>
   </div>
 
   <!-- GAJI PENDING -->
-  <div class="pm-card">
+  <div class="g-panel" data-rv>
     <div class="pm-pend">
-      <div class="pm-pend-ic <?= $pending_salary > 0 ? '' : 'ok' ?>"><i class="ph-fill <?= $pending_salary > 0 ? 'ph-hourglass-high' : 'ph-check-circle' ?>"></i></div>
+      <span class="g-slot sm"><img src="<?= $ic($pending_salary > 0 ? 'chest' : 'chest_open') ?>" alt=""></span>
       <div class="pm-pend-tx">
-        <small>Gaji Menunggu Cair</small>
+        <small>Gaji menunggu cair</small>
         <b><?= format_rp($pending_salary) ?></b>
         <span><?= $pending_days > 0 ? $pending_days . ' hari sebelumnya, dicairkan admin' : 'Semua gaji sebelumnya sudah cair' ?></span>
       </div>
       <?php if (!empty($pending_history_list)): ?>
-        <button type="button" class="pm-btn-sm" onclick="togglePendingDetail()"><i class="ph-bold ph-list-dashes"></i> Rincian</button>
+        <button type="button" class="g-btn soft pm-btn-sm" onclick="togglePendingDetail()">Rincian</button>
       <?php endif; ?>
     </div>
     <?php if (!empty($pending_history_list)): ?>
@@ -463,24 +414,24 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
           <b><?= date('d M Y', strtotime($plog['date'])) ?></b>
           <span><?= number_format((int)$plog['actual_regs']) ?> member</span>
         </div>
-        <div class="pm-row-r"><b style="color:#b45309">+<?= format_rp($log_earned($plog)) ?></b></div>
+        <div class="pm-row-r"><b style="color:#b07800">+<?= format_rp($log_earned($plog)) ?></b></div>
       </div>
       <?php endforeach; ?>
     </div>
     <?php endif; ?>
   </div>
 
-  <div class="pm-tabs">
-    <button type="button" class="pm-tab active" data-tab="tab-stats" onclick="switchTab('tab-stats')"><i class="ph-bold ph-calendar-check"></i>Riwayat</button>
-    <button type="button" class="pm-tab" data-tab="tab-chart" onclick="switchTab('tab-chart')"><i class="ph-bold ph-chart-line-up"></i>Grafik</button>
-    <button type="button" class="pm-tab" data-tab="tab-dl" onclick="switchTab('tab-dl')"><i class="ph-bold ph-users-three"></i>Member</button>
-    <button type="button" class="pm-tab" data-tab="tab-fwd" onclick="switchTab('tab-fwd')"><i class="ph-bold ph-receipt"></i>Bukti WD</button>
+  <div class="g-seg pm-tabs">
+    <button type="button" class="pm-tab active" data-tab="tab-stats" onclick="switchTab('tab-stats')"><img src="<?= $ic('receipt') ?>" alt="">Riwayat</button>
+    <button type="button" class="pm-tab" data-tab="tab-chart" onclick="switchTab('tab-chart')"><img src="<?= $ic('speed') ?>" alt="">Grafik</button>
+    <button type="button" class="pm-tab" data-tab="tab-dl" onclick="switchTab('tab-dl')"><img src="<?= $ic('referral') ?>" alt="">Member</button>
+    <button type="button" class="pm-tab" data-tab="tab-fwd" onclick="switchTab('tab-fwd')"><img src="<?= $ic('moneybag') ?>" alt="">Bukti WD</button>
   </div>
 
   <!-- RIWAYAT -->
   <div id="tab-stats" class="pm-pane active">
     <?php if (empty($history_logs)): ?>
-      <div class="pm-empty"><i class="ph-bold ph-calendar-blank"></i>Belum ada riwayat target harian.</div>
+      <div class="g-panel g-empty"><img src="<?= $ic('receipt') ?>" alt=""><b>Belum ada riwayat</b><p>Riwayat target harian akan muncul di sini.</p></div>
     <?php else: ?>
       <div class="pm-list">
         <?php foreach ($history_logs as $log):
@@ -491,7 +442,7 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
           <div class="pm-row-ic ic-<?= $st ?>"><i class="ph-bold <?= $st_ic ?>"></i></div>
           <div class="pm-row-tx">
             <b><?= date('d M Y', strtotime($log['date'])) ?></b>
-            <span><?= number_format((int)$log['actual_regs']) ?><?= $tg_regs > 0 ? '/' . number_format($tg_regs) : '' ?> member &bull; target depo <?= number_format($tg_pct((float)$log['actual_deposits'], $tg_dep), 0) ?>%</span>
+            <span><?= number_format((int)$log['actual_regs']) ?><?= $tg_regs > 0 ? '/' . number_format($tg_regs) : '' ?> member · target depo <?= number_format($tg_pct((float)$log['actual_deposits'], $tg_dep), 0) ?>%</span>
           </div>
           <div class="pm-row-r">
             <b><?= format_rp($amt) ?></b>
@@ -513,12 +464,12 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
 
   <!-- GRAFIK -->
   <div id="tab-chart" class="pm-pane">
-    <div class="pm-card pm-chart">
-      <h3><i class="ph-bold ph-cursor-click" style="color:#f59e0b"></i> Klik Link (7 hari)</h3>
+    <div class="g-panel pm-chart">
+      <h3><img src="<?= $ic('flame') ?>" alt="">Klik link (7 hari)</h3>
       <div class="cv"><canvas id="clicksChart"></canvas></div>
     </div>
-    <div class="pm-card pm-chart">
-      <h3><i class="ph-bold ph-user-plus" style="color:#10b981"></i> Pendaftar Baru (7 hari)</h3>
+    <div class="g-panel pm-chart">
+      <h3><img src="<?= $ic('referral') ?>" alt="">Pendaftar baru (7 hari)</h3>
       <div class="cv"><canvas id="regsChart"></canvas></div>
     </div>
   </div>
@@ -526,7 +477,7 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
   <!-- MEMBER -->
   <div id="tab-dl" class="pm-pane">
     <?php if (empty($downlines)): ?>
-      <div class="pm-empty"><i class="ph-bold ph-users"></i>Belum ada member yang daftar lewat linkmu.</div>
+      <div class="g-panel g-empty"><img src="<?= $ic('referral') ?>" alt=""><b>Belum ada member</b><p>Belum ada member yang daftar lewat linkmu.</p></div>
     <?php else: ?>
       <div class="pm-list">
         <?php foreach ($downlines as $idx => $dl): ?>
@@ -536,9 +487,7 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
             <b><?= htmlspecialchars($dl['username']) ?></b>
             <span><?= date('d M Y, H:i', strtotime($dl['created_at'])) ?></span>
           </div>
-          <div class="pm-row-r">
-            <span class="pm-pill pl-tier"><?= htmlspecialchars($dl['membership_name'] ?: 'Gratis') ?></span>
-          </div>
+          <div class="pm-row-r"><span class="pm-pill pl-tier"><?= htmlspecialchars($dl['membership_name'] ?: 'Gratis') ?></span></div>
         </div>
         <?php endforeach; ?>
       </div>
@@ -560,7 +509,7 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
     <?php if ($fwd_flash): ?>
     <div class="pm-note <?= $fwd_flashType ?>"><?= htmlspecialchars($fwd_flash) ?></div>
     <?php endif; ?>
-    <div class="pm-card">
+    <div class="g-panel">
       <form method="POST" id="fwd-form" class="pm-form">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="fake_wd">
@@ -578,7 +527,7 @@ $dl_pages = max(1, (int)ceil(count($downlines) / 5));
           <option value="approved">Approved</option>
           <option value="pending">Pending</option>
         </select>
-        <button type="submit">Simpan</button>
+        <button type="submit" class="g-btn full">Simpan</button>
       </form>
     </div>
     <?php if (!empty($fake_wds)): ?>
@@ -648,13 +597,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const c1 = document.getElementById('clicksChart');
   if (c1) new Chart(c1, {
     type: 'bar',
-    data: { labels: <?= json_encode($chart_labels) ?>, datasets: [{ data: <?= json_encode($chart_data) ?>, backgroundColor: '#fbbf24', borderRadius: 6 }] },
+    data: { labels: <?= json_encode($chart_labels) ?>, datasets: [{ data: <?= json_encode($chart_data) ?>, backgroundColor: '#f6b70a', borderRadius: 6 }] },
     options: opts
   });
   const c2 = document.getElementById('regsChart');
   if (c2) new Chart(c2, {
     type: 'line',
-    data: { labels: <?= json_encode($chart_reg_labels) ?>, datasets: [{ data: <?= json_encode($chart_reg_data) ?>, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3.5, pointBackgroundColor: '#10b981' }] },
+    data: { labels: <?= json_encode($chart_reg_labels) ?>, datasets: [{ data: <?= json_encode($chart_reg_data) ?>, borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.15)', fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3.5, pointBackgroundColor: '#16a34a' }] },
     options: opts
   });
 });

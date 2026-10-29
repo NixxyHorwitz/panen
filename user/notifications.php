@@ -44,628 +44,124 @@ $pageTitle  = 'Notifikasi & Pengumuman';
 $activePage = 'notifications';
 require dirname(__DIR__) . '/partials/header.php';
 
-// Konfigurasi tipe notifikasi bahari (Living Coral Reef Palette)
+/// Tipe notifikasi → label, warna & ikon 3D
 $type_cfg = [
-    'info'     => [
-        'icon'   => '<i class="ph-fill ph-info"></i>',
-        'label'  => 'Info Samudra',
-        'color'  => '#0891b2',
-        'badge'  => '#cffafe',
-        'border' => '#a5f3fc',
-        'icon_bg'=> 'linear-gradient(135deg, #06b6d4, #0891b2)'
-    ],
-    'success'  => [
-        'icon'   => '<i class="ph-fill ph-check-circle"></i>',
-        'label'  => 'Hasil Cuan',
-        'color'  => '#059669',
-        'badge'  => '#d1fae5',
-        'border' => '#a7f3d0',
-        'icon_bg'=> 'linear-gradient(135deg, #10b981, #059669)'
-    ],
-    'warning'  => [
-        'icon'   => '<i class="ph-fill ph-warning"></i>',
-        'label'  => 'Perhatian',
-        'color'  => '#d97706',
-        'badge'  => '#fef3c7',
-        'border' => '#fde68a',
-        'icon_bg'=> 'linear-gradient(135deg, #f59e0b, #d97706)'
-    ],
-    'alert'    => [
-        'icon'   => '<i class="ph-fill ph-warning-octagon"></i>',
-        'label'  => 'Penting',
-        'color'  => '#e11d48',
-        'badge'  => '#ffe4e6',
-        'border' => '#fecdd3',
-        'icon_bg'=> 'linear-gradient(135deg, #fb7185, #f43f5e)'
-    ],
-    'congrats' => [
-        'icon'   => '<i class="ph-fill ph-sparkle"></i>',
-        'label'  => 'Hadiah Spesial',
-        'color'  => '#7c3aed',
-        'badge'  => '#ede9fe',
-        'border' => '#ddd6fe',
-        'icon_bg'=> 'linear-gradient(135deg, #a855f7, #7c3aed)'
-    ],
+    'info'     => ['label' => 'Info',          'color' => '#0369a1', 'badge' => '#e0f2fe', 'icon3d' => 'bell'],
+    'success'  => ['label' => 'Cuan Masuk',    'color' => '#15803d', 'badge' => '#dcfce7', 'icon3d' => 'coins'],
+    'warning'  => ['label' => 'Perhatian',     'color' => '#8a5a00', 'badge' => '#fff3c4', 'icon3d' => 'flame'],
+    'alert'    => ['label' => 'Penting',       'color' => '#be123c', 'badge' => '#ffe4e6', 'icon3d' => 'megaphone'],
+    'congrats' => ['label' => 'Hadiah',        'color' => '#6d28d9', 'badge' => '#ede9fe', 'icon3d' => 'chest_open'],
 ];
 ?>
 
 <style>
-/* ══════════════════════════════════════════════════════════════
-   OCEAN SIGNAL LOG — NOTIFIKASI & WARTA SAMUDRA
-   Tema: Living Coral Reef Fantasy & 3D Tactile Claymorphism
-   ══════════════════════════════════════════════════════════════ */
+/* ══ NOTIFIKASI — Papan Kabar · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.ntf-hero-act { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px 8px 8px 12px; border-radius: 18px; background: rgba(255, 255, 255, .78); box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 8px 18px rgba(120, 70, 10, .12); }
+.ntf-hero-act .t { flex: 1; min-width: 0; font-size: 12px; font-weight: 800; color: #7a4f00; line-height: 1.3; }
+.ntf-hero-act .t strong { font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: #be123c; }
+.ntf-unread-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 900; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.btn-mark-all-read.g-btn { min-height: 34px; padding: 0 11px; font-size: 13px; border-radius: 11px; flex-shrink: 0; }
 
-.ntf-reef-stage {
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 6px 12px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
-}
+.ntf-tabs-deck button { gap: 6px; }
+.ntf-tab-badge { min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 900; display: inline-grid; place-items: center; background: rgba(0, 0, 0, .12); font-family: 'Nunito', sans-serif; }
+.ntf-tab-item.active .ntf-tab-badge { background: #ffd54f; color: #4a3000; text-shadow: none; }
 
-/* Claymorphism Base */
-.ntf-clay {
-  border: 2px solid #ffffff;
-  border-radius: 20px;
-  background: var(--reef-card);
-  box-shadow: var(--reef-clay-shadow);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Ambient Marine Floating Bubbles */
-.ntf-bubble {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95) 0%, rgba(103, 232, 249, 0.35) 60%, rgba(244, 63, 94, 0.15) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: inset 1px 1px 2px #ffffff, 0 2px 6px rgba(8, 145, 178, 0.15);
-  pointer-events: none;
-  z-index: 0;
-}
-.ntf-bubble--1 {
-  width: 16px;
-  height: 16px;
-  top: 10px;
-  right: 18px;
-  animation: ntfBubbleFloat 5.2s infinite ease-in-out alternate;
-}
-.ntf-bubble--2 {
-  width: 24px;
-  height: 24px;
-  bottom: 12px;
-  right: 14px;
-  animation: ntfBubbleFloat 6.8s infinite ease-in-out alternate-reverse;
-  opacity: 0.65;
-}
-@keyframes ntfBubbleFloat {
-  0% { transform: translateY(0) scale(0.95); }
-  50% { transform: translateY(-6px) scale(1.05); }
-  100% { transform: translateY(2px) scale(0.98); }
-}
-
-/* ── 1. COMPACT TOP NAVIGATOR ── */
-.ntf-top-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 2px;
-}
-.ntf-back-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 1.5px solid #ffffff;
-  background: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--reef-ink);
-  font-size: 17px;
-  text-decoration: none;
-  box-shadow: 0 3px 8px rgba(30, 27, 46, 0.05), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.95);
-  transition: transform 0.12s ease;
-}
-.ntf-back-btn:active { transform: scale(0.92); }
-
-.ntf-nav-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1.5px solid #ffffff;
-  border-radius: 14px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  box-shadow: 0 2px 8px rgba(30, 27, 46, 0.04);
-}
-
-.ntf-unread-pill {
-  background: linear-gradient(135deg, #fef08a 0%, #f59e0b 100%);
-  border: 1.5px solid #ffffff;
-  color: #78350f;
-  font-weight: 900;
-  font-size: 11px;
-  padding: 6px 11px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.22), inset 1px 1px 2px #ffffff;
-}
-
-/* ── 2. OCEAN SIGNAL TOWER (HEADER BANNER CARD) ── */
-.ntf-signal-card {
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.ntf-signal-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.ntf-signal-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
-  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
-  border: 1.5px solid #ffffff;
-  box-shadow: 0 3px 10px rgba(244, 63, 94, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.ntf-signal-info {
-  line-height: 1.25;
-}
-.ntf-signal-title {
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--reef-ink);
-}
-.ntf-signal-sub {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--reef-muted);
-}
-
-.btn-mark-all-read {
-  background: #ffffff;
-  border: 1.5px solid #ffffff;
-  border-radius: 12px;
-  padding: 6px 11px;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: var(--reef-coral-500);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(30, 27, 46, 0.05);
-  transition: transform 0.12s ease;
-  user-select: none;
-  flex-shrink: 0;
-}
-.btn-mark-all-read:active { transform: scale(0.95); }
-
-/* ── 3. SEGMENTED FILTER TABS ── */
-.ntf-tabs-deck {
-  display: flex;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1.5px solid #ffffff;
-  border-radius: 16px;
-  padding: 4px;
-  gap: 4px;
-  box-shadow: 0 3px 10px rgba(30, 27, 46, 0.04);
-}
-.ntf-tab-item {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: var(--reef-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-  user-select: none;
-}
-.ntf-tab-item.active {
-  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
-  color: #ffffff;
-  box-shadow: 0 3px 8px rgba(244, 63, 94, 0.28);
-  font-weight: 900;
-}
-.ntf-tab-badge {
-  font-size: 9.5px;
-  padding: 1.5px 6px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  color: var(--reef-ink);
-  font-weight: 800;
-}
-.ntf-tab-item.active .ntf-tab-badge {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-}
-
-/* ── 4. NOTIFICATION CARDS LIST ── */
-.ntf-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.ntf-item {
-  background: #ffffff;
-  border: 1.5px solid #ffffff;
-  border-radius: 16px;
-  padding: 11px 12px;
-  box-shadow: 0 2px 8px rgba(30, 27, 46, 0.04);
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  transition: transform 0.12s ease, opacity 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-.ntf-item:active {
-  transform: scale(0.99);
-}
-
-/* Unread Accent (Living Coral Pulse) */
-.ntf-item.unread {
-  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
-  border-left: 4px solid var(--reef-coral-500);
-  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.12);
-}
-
-/* Read Accent (Clean Ocean Softness) */
-.ntf-item.read {
-  background: rgba(255, 255, 255, 0.85);
-  opacity: 0.86;
-}
-
-/* Icon Box */
-.ntf-ico-box {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: #ffffff;
-  border: 1.5px solid #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  flex-shrink: 0;
-}
-.ntf-item.read .ntf-ico-box {
-  background: #e2e8f0 !important;
-  color: #64748b !important;
-  box-shadow: none;
-}
-
-/* Content Area */
-.ntf-content {
-  flex: 1;
-  min-width: 0;
-}
-.ntf-header-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 3px;
-}
-.ntf-badge-group {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.ntf-type-tag {
-  font-size: 9px;
-  font-weight: 900;
-  padding: 2px 6px;
-  border-radius: 6px;
-  border: 1px solid;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.ntf-unread-dot {
-  width: 7px;
-  height: 7px;
-  background: var(--reef-coral-500);
-  border-radius: 50%;
-  border: 1px solid #ffffff;
-  box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
-  animation: ntfPulseDot 1.6s infinite;
-  flex-shrink: 0;
-}
-@keyframes ntfPulseDot {
-  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(244, 63, 94, 0); }
-  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
-}
-
-.ntf-time-stamp {
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--reef-muted);
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.ntf-title {
-  font-size: 12.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  line-height: 1.35;
-  margin-bottom: 3px;
-}
-.ntf-message {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--reef-muted);
-  line-height: 1.45;
-}
-
-/* Action Link */
-.ntf-action-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  font-size: 10.5px;
-  font-weight: 900;
-  color: #ffffff;
-  text-decoration: none;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: 1px solid #ffffff;
-  border-radius: 8px;
-  padding: 4px 9px;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
-  transition: transform 0.1s ease;
-}
-.ntf-action-link:active { transform: scale(0.95); }
-
-/* Single Mark As Read Button */
-.btn-mark-single {
-  background: #ffffff;
-  border: 1.5px solid #ffffff;
-  color: var(--reef-muted);
-  border-radius: 10px;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(30, 27, 46, 0.05);
-  transition: all 0.12s ease;
-  flex-shrink: 0;
-}
-.btn-mark-single:hover {
-  background: #ecfdf5;
-  color: #059669;
-}
-.btn-mark-single:active { transform: scale(0.92); }
-
-/* ── 5. EMPTY STATE (CLAYMORPHIC) ── */
-.ntf-empty-card {
-  text-align: center;
-  padding: 30px 18px;
-  margin-top: 4px;
-}
-.ntf-empty-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  border: 2px solid #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  color: #065f46;
-  margin: 0 auto 10px;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
-}
-.ntf-empty-title {
-  font-size: 14.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  margin-bottom: 3px;
-}
-.ntf-empty-sub {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--reef-muted);
-  line-height: 1.4;
-  margin-bottom: 14px;
-}
-.btn-marine-home {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 9px 15px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
-  border: 1.5px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
-  color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 900;
-  text-decoration: none;
-  transition: transform 0.12s ease;
-}
-.btn-marine-home:active { transform: scale(0.96); }
+.ntf-list { display: flex; flex-direction: column; gap: 8px; }
+.ntf-item { position: relative; display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd; transition: opacity .2s, transform .15s; }
+.ntf-item.unread { background: linear-gradient(180deg, #fff7d1, #fffdf3); box-shadow: 0 0 0 2px #fcd34d, 0 4px 0 #e9b949, 0 10px 18px rgba(246, 183, 10, .14); }
+.ntf-item.read { opacity: .85; }
+.ntf-item.read .g-slot img { filter: grayscale(.5); opacity: .75; }
+.ntf-emoji { font-size: 24px; line-height: 1; }
+.ntf-content { flex: 1; min-width: 0; }
+.ntf-header-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+.ntf-badge-group { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.ntf-type-tag { padding: 1px 8px; border-radius: 999px; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.ntf-unread-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #f43f5e; box-shadow: 0 0 0 2px #fff; animation: gGlow 1.4s ease-in-out infinite; }
+.ntf-time-stamp { flex-shrink: 0; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; }
+.ntf-title { font-size: 13px; font-weight: 900; line-height: 1.3; color: var(--pc-ink); }
+.ntf-message { margin-top: 2px; font-size: 12px; font-weight: 700; line-height: 1.45; color: var(--pc-muted); word-break: break-word; }
+.ntf-action-link.g-btn { min-height: 30px; margin-top: 8px; padding: 0 11px; font-size: 12.5px; border-radius: 10px; }
+.btn-mark-single { width: 30px; height: 30px; flex-shrink: 0; border: 0; border-radius: 10px; cursor: pointer; display: grid; place-items: center; font-size: 15px; color: #15803d; background: #dcfce7; box-shadow: 0 2px 0 #bbf7d0; transition: transform .12s; }
+.btn-mark-single:active { transform: scale(.9); }
 </style>
 
-<div class="ntf-reef-stage">
+<div class="g-page">
 
-  <!-- ── 1. COMPACT TOP NAVIGATOR ── -->
-  <div class="ntf-top-nav">
-    <a href="/home" class="ntf-back-btn" title="Kembali ke Home">
-      <i class="ph-bold ph-caret-left"></i>
-    </a>
-    <div class="ntf-nav-title">
-      <i class="ph-fill ph-bell-simple-ringing" style="color:var(--reef-coral-500);"></i>
-      <span>Warta Samudra</span>
-    </div>
-    <div class="ntf-unread-pill">
-      <i class="ph-bold ph-envelope-simple-open"></i>
-      <span id="unread-pill-txt"><?= $unread_count ?> Baru</span>
-    </div>
-  </div>
-
-  <!-- ── 2. OCEAN SIGNAL TOWER (HEADER BANNER) ── -->
-  <div class="ntf-clay ntf-signal-card">
-    <div class="ntf-bubble ntf-bubble--1"></div>
-    <div class="ntf-bubble ntf-bubble--2"></div>
-
-    <div class="ntf-signal-left">
-      <div class="ntf-signal-avatar">
-        <i class="ph-fill ph-broadcast"></i>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Papan Kabar</h1>
+        <p>Pengumuman &amp; kabar terbaru untukmu.</p>
+        <div style="margin-top:8px"><span class="ntf-unread-pill"><i class="ph-bold ph-envelope-simple-open"></i><span id="unread-pill-txt"><?= $unread_count ?> Baru</span></span></div>
       </div>
-      <div class="ntf-signal-info">
-        <div class="ntf-signal-title">Pusat Sinyal & Pengumuman</div>
-        <div class="ntf-signal-sub" id="banner-sub-text">
-          <?php if ($unread_count > 0): ?>
-            Ada <strong id="unread-count-banner"><?= $unread_count ?></strong> pesan yang belum dibaca
-          <?php else: ?>
-            Seluruh pesan telah dibaca
-          <?php endif; ?>
-        </div>
-      </div>
+      <div class="g-hero-art"><img src="/assets/img/icons3d/bell.png" alt=""></div>
     </div>
+    <div class="ntf-hero-act">
+      <div class="t" id="banner-sub-text">
+        <?php if ($unread_count > 0): ?>
+          Ada <strong id="unread-count-banner"><?= $unread_count ?></strong> kabar belum dibaca
+        <?php else: ?>
+          Semua kabar sudah dibaca
+        <?php endif; ?>
+      </div>
+      <?php if ($unread_count > 0): ?>
+        <button type="button" class="g-btn btn-mark-all-read" id="btn-mark-all" onclick="markAllRead()" title="Tandai semua sudah dibaca"><i class="ph-bold ph-checks"></i>Baca semua</button>
+      <?php endif; ?>
+    </div>
+  </section>
 
-    <?php if ($unread_count > 0): ?>
-      <button type="button" class="btn-mark-all-read" id="btn-mark-all" onclick="markAllRead()" title="Tandai semua sudah dibaca">
-        <i class="ph-bold ph-checks"></i>
-        <span>Baca Semua</span>
-      </button>
-    <?php endif; ?>
+  <div class="g-seg ntf-tabs-deck" data-rv style="--d:.05s">
+    <button type="button" class="ntf-tab-item active" id="tab-all" onclick="filterNotifs('all')">Semua<span class="ntf-tab-badge" id="badge-all-count"><?= count($notifications) ?></span></button>
+    <button type="button" class="ntf-tab-item" id="tab-unread" onclick="filterNotifs('unread')">Belum dibaca<span class="ntf-tab-badge" id="badge-unread-count"><?= $unread_count ?></span></button>
   </div>
 
-  <!-- ── 3. SEGMENTED FILTER TABS ── -->
-  <div class="ntf-tabs-deck">
-    <button type="button" class="ntf-tab-item active" id="tab-all" onclick="filterNotifs('all')">
-      <i class="ph-bold ph-tray"></i>
-      <span>Semua Warta</span>
-      <span class="ntf-tab-badge" id="badge-all-count"><?= count($notifications) ?></span>
-    </button>
-
-    <button type="button" class="ntf-tab-item" id="tab-unread" onclick="filterNotifs('unread')">
-      <i class="ph-bold ph-bell-simple-ringing"></i>
-      <span>Belum Dibaca</span>
-      <span class="ntf-tab-badge" id="badge-unread-count"><?= $unread_count ?></span>
-    </button>
-  </div>
-
-  <!-- ── 4. NOTIFICATION CARDS LIST ── -->
   <?php if (empty($notifications)): ?>
-    <div class="ntf-clay ntf-empty-card">
-      <div class="ntf-empty-icon">
-        <i class="ph-fill ph-bell-slash"></i>
-      </div>
-      <div class="ntf-empty-title">Kotak Warta Bersih</div>
-      <div class="ntf-empty-sub">
-        Belum ada pengumuman atau warta samudra baru untuk akunmu saat ini.
-      </div>
-      <a href="/home" class="btn-marine-home">
-        <i class="ph-bold ph-house"></i>
-        <span>Kembali ke Home</span>
-      </a>
+    <div class="g-panel g-empty" data-rv>
+      <img src="/assets/img/icons3d/bell.png" alt="">
+      <b>Papan kabar masih kosong</b>
+      <p>Belum ada pengumuman untuk akunmu saat ini.</p>
+      <a href="/home" class="g-btn sm" style="margin-top:12px"><i class="ph-bold ph-house"></i>Kembali ke Home</a>
     </div>
   <?php else: ?>
     <div class="ntf-list" id="notif-list-container">
-      <?php foreach ($notifications as $n):
+      <?php foreach ($notifications as $ni => $n):
         $cfg = $type_cfg[$n['type']] ?? $type_cfg['info'];
-        $icon = !empty($n['icon']) ? htmlspecialchars($n['icon']) : $cfg['icon'];
         $is_read = !empty($n['is_read']);
       ?>
-        <div class="ntf-item <?= $is_read ? 'read' : 'unread' ?>"
-             data-id="<?= (int)$n['id'] ?>"
-             data-read="<?= $is_read ? '1' : '0' ?>">
+        <div class="ntf-item <?= $is_read ? 'read' : 'unread' ?>" data-id="<?= (int)$n['id'] ?>" data-read="<?= $is_read ? '1' : '0' ?>" data-rv style="--d:<?= number_format(min(0.3, 0.04 * $ni), 2) ?>s">
+          <span class="g-slot sm">
+            <?php if (!empty($n['icon'])): ?><span class="ntf-emoji"><?= htmlspecialchars($n['icon']) ?></span>
+            <?php else: ?><img src="/assets/img/icons3d/<?= $cfg['icon3d'] ?>.png" alt=""><?php endif; ?>
+          </span>
 
-          <!-- Left Icon Box -->
-          <div class="ntf-ico-box" style="background: <?= $cfg['icon_bg'] ?>;">
-            <?= $icon ?>
-          </div>
-
-          <!-- Body Content -->
           <div class="ntf-content">
             <div class="ntf-header-meta">
               <div class="ntf-badge-group">
-                <?php if (!$is_read): ?>
-                  <span class="ntf-unread-dot" title="Belum Dibaca"></span>
-                <?php endif; ?>
-                <span class="ntf-type-tag" style="color:<?= $cfg['color'] ?>; background:<?= $cfg['badge'] ?>; border-color:<?= $cfg['border'] ?>;">
-                  <?= htmlspecialchars($cfg['label']) ?>
-                </span>
+                <?php if (!$is_read): ?><span class="ntf-unread-dot" title="Belum dibaca"></span><?php endif; ?>
+                <span class="ntf-type-tag" style="color:<?= $cfg['color'] ?>;background:<?= $cfg['badge'] ?>"><?= htmlspecialchars($cfg['label']) ?></span>
               </div>
-              <span class="ntf-time-stamp">
-                <i class="ph-bold ph-clock"></i> <?= date('d M, H:i', strtotime($n['created_at'])) ?>
-              </span>
+              <span class="ntf-time-stamp"><?= date('d M, H:i', strtotime($n['created_at'])) ?></span>
             </div>
-
             <div class="ntf-title"><?= htmlspecialchars($n['title']) ?></div>
             <div class="ntf-message"><?= nl2br(htmlspecialchars($n['message'])) ?></div>
-
             <?php if (!empty($n['action_url']) && !empty($n['action_text'])): ?>
-              <div>
-                <a href="<?= htmlspecialchars($n['action_url']) ?>" class="ntf-action-link">
-                  <span><?= htmlspecialchars($n['action_text']) ?></span>
-                  <i class="ph-bold ph-arrow-up-right"></i>
-                </a>
-              </div>
+              <a href="<?= htmlspecialchars($n['action_url']) ?>" class="g-btn ntf-action-link"><?= htmlspecialchars($n['action_text']) ?><i class="ph-bold ph-arrow-right"></i></a>
             <?php endif; ?>
           </div>
 
-          <!-- Mark As Read Single Button -->
           <?php if (!$is_read): ?>
-            <button type="button" class="btn-mark-single" onclick="markRead(<?= (int)$n['id'] ?>, this)" title="Tandai sudah dibaca">
-              <i class="ph-bold ph-check"></i>
-            </button>
+            <button type="button" class="btn-mark-single" onclick="markRead(<?= (int)$n['id'] ?>, this)" title="Tandai sudah dibaca"><i class="ph-bold ph-check"></i></button>
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
     </div>
 
-    <!-- Empty Filter Message (Hidden by default) -->
-    <div id="filter-empty-message" class="ntf-clay ntf-empty-card" style="display:none;">
-      <div class="ntf-empty-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;">
-        <i class="ph-fill ph-checks"></i>
-      </div>
-      <div class="ntf-empty-title">Semua Pesan Sudah Dibaca!</div>
-      <div class="ntf-empty-sub">
-        Tidak ada pesan baru yang tertunda. Kamu selalu ter-update dengan kabar terbaru PanenCuan.
-      </div>
-      <button type="button" onclick="filterNotifs('all')" class="btn-marine-home" style="cursor:pointer;border:none;">
-        <i class="ph-bold ph-tray"></i>
-        <span>Tampilkan Semua Pesan</span>
-      </button>
+    <div id="filter-empty-message" class="g-panel g-empty" style="display:none;">
+      <img src="/assets/img/icons3d/star.png" alt="">
+      <b>Semua kabar sudah dibaca!</b>
+      <p>Kamu selalu up to date dengan kabar PanenCuan.</p>
+      <button type="button" onclick="filterNotifs('all')" class="g-btn sm" style="margin-top:12px">Tampilkan semua</button>
     </div>
   <?php endif; ?>
 

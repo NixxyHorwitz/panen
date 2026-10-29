@@ -338,114 +338,74 @@ require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══════════════════════════════════════════════════════════
-   RIWAYAT — "BUKU KAS KAPAL" (Living Coral Reef, padat)
-   Token warna & latar laut dari partials/header.php (--reef-*)
-   ══════════════════════════════════════════════════════════ */
-.hx-wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 8px 12px 96px; color: var(--reef-ink); }
+/* ══ RIWAYAT — Buku Panen · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.hx-bal { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 10px 10px 12px; border-radius: 18px; background: rgba(255, 255, 255, .78); box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 8px 18px rgba(120, 70, 10, .12); }
+.hx-bal .t { flex: 1; min-width: 0; }
+.hx-bal small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.hx-bal b { display: block; font-family: var(--pc-font); font-size: 22px; font-weight: 700; line-height: 1.1; color: #15803d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hx-mini { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.hx-mini > div { min-width: 0; padding: 6px 4px 5px; border-radius: 14px; text-align: center; background: rgba(255, 255, 255, .66); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .9); }
+.hx-mini img { width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .18)); }
+.hx-mini b { display: block; font-size: 11px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hx-mini small { display: block; font-size: 9.5px; font-weight: 800; color: #7a4f00; white-space: nowrap; }
 
-/* Kartu buku kas */
-.hx-ledger { position: relative; overflow: hidden; padding: 11px 12px 10px; border: 2px solid #fff; border-radius: 22px; color: #fff;
-  background: linear-gradient(150deg, #0e7490 0%, #0891b2 55%, #22d3ee 100%);
-  box-shadow: 0 12px 26px rgba(8, 145, 178, 0.26), inset 3px 3px 6px rgba(255, 255, 255, 0.3), inset -4px -6px 12px rgba(8, 51, 68, 0.3); }
-.hx-ledger::after { content: ''; position: absolute; right: -30px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 70%); pointer-events: none; }
-.hx-led-top { position: relative; display: flex; align-items: center; gap: 10px; }
-.hx-led-top small { display: block; font-size: 9.5px; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.9; }
-.hx-led-top b { display: block; font-size: 22px; font-weight: 900; line-height: 1.1; text-shadow: 0 2px 4px rgba(8, 51, 68, 0.35); }
-.hx-led-bal { flex: 1; min-width: 0; }
-.hx-wd { display: inline-flex; align-items: center; gap: 5px; padding: 8px 13px; border: 2px solid #fff; border-radius: 14px; text-decoration: none; color: #fff; font-size: 12px; font-weight: 900;
-  background: linear-gradient(145deg, #6ee7b7, #059669); box-shadow: 0 6px 12px rgba(4, 120, 87, 0.35), inset 2px 2px 3px rgba(255, 255, 255, 0.45); }
-.hx-wd:active { transform: scale(0.96); }
-.hx-mini { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 9px; }
-.hx-mini > div { padding: 6px 5px; border-radius: 12px; background: rgba(255, 255, 255, 0.17); border: 1.5px solid rgba(255, 255, 255, 0.35); text-align: center; min-width: 0; }
-.hx-mini i { font-size: 13px; color: #fde68a; }
-.hx-mini b { display: block; font-size: 10.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hx-mini small { display: block; font-size: 7.5px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.85; }
+.hx-flash { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; }
+.hx-flash i { font-size: 18px; flex-shrink: 0; }
+.hx-flash.success { background: #dcfce7; color: #14532d; box-shadow: inset 0 0 0 2px #bbf7d0; }
+.hx-flash.error { background: #ffe4e6; color: #9f1239; box-shadow: inset 0 0 0 2px #fecdd3; }
 
-/* Flash */
-.hx-flash { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 11px; border: 2px solid #fff; border-radius: 16px; font-size: 11.5px; font-weight: 800; box-shadow: var(--reef-clay-shadow); }
-.hx-flash i { font-size: 17px; flex-shrink: 0; }
-.hx-flash.success { background: linear-gradient(145deg, #ecfdf5, #d1fae5); color: #065f46; }
-.hx-flash.error { background: linear-gradient(145deg, #fff1f2, #ffe4e6); color: #9f1239; }
-
-/* Tab chip */
-.hx-tabs { display: flex; gap: 5px; overflow-x: auto; margin: 10px -12px 8px; padding: 2px 12px 4px; scrollbar-width: none; }
+/* Tab gulir */
+.hx-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 0 -12px; padding: 2px 12px 6px; scrollbar-width: none; }
 .hx-tabs::-webkit-scrollbar { display: none; }
-.hx-tab { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 2px solid #fff; border-radius: 999px; text-decoration: none; font-size: 11px; font-weight: 900;
-  color: var(--reef-muted); background: rgba(255, 255, 255, 0.75); box-shadow: 0 3px 8px rgba(8, 145, 178, 0.08), inset 1.5px 1.5px 3px #fff; }
-.hx-tab i { font-size: 13px; }
-.hx-tab em { font-style: normal; min-width: 17px; padding: 0 5px; border-radius: 999px; font-size: 9.5px; text-align: center; background: rgba(8, 145, 178, 0.12); color: #0e7490; }
-.hx-tab.on { color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 5px 12px rgba(225, 29, 72, 0.28), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.hx-tab.on em { background: #fff; color: #e11d48; }
-.hx-tab.farm.on { background: linear-gradient(145deg, #6ee7b7, #059669); box-shadow: 0 5px 12px rgba(5, 150, 105, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.hx-tab.farm.on em { color: #059669; }
+.hx-tab { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 11px 0 6px; border-radius: 12px; text-decoration: none;
+  font-family: var(--pc-font); font-size: 13.5px; font-weight: 600; color: #8a6a3a; background: #f2e6c8; box-shadow: inset 0 -2px 0 rgba(120, 70, 10, .12); transition: transform .15s var(--pc-ease); }
+.hx-tab:active { transform: scale(.94); }
+.hx-tab img { width: 24px; height: 24px; object-fit: contain; }
+.hx-tab em { font-style: normal; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; font-weight: 900; display: inline-grid; place-items: center; background: rgba(0, 0, 0, .1); }
+.hx-tab.on { color: #fff; background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
+.hx-tab.on em { background: #ffd54f; color: #4a3000; text-shadow: none; }
 
-/* Grup per tanggal */
-.hx-day { margin-bottom: 8px; }
-.hx-day-lbl { display: flex; align-items: center; gap: 6px; margin: 0 4px 4px; font-size: 10px; font-weight: 900; color: var(--reef-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.hx-day-lbl::after { content: ''; flex: 1; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, rgba(8, 145, 178, 0.25), transparent); }
-.hx-day-lbl b { color: #0e7490; font-weight: 900; text-transform: none; letter-spacing: 0; }
-.hx-card { border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); overflow: hidden; }
+/* Grup tanggal */
+.hx-day { display: flex; flex-direction: column; gap: 6px; }
+.hx-day-lbl { display: flex; align-items: center; gap: 8px; margin: 2px 4px 0; font-size: 11.5px; font-weight: 900; color: #8a5a00; }
+.hx-day-lbl::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: repeating-linear-gradient(90deg, #ecd59c 0 6px, transparent 6px 10px); }
+.hx-card { padding: 4px 10px; border-radius: 20px; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c, 0 10px 18px rgba(120, 70, 10, .06); }
 
-/* Baris transaksi */
-.hx-row { padding: 7px 10px; }
-.hx-row + .hx-row { border-top: 1.5px dashed rgba(251, 146, 60, 0.22); }
-.hx-main { display: flex; align-items: center; gap: 9px; }
-.hx-ico { position: relative; width: 34px; height: 34px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff;
-  box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), inset -2px -2px 4px rgba(0, 0, 0, 0.14); }
-.hx-ico.t-withdraw { background: linear-gradient(145deg, #fda4af, #e11d48); }
-.hx-ico.t-deposit { background: linear-gradient(145deg, #7dd3fc, #0284c7); }
-.hx-ico.t-reward { background: linear-gradient(145deg, #fcd34d, #f59e0b); }
-.hx-ico.t-bonus { background: linear-gradient(145deg, #c084fc, #7c3aed); }
-.hx-ico.t-upgrade { background: linear-gradient(145deg, #fde68a, #d97706); }
-.hx-ico.t-farm { background: linear-gradient(145deg, #6ee7b7, #059669); }
-.hx-ico.logo { background: #fff; padding: 4px; box-shadow: inset 0 0 0 1.5px rgba(8, 145, 178, 0.15); }
-.hx-ico.logo img { width: 100%; height: 100%; object-fit: contain; }
+.hx-row { padding: 8px 0; }
+.hx-row + .hx-row { border-top: 1.5px dashed #f1dfb4; }
+.hx-main { display: flex; align-items: center; gap: 10px; }
+.hx-ico.logo { background: #fff; }
+.hx-ico.logo img { width: 72%; height: 72%; filter: none; }
 .hx-body { flex: 1; min-width: 0; }
-.hx-title { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hx-meta { margin-top: 1px; font-size: 9.5px; font-weight: 700; color: var(--reef-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hx-meta b { font-weight: 900; color: #0e7490; }
+.hx-title { font-size: 13px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hx-meta { margin-top: 1px; font-size: 11px; font-weight: 700; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hx-meta b { font-weight: 900; color: #8a5a00; }
 .hx-right { flex-shrink: 0; text-align: right; }
-.hx-amt { font-size: 12.5px; font-weight: 900; line-height: 1.2; }
-.hx-amt.in { color: #059669; } .hx-amt.out { color: #e11d48; }
-.hx-st { display: inline-flex; align-items: center; gap: 3px; margin-top: 1px; font-size: 8.5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; }
-.hx-st::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.hx-st.succ { color: #059669; } .hx-st.warn { color: #d97706; } .hx-st.err { color: #e11d48; } .hx-st.hold { color: #64748b; } .hx-st.info { color: #0284c7; }
-/* Catatan & aksi */
-.hx-note { display: flex; gap: 5px; margin: 5px 0 0 43px; padding: 5px 8px; border-radius: 10px; background: #fff1f2; font-size: 10px; font-weight: 700; color: #9f1239; line-height: 1.35; }
-.hx-note i { font-size: 12px; color: #e11d48; flex-shrink: 0; margin-top: 1px; }
-.hx-note b { font-weight: 900; }
-.hx-act { display: flex; justify-content: flex-end; gap: 5px; margin-top: 5px; }
-.hx-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border: 2px solid #fff; border-radius: 999px; font-size: 10px; font-weight: 900; text-decoration: none; cursor: pointer; font-family: inherit;
-  box-shadow: 0 3px 8px rgba(30, 27, 46, 0.12), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5); }
-.hx-btn.pay { background: linear-gradient(145deg, #fde68a, #f59e0b); color: #78350f; }
-.hx-btn.refund { background: linear-gradient(145deg, #bae6fd, #0284c7); color: #fff; }
-.hx-btn.done { background: #f1f5f9; color: #64748b; cursor: default; }
-
-/* Muat lagi & kosong */
-.hx-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 4px; padding: 9px; border: 2px solid #fff; border-radius: 16px; cursor: pointer; font-family: inherit;
-  background: rgba(255, 255, 255, 0.8); color: #0e7490; font-size: 11.5px; font-weight: 900; box-shadow: var(--reef-clay-shadow); }
+.hx-amt { font-family: var(--pc-font); font-size: 14.5px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
+.hx-amt.in { color: #15803d; } .hx-amt.out { color: #e11d48; }
+.hx-st { display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 900; }
+.hx-st.succ { background: #dcfce7; color: #15803d; } .hx-st.warn { background: #fff3c4; color: #8a5a00; } .hx-st.err { background: #ffe4e6; color: #be123c; }
+.hx-st.hold { background: #eef0f3; color: #475569; } .hx-st.info { background: #e0f2fe; color: #0369a1; }
+.hx-note { display: flex; gap: 6px; margin: 6px 0 0 48px; padding: 6px 9px; border-radius: 11px; background: #fff1f2; font-size: 11px; font-weight: 700; color: #9f1239; line-height: 1.35; }
+.hx-note i { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.hx-act { display: flex; justify-content: flex-end; margin-top: 6px; }
+.hx-act .g-btn { min-height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 11px; }
+.hx-done { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 10px; font-size: 11.5px; font-weight: 900; color: #64748b; background: #f1f5f9; }
 .hx-more[hidden], .hx-row[hidden], .hx-day[hidden] { display: none !important; }
-.hx-empty { text-align: center; padding: 22px 16px; border-radius: 20px; border: 2px dashed rgba(8, 145, 178, 0.35); background: rgba(255, 255, 255, 0.65); }
-.hx-empty .ic { width: 52px; height: 52px; margin: 0 auto 7px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; background: linear-gradient(145deg, #67e8f9, #0891b2); border: 3px solid #fff; box-shadow: 0 6px 14px rgba(8, 145, 178, 0.25); }
-.hx-empty .ic img { width: 40px; height: 40px; object-fit: contain; }
-.hx-empty b { display: block; font-size: 12.5px; font-weight: 900; }
-.hx-empty small { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--reef-muted); line-height: 1.4; }
-.hx-empty a { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 7px 14px; border-radius: 999px; border: 2px solid #fff; text-decoration: none; font-size: 11px; font-weight: 900; color: #fff; background: linear-gradient(145deg, #67e8f9, #0891b2); box-shadow: 0 5px 12px rgba(8, 145, 178, 0.28); }
 
 /* Modal refund */
-.cg-modal { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; padding: 20px; background: rgba(30, 27, 46, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.cg-modal-card { width: 100%; max-width: 330px; padding: 18px 16px 16px; text-align: center; border: 2px solid #fff; border-radius: 24px; background: var(--reef-card); box-shadow: 0 24px 50px rgba(30, 27, 46, 0.3), inset 3px 3px 6px #fff; animation: hxPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-@keyframes hxPop { from { transform: scale(0.88); opacity: 0; } to { transform: none; opacity: 1; } }
-.cg-ic { width: 52px; height: 52px; margin: 0 auto 8px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 25px; color: #fff; background: linear-gradient(145deg, #7dd3fc, #0284c7); border: 2.5px solid #fff; box-shadow: 0 6px 14px rgba(2, 132, 199, 0.3); }
-.cg-mc-hdr { font-size: 15px; font-weight: 900; }
-.cg-mc-sub { margin-top: 4px; font-size: 11.5px; font-weight: 700; color: var(--reef-muted); line-height: 1.45; }
-.cg-info { display: flex; gap: 6px; margin: 11px 0 13px; padding: 8px 10px; border-radius: 13px; background: #ecfeff; font-size: 10.5px; font-weight: 700; color: #0e7490; text-align: left; line-height: 1.4; }
-.cg-info i { font-size: 15px; flex-shrink: 0; }
-.cg-btn-row { display: flex; gap: 8px; }
-.cg-btn { flex: 1; padding: 10px; border: 2px solid #fff; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 900; }
-.cg-btn--cancel { background: #fff; color: var(--reef-muted); box-shadow: inset 1.5px 1.5px 3px #fff, 0 3px 8px rgba(30, 27, 46, 0.08); }
-.cg-btn--submit { color: #fff; background: linear-gradient(145deg, #7dd3fc, #0284c7); box-shadow: 0 6px 14px rgba(2, 132, 199, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
+.hx-modal { display: none; position: fixed; inset: 0; z-index: 10000; align-items: flex-end; justify-content: center; background: rgba(40, 25, 5, .5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.hx-sheet { width: 100%; max-width: 440px; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; text-align: center; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 -10px 30px rgba(40, 25, 5, .25); animation: hxUp .35s var(--pc-out); }
+@keyframes hxUp { from { transform: translateY(100%); } }
+.hx-grab { width: 40px; height: 5px; margin: 0 auto 10px; border-radius: 5px; background: #ecd59c; }
+.hx-sheet .art { display: block; width: 74px; height: 74px; margin: 0 auto 4px; object-fit: contain; animation: gBob 3s ease-in-out infinite; }
+.hx-sheet h3 { margin: 0; font-family: var(--pc-font); font-size: 19px; font-weight: 700; color: #4a2b00; }
+.hx-sheet p { margin: 4px 0 0; font-size: 12px; font-weight: 700; color: var(--pc-muted); line-height: 1.45; }
+.hx-sheet .info { display: flex; gap: 7px; margin: 12px 0; padding: 9px 11px; border-radius: 14px; background: #dcfce7; font-size: 11.5px; font-weight: 800; color: #14532d; text-align: left; line-height: 1.4; }
+.hx-sheet .info i { font-size: 16px; flex-shrink: 0; }
+.hx-sheet .row { display: flex; gap: 8px; }
+.hx-sheet .row .g-btn { flex: 1; }
+@media (max-width: 360px) { .hx-mini small { font-size: 8.5px; } .hx-mini b { font-size: 10px; } .hx-tab { font-size: 12.5px; } }
 </style>
 
 <?php
@@ -469,27 +429,44 @@ $hx_day = static function (string $time): string {
     if ($d === date('Y-m-d', strtotime('-1 day'))) return 'Kemarin';
     return date('d M Y', strtotime($time));
 };
+// Ikon 3D per jenis transaksi
+$hx_3d = static function (array $it): string {
+    return match ($it['type']) {
+        'withdraw' => 'moneybag',
+        'deposit'  => 'piggy',
+        'reward'   => 'watch',
+        'upgrade'  => 'upgrade',
+        'farm'     => 'basket',
+        default    => match ($it['sub_type']) {
+            'Survei Pengguna' => 'survey',
+            'Komisi Referral' => 'referral',
+            'Voucher Redeem'  => 'redeem',
+            default           => 'missions',
+        },
+    };
+};
 $hx_tabs = [
-    'all'      => ['Semua', 'ph-squares-four'],
-    'farm'     => ['Jual Panen', 'ph-basket'],
-    'withdraw' => ['Tarik', 'ph-paper-plane-tilt'],
-    'deposit'  => ['Deposit', 'ph-wallet'],
-    'reward'   => ['Video', 'ph-play-circle'],
-    'bonus'    => ['Bonus & Misi', 'ph-gift'],
+    'all'      => ['Semua', 'receipt'],
+    'farm'     => ['Jual Panen', 'basket'],
+    'withdraw' => ['Withdraw', 'moneybag'],
+    'deposit'  => ['Deposit', 'piggy'],
+    'reward'   => ['Video', 'watch'],
+    'bonus'    => ['Bonus', 'redeem'],
 ];
 if (!isset($hx_tabs[$tab])) $tab = 'all';
 $hx_items = $tab === 'all' ? $unified : array_values(array_filter($unified, fn($it) => $it['type'] === $tab));
 $hx_empty = [
-    'all'      => ['ph-clock-counter-clockwise', 'Belum ada transaksi', 'Tonton video, bertani, atau selesaikan misi untuk mengisi buku kasmu!', '/home', 'Mulai Cuan'],
-    'farm'     => ['ph-basket', 'Belum ada hasil panen terjual', 'Tanam &amp; panen di Sawah Panen Cuan, lalu jual di Pasar Pengepul untuk mencairkannya jadi Saldo Tarik.', '/farm', 'Mulai Bertani'],
-    'withdraw' => ['ph-paper-plane-tilt', 'Belum ada penarikan', 'Kumpulkan saldo lalu tarik ke e-wallet atau rekening bankmu.', '/withdraw', 'Withdraw'],
-    'deposit'  => ['ph-wallet', 'Belum ada deposit', 'Deposit saldo untuk upgrade paket atau beli bibit di Sawah Panen Cuan.', '/deposit', 'Deposit'],
-    'reward'   => ['ph-play-circle', 'Belum ada riwayat nonton', 'Tonton video untuk mendapatkan rupiah di setiap video.', '/home', 'Nonton Sekarang'],
-    'bonus'    => ['ph-gift', 'Belum ada bonus masuk', 'Selesaikan survei, misi harian, atau referral untuk dapat bonus.', '/referral', 'Referral'],
+    'all'      => ['receipt', 'Belum ada transaksi', 'Tonton video, bertani, atau selesaikan quest untuk mengisi buku panenmu.', '/home', 'Mulai Cuan'],
+    'farm'     => ['basket', 'Belum ada panen terjual', 'Tanam &amp; panen di Sawah, lalu jual di Pasar Pengepul jadi Saldo Tarik.', '/farm', 'Mulai Bertani'],
+    'withdraw' => ['moneybag', 'Belum ada withdraw', 'Kumpulkan saldo lalu tarik ke e-wallet atau rekening bankmu.', '/withdraw', 'Withdraw'],
+    'deposit'  => ['piggy', 'Belum ada deposit', 'Deposit saldo untuk level up atau beli bibit di Sawah.', '/deposit', 'Deposit'],
+    'reward'   => ['watch', 'Belum ada riwayat nonton', 'Tonton video untuk dapat rupiah di setiap video.', '/videos', 'Nonton Video'],
+    'bonus'    => ['redeem', 'Belum ada bonus', 'Selesaikan survei, quest, atau referral untuk dapat bonus.', '/missions', 'Lihat Quest'],
 ][$tab];
 $HX_PAGE = 25;
+$ic = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png';
 ?>
-<div class="hx-wrap">
+<div class="g-page">
 
   <?php if ($flash): ?>
     <div class="hx-flash <?= $flashType === 'error' ? 'error' : 'success' ?>">
@@ -498,41 +475,45 @@ $HX_PAGE = 25;
     </div>
   <?php endif; ?>
 
-  <!-- BUKU KAS -->
-  <section class="hx-ledger">
-    <div class="hx-led-top">
-      <div class="hx-led-bal">
-        <small><i class="ph-fill ph-book-open-text"></i> Ringkasan Saldo · Siap Withdraw</small>
-        <b><?= format_rp($balance_wd) ?></b>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Buku Panen</h1>
+        <p>Semua uang masuk &amp; keluar akunmu.</p>
       </div>
-      <a href="/withdraw" class="hx-wd"><i class="ph-bold ph-arrow-up-right"></i> Tarik</a>
+      <div class="g-hero-art" style="width:66px;height:66px"><img src="<?= $ic('receipt') ?>" alt=""></div>
+    </div>
+    <div class="hx-bal">
+      <span class="g-slot sm"><img src="<?= $ic('moneybag') ?>" alt=""></span>
+      <div class="t"><small>Saldo siap withdraw</small><b><?= format_rp($balance_wd) ?></b></div>
+      <a href="/withdraw" class="g-btn gold sm shine">Withdraw</a>
     </div>
     <div class="hx-mini">
-      <div><i class="ph-fill ph-sparkle"></i><b><?= format_rp($total_earned) ?></b><small>Total Cuan</small></div>
-      <div><i class="ph-fill ph-basket"></i><b><?= format_rp($farm_sales_total) ?></b><small>Jual Panen</small></div>
-      <div><i class="ph-fill ph-arrow-down-left"></i><b><?= format_rp($total_dep) ?></b><small>Deposit</small></div>
-      <div><i class="ph-fill ph-hand-coins"></i><b><?= format_rp($total_wd) ?></b><small>Ditarik</small></div>
+      <div><img src="<?= $ic('coins') ?>" alt=""><b><?= format_rp($total_earned) ?></b><small>Total cuan</small></div>
+      <div><img src="<?= $ic('basket') ?>" alt=""><b><?= format_rp($farm_sales_total) ?></b><small>Jual panen</small></div>
+      <div><img src="<?= $ic('piggy') ?>" alt=""><b><?= format_rp($total_dep) ?></b><small>Deposit</small></div>
+      <div><img src="<?= $ic('moneybag') ?>" alt=""><b><?= format_rp($total_wd) ?></b><small>Ditarik</small></div>
     </div>
   </section>
 
-  <!-- TAB -->
-  <nav class="hx-tabs" aria-label="Filter riwayat">
-    <?php foreach ($hx_tabs as $key => [$lbl, $ic]): ?>
-      <a href="?tab=<?= $key ?>" class="hx-tab <?= $key === 'farm' ? 'farm' : '' ?> <?= $tab === $key ? 'on' : '' ?>"><i class="ph-bold <?= $ic ?>"></i><?= htmlspecialchars($lbl) ?><em><?= (int)($counts[$key] ?? 0) ?></em></a>
+  <nav class="hx-tabs" aria-label="Filter riwayat" data-rv style="--d:.05s">
+    <?php foreach ($hx_tabs as $key => [$lbl, $tic]): ?>
+      <a href="?tab=<?= $key ?>" class="hx-tab <?= $tab === $key ? 'on' : '' ?>"><img src="<?= $ic($tic) ?>" alt=""><?= htmlspecialchars($lbl) ?><em><?= (int)($counts[$key] ?? 0) ?></em></a>
     <?php endforeach; ?>
   </nav>
 
   <?php if (!$hx_items): ?>
-    <div class="hx-empty">
-      <div class="ic"><i class="ph-fill <?= $hx_empty[0] ?>"></i></div>
+    <div class="g-panel g-empty" data-rv>
+      <img src="<?= $ic($hx_empty[0]) ?>" alt="">
       <b><?= $hx_empty[1] ?></b>
-      <small><?= $hx_empty[2] ?></small>
-      <a href="<?= $hx_empty[3] ?>"><i class="ph-bold ph-arrow-right"></i> <?= $hx_empty[4] ?></a>
+      <p><?= $hx_empty[2] ?></p>
+      <a href="<?= $hx_empty[3] ?>" class="g-btn sm" style="margin-top:12px"><?= $hx_empty[4] ?></a>
     </div>
   <?php else: ?>
-    <div id="hx-list">
+    <div id="hx-list" style="display:flex;flex-direction:column;gap:12px">
       <?php
-      $curDay = null; $open = false;
+      $curDay = null; $open = false; $gi = 0;
       foreach ($hx_items as $i => $item):
         $day = $hx_day((string)$item['time']);
         [$stCls, $stTxt] = $hx_status($item);
@@ -541,16 +522,16 @@ $HX_PAGE = 25;
           if ($open) echo '</div></div>';
           $curDay = $day; $open = true;
       ?>
-        <div class="hx-day" data-day>
-          <div class="hx-day-lbl"><b><?= $day ?></b></div>
+        <div class="hx-day" data-day data-rv style="--d:<?= number_format(min(0.3, 0.05 * $gi++), 2) ?>s">
+          <div class="hx-day-lbl"><?= $day ?></div>
           <div class="hx-card">
       <?php endif; ?>
             <div class="hx-row" data-i="<?= $i ?>" <?= $i >= $HX_PAGE ? 'hidden' : '' ?>>
               <div class="hx-main">
                 <?php if (!empty($item['logo'])): ?>
-                  <div class="hx-ico logo"><img src="/assets/banks/<?= htmlspecialchars($item['logo']) ?>" alt="" loading="lazy"></div>
+                  <span class="g-slot sm hx-ico logo"><img src="/assets/banks/<?= htmlspecialchars($item['logo']) ?>" alt="" loading="lazy"></span>
                 <?php else: ?>
-                  <div class="hx-ico t-<?= htmlspecialchars($item['type']) ?>"><i class="ph-fill <?= htmlspecialchars((string)$item['icon']) ?>"></i></div>
+                  <span class="g-slot sm hx-ico"><img src="<?= $ic($hx_3d($item)) ?>" alt="" loading="lazy"></span>
                 <?php endif; ?>
                 <div class="hx-body">
                   <div class="hx-title"><?= htmlspecialchars((string)$item['title']) ?></div>
@@ -563,43 +544,44 @@ $HX_PAGE = 25;
               </div>
 
               <?php if (!empty($item['admin_note'])): ?>
-                <div class="hx-note"><i class="ph-fill ph-warning-circle"></i><span><b><?= $stLower === 'rejected' ? 'Alasan penolakan:' : ($stLower === 'revoked' ? 'Alasan pembatalan:' : ($stLower === 'hold' ? 'Catatan hold:' : 'Catatan admin:')) ?></b> <?= htmlspecialchars((string)$item['admin_note']) ?></span></div>
+                <div class="hx-note"><i class="ph-fill ph-warning-circle"></i><span><b><?= $stLower === 'rejected' ? 'Alasan ditolak:' : ($stLower === 'revoked' ? 'Alasan dibatalkan:' : ($stLower === 'hold' ? 'Catatan hold:' : 'Catatan admin:')) ?></b> <?= htmlspecialchars((string)$item['admin_note']) ?></span></div>
               <?php endif; ?>
 
               <?php if ($item['type'] === 'withdraw' && $stLower === 'hold'): ?>
                 <div class="hx-act">
                   <?php if (in_array((int)$item['raw']['id'], $requested_wds, true)): ?>
-                    <span class="hx-btn done"><i class="ph-bold ph-hourglass-medium"></i> Refund Diajukan</span>
+                    <span class="hx-done"><i class="ph-bold ph-hourglass-medium"></i> Refund diajukan</span>
                   <?php else: ?>
-                    <button type="button" class="hx-btn refund" onclick="openRefundModal(<?= (int)$item['raw']['id'] ?>)"><i class="ph-bold ph-arrow-u-up-left"></i> Ajukan Refund Saldo</button>
+                    <button type="button" class="g-btn sky" onclick="openRefundModal(<?= (int)$item['raw']['id'] ?>)"><i class="ph-bold ph-arrow-u-up-left"></i> Ajukan refund</button>
                   <?php endif; ?>
                 </div>
               <?php elseif ($item['type'] === 'deposit' && $stLower === 'pending' && strtolower((string)$item['raw']['method']) === 'qris'): ?>
-                <div class="hx-act"><a href="/pay?id=<?= (int)$item['raw']['id'] ?>" class="hx-btn pay"><i class="ph-bold ph-qr-code"></i> Bayar QRIS Sekarang</a></div>
+                <div class="hx-act"><a href="/pay?id=<?= (int)$item['raw']['id'] ?>" class="g-btn gold shine"><i class="ph-bold ph-qr-code"></i> Bayar QRIS</a></div>
               <?php endif; ?>
             </div>
       <?php endforeach; if ($open) echo '</div></div>'; ?>
     </div>
     <?php if (count($hx_items) > $HX_PAGE): ?>
-      <button type="button" class="hx-more" id="hx-more" onclick="hxMore()"><i class="ph-bold ph-caret-down"></i> Muat lagi <span id="hx-more-n"></span></button>
+      <button type="button" class="g-btn soft full hx-more" id="hx-more" onclick="hxMore()"><i class="ph-bold ph-caret-down"></i> Muat lagi <span id="hx-more-n"></span></button>
     <?php endif; ?>
   <?php endif; ?>
 </div>
 
 <!-- MODAL PENGAJUAN REFUND WD HOLD -->
-<div id="refund-modal" class="cg-modal">
-  <div class="cg-modal-card">
-    <div class="cg-ic"><i class="ph-bold ph-arrow-u-up-left"></i></div>
-    <div class="cg-mc-hdr">Ajukan Refund Saldo?</div>
-    <div class="cg-mc-sub">Kamu yakin ingin mengembalikan saldo dari penarikan yang ditahan ini?</div>
-    <div class="cg-info"><i class="ph-fill ph-shield-check"></i><span>Saldo dikembalikan utuh ke <strong>Saldo Tarik (WD)</strong> setelah diverifikasi tim admin.</span></div>
+<div id="refund-modal" class="hx-modal">
+  <div class="hx-sheet">
+    <div class="hx-grab"></div>
+    <img class="art" src="<?= $ic('moneybag') ?>" alt="">
+    <h3>Ajukan refund saldo?</h3>
+    <p>Saldo dari withdraw yang ditahan ini akan dikembalikan.</p>
+    <div class="info"><i class="ph-fill ph-shield-check"></i><span>Saldo kembali utuh ke <b>Saldo Tarik</b> setelah dicek admin.</span></div>
     <form method="POST" id="refund-form">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="refund_wd_hold">
       <input type="hidden" name="wd_id" id="refund-wd-id" value="">
-      <div class="cg-btn-row">
-        <button type="button" class="cg-btn cg-btn--cancel" onclick="closeRefundModal()">Batal</button>
-        <button type="submit" class="cg-btn cg-btn--submit" onclick="this.disabled=true;this.textContent='Memproses...';document.getElementById('refund-form').submit();">Ajukan Refund</button>
+      <div class="row">
+        <button type="button" class="g-btn soft" onclick="closeRefundModal()">Batal</button>
+        <button type="submit" class="g-btn sky" onclick="this.disabled=true;this.textContent='Memproses...';document.getElementById('refund-form').submit();">Ajukan refund</button>
       </div>
     </form>
   </div>
