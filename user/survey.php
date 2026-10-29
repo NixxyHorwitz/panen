@@ -1010,7 +1010,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label class="source-pearl-chip" onclick="selectSource('Teman')">
             <input type="radio" name="source_choice" value="Teman" id="src-teman">
             <i class="ph-bold ph-users-three source-pearl-icon"></i>
-            <span class="source-pearl-label">Teman Nelayan</span>
+            <span class="source-pearl-label">Teman / Keluarga</span>
             <i class="ph-bold ph-check-circle source-pearl-check"></i>
           </label>
 

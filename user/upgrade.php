@@ -340,12 +340,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 end_post:
 
-// Migrasi sekali jalan: nama pangkat tema Amber -> tema nelayan (hanya jika masih bernama lama)
+// Migrasi nama pangkat lama (tema Amber, lalu tema nelayan) -> tema sawah PanenCuan (hanya jika masih bernama lama)
 $rankRename = [
-  'Raw Amber'      => ['Nelayan Pemula',    'ph-fish-simple',    'Pangkat awal. Kuota nonton harian dasar.'],
-  'Golden Amber'   => ['Juragan Perahu',    'ph-sailboat',       'Kuota nonton lebih banyak & batas tarik lebih tinggi.'],
-  'Royal Amber'    => ['Kapten Kapal',      'ph-steering-wheel', 'Pilihan favorit: kuota besar & tarik lebih cepat.'],
-  'Imperial Amber' => ['Laksamana Samudra', 'ph-crown',          'Pangkat tertinggi: kuota maksimal & pencairan prioritas.'],
+  'Raw Amber'         => ['Petani Pemula', 'ph-plant',  'Pangkat awal. Kuota nonton harian dasar.'],
+  'Golden Amber'      => ['Juragan Sawah', 'ph-leaf',   'Kuota nonton lebih banyak & batas tarik lebih tinggi.'],
+  'Royal Amber'       => ['Mandor Panen',  'ph-basket', 'Pilihan favorit: kuota besar & tarik lebih cepat.'],
+  'Imperial Amber'    => ['Tuan Tanah',    'ph-crown',  'Pangkat tertinggi: kuota maksimal & pencairan prioritas.'],
+  'Nelayan Pemula'    => ['Petani Pemula', 'ph-plant',  'Pangkat awal. Kuota nonton harian dasar.'],
+  'Juragan Perahu'    => ['Juragan Sawah', 'ph-leaf',   'Kuota nonton lebih banyak & batas tarik lebih tinggi.'],
+  'Kapten Kapal'      => ['Mandor Panen',  'ph-basket', 'Pilihan favorit: kuota besar & tarik lebih cepat.'],
+  'Laksamana Samudra' => ['Tuan Tanah',    'ph-crown',  'Pangkat tertinggi: kuota maksimal & pencairan prioritas.'],
 ];
 $renStmt = $pdo->prepare("UPDATE memberships SET name = ?, icon = ?, description = ? WHERE name = ?");
 foreach ($rankRename as $old => [$new, $icon, $desc]) $renStmt->execute([$new, $icon, $desc, $old]);
@@ -509,7 +513,7 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
       <span class="ic rank"><i class="ph-fill <?= htmlspecialchars((string)($active_membership['icon'] ?? ($free_rank['icon'] ?? 'ph-fish-simple'))) ?>"></i></span>
       <span class="tx">
         <small>Pangkatmu</small>
-        <b><?= htmlspecialchars((string)($active_membership['name'] ?? ($free_rank['name'] ?? 'Nelayan Pemula'))) ?></b>
+        <b><?= htmlspecialchars((string)($active_membership['name'] ?? ($free_rank['name'] ?? 'Petani Pemula'))) ?></b>
         <em><?= $active_membership ? 's/d ' . date('d M Y', strtotime($user['membership_expires_at'])) : 'Gratis' ?></em>
       </span>
       <?php if ($can_refund): ?>
