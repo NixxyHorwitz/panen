@@ -1764,4 +1764,6 @@
   global.FarmAudio = FarmAudio;
   global.FarmAPI = FarmAPI;
   global.FarmUtil = { fmtRp, fmtShort, fmtTime, cropIcon, iconHtml };
+  // Builder geometri & material untuk alat pembuat ikon 3D UI (assets/img/icons3d/)
+  global.FarmGeo = { Geo, V, toonGradient, tintMaterial, colors: C };
 })(window);

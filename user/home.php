@@ -207,6 +207,47 @@ if (!$is_guest && !empty($user['id'])) {
     } catch (\Throwable) {}
 }
 
+// ── GAMIFIKASI: level petani, streak, panen hari ini, misi harian ──
+$farm_lv = farm_level(0);
+$streak = 0;
+$harvest_today = 0;
+if (!$is_guest) {
+    try {
+        $xs = $pdo->prepare("SELECT xp FROM farm_users WHERE user_id = ?");
+        $xs->execute([$user['id']]);
+        $farm_lv = farm_level((int)$xs->fetchColumn());
+    } catch (\Throwable) {}
+    // Streak dihitung sama seperti halaman check-in
+    $lc = (string)($user['last_checkin'] ?? '');
+    if ($lc !== '' && (int)((strtotime(date('Y-m-d')) - strtotime($lc)) / 86400) <= 1) {
+        try {
+            $sq = $pdo->prepare("SELECT COUNT(DISTINCT DATE(watched_at)) FROM watch_history WHERE user_id = ? AND watched_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+            $sq->execute([$user['id']]);
+            $streak = max(1, (int)$sq->fetchColumn());
+        } catch (\Throwable) { $streak = 1; }
+    }
+    try {
+        $hs = $pdo->prepare("SELECT COUNT(*) FROM farm_logs WHERE user_id = ? AND action = 'harvest' AND created_at >= CURDATE()");
+        $hs->execute([$user['id']]);
+        $harvest_today = (int)$hs->fetchColumn();
+    } catch (\Throwable) {}
+}
+$xp_span = max(1, $farm_lv['xp_next'] - $farm_lv['xp_cur']);
+$xp_pct  = min(100, (int)round(($farm_lv['xp'] - $farm_lv['xp_cur']) / $xp_span * 100));
+
+// Misi harian di beranda: [kunci, ikon 3D, judul, progres, target, aksi (url atau js), label hadiah]
+$daily_quests = [];
+if (!$is_guest) {
+    $daily_quests[] = ['checkin', 'checkin', 'Check-in harian', $has_checked_in_today ? 1 : 0, 1, $has_checked_in_today ? '/checkin' : 'js:openCheckinModal()', 'Bonus saldo'];
+}
+if (!empty($cms['hero']['show_watch_cta'])) {
+    $daily_quests[] = ['watch', 'watch', 'Nonton video', $watch_today, max(1, $watch_limit), '/videos', 'Rp per video'];
+}
+if (!empty($cms['farm_spotlight']['enabled'])) {
+    $daily_quests[] = ['farm', 'padi', 'Panen sawah', min(1, $harvest_today), 1, (string)($cms['farm_spotlight']['url'] ?: '/farm'), '+XP petani'];
+}
+$quests_done = count(array_filter($daily_quests, fn($q) => $q[3] >= $q[4]));
+
 $pageTitle = 'Beranda';
 $activePage = 'home';
 require dirname(__DIR__) . '/partials/header.php';
@@ -495,6 +536,113 @@ require dirname(__DIR__) . '/partials/header.php';
   .h-modal, .h-ring .fg { transition: none; }
 }
 </style>
+<style>
+/* ══ LAPISAN GAMIFIKASI ══ */
+/* Tombol game: muka gradien + bibir bawah, turun saat ditekan */
+.h-btn { --lip: #11622f; box-shadow: 0 4px 0 var(--lip), 0 8px 16px var(--sh), inset 0 2px 0 rgba(255, 255, 255, .45); text-shadow: 0 1px 0 rgba(0, 0, 0, .15); }
+.h-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--lip), 0 3px 6px var(--sh), inset 0 2px 0 rgba(255, 255, 255, .4); }
+.h-btn.gold { --lip: #b07800; text-shadow: 0 1px 0 rgba(255, 255, 255, .5); }
+.h-btn.sky { --lip: #0369a1; } .h-btn.dark { --lip: #000; }
+.h-btn.soft { --lip: #d7dfcd; text-shadow: none; box-shadow: 0 3px 0 var(--lip); }
+.h-quest .h-btn { --lip: rgba(0, 0, 0, .18); }
+
+/* Kartu pemain */
+.h-player { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 2; display: flex; align-items: center; gap: 10px; }
+.h-ava-wrap { position: relative; flex-shrink: 0; }
+.h-ava-wrap .h-ava {
+  width: 50px; height: 50px; border-radius: 16px; font-size: 22px;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #f6b70a, 0 8px 16px rgba(120, 70, 10, .3);
+}
+.h-lv {
+  position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); padding: 1px 7px; border-radius: 999px; font-style: normal; white-space: nowrap;
+  font-family: var(--pc-font); font-size: 11px; font-weight: 700; color: #4a3000; background: linear-gradient(180deg, #ffe082, #f6b70a); box-shadow: 0 2px 0 #b07800, 0 0 0 2px #fff;
+}
+.h-pinfo { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: 16px; background: rgba(255, 255, 255, .78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 6px 14px rgba(120, 70, 10, .15); max-width: 210px; }
+.h-pinfo b { font-family: var(--pc-font); font-size: 15px; font-weight: 700; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-pinfo small { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 800; color: #8a5a00; }
+.h-pinfo small i { color: var(--pc-gold); }
+.h-xp { position: relative; height: 8px; border-radius: 999px; background: rgba(120, 70, 10, .15); overflow: hidden; margin-top: 2px; }
+.h-xp i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: repeating-linear-gradient(-45deg, #ffd54f 0 6px, #f6b70a 6px 12px); background-size: 200% 100%; animation: hStripes 1.4s linear infinite; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .1); }
+@keyframes hStripes { to { background-position: -34px 0; } }
+.h-xp-tx { font-size: 9.5px; font-weight: 900; color: #8a5a00; }
+.h-badges { position: absolute; top: 76px; left: 72px; z-index: 2; display: flex; gap: 6px; }
+.h-badges .h-today { position: static; animation: none; }
+.h-streak {
+  display: inline-flex; align-items: center; gap: 2px; padding: 1px 10px 1px 3px; border-radius: 999px; font-size: 11.5px; font-weight: 900; color: #fff;
+  background: linear-gradient(135deg, #fb923c, #ea580c); box-shadow: 0 6px 14px rgba(234, 88, 12, .35);
+}
+.h-streak img { width: 22px; height: 22px; object-fit: contain; animation: hFlame 1.2s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes hFlame { 50% { transform: scale(1.12, .92) rotate(-4deg); } }
+.h-scene { height: 168px; }
+
+/* Ikon 3D di tombol aksi */
+.h-act-ic { --lip: rgba(0, 0, 0, .18); box-shadow: 0 4px 0 var(--lip), 0 8px 16px var(--s, rgba(22, 163, 74, .35)), inset 0 2px 0 rgba(255, 255, 255, .5); }
+.h-act-ic img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .25)); transition: transform .3s var(--pc-ease); }
+.h-act:active .h-act-ic { transform: translateY(3px) scale(.92); }
+.h-act:hover .h-act-ic img { transform: translateY(-3px) rotate(-6deg) scale(1.08); }
+.h-act.a1 .h-act-ic { --lip: #b07800; } .h-act.a2 .h-act-ic { --lip: #11622f; } .h-act.a3 .h-act-ic { --lip: #5b21b6; } .h-act.a4 .h-act-ic { --lip: #0369a1; }
+.h-ticker-ic { background: linear-gradient(145deg, #fff8e1, #fff3c4); }
+.h-ticker-ic img { width: 28px; height: 28px; object-fit: contain; }
+.h-guide-ic { background: linear-gradient(145deg, #e0f2fe, #fff); animation: none; }
+.h-guide-ic img { width: 34px; height: 34px; object-fit: contain; animation: hSpinSlow 10s linear infinite; }
+
+/* Judul seksi: pita */
+.h-ribbon, .h-sec b {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 4px 16px 5px 12px; margin-left: 8px;
+  font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  background: linear-gradient(180deg, #22c55e, #15803d); border-radius: 6px 10px 10px 6px; box-shadow: 0 3px 0 #11622f;
+}
+.h-ribbon::before, .h-sec b::before {
+  content: ''; position: absolute; left: -8px; top: 5px; bottom: -5px; width: 12px; z-index: -1; background: #0f5a2a; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 6px 50%);
+}
+.h-sec b img { width: 24px; height: 24px; margin: -6px 0; }
+.h-sec b i { color: #fff3c4 !important; }
+
+/* Papan misi harian */
+.h-qboard { position: relative; padding: 12px 12px 6px; border-radius: 24px; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 10px 24px rgba(120, 70, 10, .12); }
+.h-qhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.h-chest { position: relative; display: block; width: 54px; height: 54px; margin: -18px -2px -8px 0; }
+.h-chest img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 6px 6px rgba(120, 70, 10, .3)); animation: hBob 2.6s ease-in-out infinite; }
+.h-chest.open img { animation: hChest 1s var(--pc-ease) infinite alternate; }
+@keyframes hChest { from { transform: scale(1) rotate(-4deg); } to { transform: scale(1.1) rotate(4deg); filter: drop-shadow(0 0 12px rgba(246, 183, 10, .8)); } }
+.h-chest em { position: absolute; right: -4px; bottom: 0; padding: 0 6px; border-radius: 999px; font-style: normal; font-family: var(--pc-font); font-size: 11px; font-weight: 700; color: #fff; background: #ea580c; box-shadow: 0 0 0 2px #fff; }
+.h-qprog { height: 6px; margin: 0 2px 6px; border-radius: 999px; background: #f2e6c8; overflow: hidden; }
+.h-qprog i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f6b70a, #fb923c); transition: width 1s var(--pc-ease); }
+.h-q { display: flex; align-items: center; gap: 10px; padding: 8px 2px; }
+.h-q + .h-q { border-top: 1.5px dashed #f2e6c8; }
+.h-q-ic { position: relative; width: 48px; height: 48px; flex-shrink: 0; border-radius: 15px; display: grid; place-items: center; background: linear-gradient(145deg, #fff8e1, #fff3c4); box-shadow: inset 0 0 0 2px #f6e2b0; }
+.h-q-ic img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .2)); }
+.h-q-ok { position: absolute; right: -4px; bottom: -4px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: #fff; background: var(--pc-green); box-shadow: 0 0 0 2px #fff; animation: pcBadgePop .5s var(--pc-ease); }
+.h-q-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.h-q-tx b { font-family: var(--pc-font); font-size: 14.5px; font-weight: 600; line-height: 1.1; }
+.h-q-hot { font-style: normal; padding: 0 6px; border-radius: 999px; font-family: 'Nunito', sans-serif; font-size: 10px; font-weight: 900; color: #4a3000; background: #ffd54f; animation: hFloat 1.6s ease-in-out infinite; display: inline-block; }
+.h-q-bar { height: 8px; border-radius: 999px; background: #edf2e6; overflow: hidden; }
+.h-q-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4ade80, #16a34a); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .1); }
+.h-q.done .h-q-bar i { background: linear-gradient(90deg, #ffd54f, #f6b70a); }
+.h-q-tx small { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; color: var(--pc-muted); }
+.h-q-rew { display: inline-flex; align-items: center; gap: 2px; color: #8a5a00; }
+.h-q-rew img { width: 14px; height: 14px; object-fit: contain; }
+.h-q .h-btn { flex-shrink: 0; min-width: 64px; }
+.h-q.done .h-q-tx b { color: var(--pc-muted); }
+
+/* Menu cepat: slot inventori */
+.h-menu { background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 10px 24px rgba(120, 70, 10, .1); }
+.h-tile-ic {
+  background: radial-gradient(circle at 50% 35%, #ffffff 0%, #fff6dc 70%) !important; border-radius: 18px;
+  box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c, 0 8px 12px rgba(120, 70, 10, .12);
+}
+.h-tile-ic img { width: 46px; height: 46px; transition: transform .35s var(--pc-ease); }
+.h-tile:hover .h-tile-ic img { transform: translateY(-4px) rotate(-8deg) scale(1.1); }
+.h-tile:active .h-tile-ic { transform: translateY(3px) scale(.9); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
+.h-tile span { color: #5a4318; }
+
+/* Ikon 3D di kartu story & modal */
+.h-slide-ic { background: rgba(255, 255, 255, .9); box-shadow: 0 6px 14px rgba(0, 0, 0, .15); }
+.h-slide-ic img { width: 50px; height: 50px; object-fit: contain; }
+.h-modal-ic.dark { background: linear-gradient(160deg, #fff, #fff3c4); }
+
+@media (prefers-reduced-motion: reduce) { .h-xp i, .h-streak img, .h-chest img, .h-q-hot, .h-guide-ic img { animation: none !important; } }
+</style>
 
 <?php
   $ic3d = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png';
@@ -544,12 +692,25 @@ require dirname(__DIR__) . '/partials/header.php';
     </div>
 
     <?php if ($H['show_user_bar']): ?>
-    <div class="h-greet">
-      <span class="h-ava"><?= htmlspecialchars(mb_strtoupper(mb_substr((string)($user['username'] ?? 'P'), 0, 1))) ?></span>
-      <span><b><?= $is_guest ? 'Halo, Petani!' : 'Halo, ' . htmlspecialchars((string)$user['username']) ?></b><small><i class="ph-fill ph-crown-simple"></i><?= htmlspecialchars((string)$membership_name) ?></small></span>
+    <div class="h-player">
+      <span class="h-ava-wrap">
+        <span class="h-ava"><?= htmlspecialchars(mb_strtoupper(mb_substr((string)($user['username'] ?? 'P'), 0, 1))) ?></span>
+        <?php if (!$is_guest): ?><em class="h-lv">Lv <?= $farm_lv['level'] ?></em><?php endif; ?>
+      </span>
+      <span class="h-pinfo">
+        <b><?= $is_guest ? 'Halo, Petani!' : htmlspecialchars((string)$user['username']) ?></b>
+        <small><i class="ph-fill ph-crown-simple"></i><?= htmlspecialchars((string)$membership_name) ?></small>
+        <?php if (!$is_guest): ?>
+        <span class="h-xp" title="XP petani"><i style="width:<?= $xp_pct ?>%"></i></span>
+        <span class="h-xp-tx"><?= $farm_lv['xp'] - $farm_lv['xp_cur'] ?>/<?= $xp_span ?> XP</span>
+        <?php endif; ?>
+      </span>
     </div>
-    <?php if ($H['show_today_stats'] && !$is_guest): ?>
-    <span class="h-today"><i class="ph-bold ph-trend-up"></i>+Rp <?= $rp0($today_watch_earned) ?> hari ini</span>
+    <?php if (!$is_guest): ?>
+    <div class="h-badges">
+      <?php if ($streak > 0): ?><span class="h-streak"><img src="<?= $ic3d('flame') ?>" alt="" width="22" height="22"><?= $streak ?> hari</span><?php endif; ?>
+      <?php if ($H['show_today_stats']): ?><span class="h-today"><i class="ph-bold ph-trend-up"></i>+Rp <?= $rp0($today_watch_earned) ?></span><?php endif; ?>
+    </div>
     <?php endif; ?>
     <?php endif; ?>
 
@@ -571,15 +732,15 @@ require dirname(__DIR__) . '/partials/header.php';
         <?php if ($H['show_quick_actions']): ?>
         <div class="h-acts">
           <?php if ($is_guest): ?>
-          <a href="/register" class="h-act a1"><span class="h-act-ic rp"><i class="ph-fill ph-user-plus"></i></span>Daftar</a>
-          <a href="/login" class="h-act a2"><span class="h-act-ic rp"><i class="ph-fill ph-sign-in"></i></span>Masuk</a>
-          <a href="/panduan" class="h-act a4"><span class="h-act-ic rp"><i class="ph-fill ph-compass"></i></span>Panduan</a>
-          <a href="/farm" class="h-act a3"><span class="h-act-ic rp"><i class="ph-fill ph-plant"></i></span>Sawah</a>
+          <a href="/register" class="h-act a1"><span class="h-act-ic rp"><img src="<?= $ic3d('referral') ?>" alt="" width="40" height="40"></span>Daftar</a>
+          <a href="/login" class="h-act a2"><span class="h-act-ic rp"><img src="<?= $ic3d('lock') ?>" alt="" width="40" height="40"></span>Masuk</a>
+          <a href="/panduan" class="h-act a4"><span class="h-act-ic rp"><img src="<?= $ic3d('compass') ?>" alt="" width="40" height="40"></span>Panduan</a>
+          <a href="/farm" class="h-act a3"><span class="h-act-ic rp"><img src="<?= $ic3d('padi') ?>" alt="" width="40" height="40"></span>Sawah</a>
           <?php else: ?>
-          <a href="/withdraw" class="h-act a1" id="tour-btn-withdraw"><span class="h-act-ic rp"><i class="ph-fill ph-hand-coins"></i></span>Tarik</a>
-          <a href="/deposit" class="h-act a2"><span class="h-act-ic rp"><i class="ph-fill ph-wallet"></i></span>Isi Kas</a>
-          <a href="/missions" class="h-act a3"><span class="h-act-ic rp"><i class="ph-fill ph-target"></i></span>Misi</a>
-          <a href="/history" class="h-act a4"><span class="h-act-ic rp"><i class="ph-fill ph-receipt"></i></span>Riwayat</a>
+          <a href="/withdraw" class="h-act a1" id="tour-btn-withdraw"><span class="h-act-ic rp"><img src="<?= $ic3d('moneybag') ?>" alt="" width="40" height="40"></span>Tarik</a>
+          <a href="/deposit" class="h-act a2"><span class="h-act-ic rp"><img src="<?= $ic3d('piggy') ?>" alt="" width="40" height="40"></span>Isi Kas</a>
+          <a href="/missions" class="h-act a3"><span class="h-act-ic rp"><img src="<?= $ic3d('missions') ?>" alt="" width="40" height="40"></span>Misi</a>
+          <a href="/history" class="h-act a4"><span class="h-act-ic rp"><img src="<?= $ic3d('receipt') ?>" alt="" width="40" height="40"></span>Riwayat</a>
           <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -596,53 +757,50 @@ require dirname(__DIR__) . '/partials/header.php';
   ?>
   <?php if ($ticks): $tickHtml = implode('<span aria-hidden="true">•</span>', array_map(fn($t) => '<span>' . $t . '</span>', $ticks)); ?>
   <a href="/notifications" class="h-ticker" data-rv style="--d:.05s">
-    <span class="h-ticker-ic"><i class="ph-fill ph-megaphone-simple"></i></span>
+    <span class="h-ticker-ic"><img src="<?= $ic3d('bell') ?>" alt="" width="30" height="30"></span>
     <span class="h-ticker-mask"><span class="h-ticker-track" style="--dur:<?= max(14, (int)(mb_strlen(strip_tags($tickHtml)) / 5)) ?>s"><?= $tickHtml ?><span aria-hidden="true">•</span><?= $tickHtml ?></span></span>
   </a>
   <?php endif; ?>
 
-  <!-- 3. QUEST: Nonton & Sawah -->
-  <?php $q_watch = !empty($H['show_watch_cta']); $q_farm = !empty($FS['enabled']); ?>
-  <?php if ($q_watch || $q_farm): ?>
-  <div class="h-quests<?= $q_watch && $q_farm ? '' : ' one' ?>">
-    <?php if ($q_watch): ?>
-    <section class="h-quest watch" id="tour-video-mission" data-rv style="--d:.08s">
-      <div class="h-quest-top">
-        <?php if ($H['show_watch_mission']): ?>
-        <div class="h-ring" data-ring="<?= $watch_pct ?>"><svg viewBox="0 0 60 60" aria-hidden="true"><circle class="bg" cx="30" cy="30" r="24"/><circle class="fg" cx="30" cy="30" r="24"/></svg><span><?= $watch_today ?>/<?= $watch_limit ?></span></div>
-        <?php else: ?><span class="h-quest-tag">Harian</span><?php endif; ?>
-        <span class="h-quest-tag"><i class="ph-fill ph-film-strip"></i></span>
-      </div>
-      <h3>Nonton video</h3>
-      <small><?= $watch_remaining > 0 ? $watch_remaining . ' video berbayar tersisa hari ini' : 'Kuota penuh, lanjut besok' ?></small>
-      <a href="/videos" class="h-btn rp" id="tour-btn-watch"><i class="ph-fill ph-play"></i>Nonton</a>
-    </section>
-    <?php endif; ?>
-    <?php if ($q_farm): ?>
-    <section class="h-quest farm" id="tour-sidejob-card" data-rv style="--d:.14s">
-      <div class="h-quest-top">
-        <div class="h-quest-art"><img class="q1" src="<?= $ic3d('padi') ?>" alt="" width="52" height="52"><img class="q2" src="<?= $ic3d('basket') ?>" alt="" width="30" height="30"></div>
-        <span class="h-quest-tag"><?= htmlspecialchars((string)($FS['badge'] ?: 'Game')) ?></span>
-      </div>
-      <h3><?= htmlspecialchars((string)($FS['title'] ?: 'Sawah PanenCuan')) ?></h3>
-      <?php if ($farm_summary && $farm_summary['ready_count'] > 0): ?>
-      <span class="h-ready"><i class="ph-fill ph-sparkle"></i><?= $farm_summary['ready_count'] ?> siap panen!</span>
-      <?php elseif ($farm_summary && $farm_summary['growing_count'] > 0): ?>
-      <small><?= $farm_summary['growing_count'] ?> petak sedang tumbuh<?= $farm_summary['harvest_count'] ? ' · ' . $farm_summary['harvest_count'] . ' di lumbung' : '' ?></small>
+  <!-- 3. PAPAN MISI HARIAN (#tour-video-mission, #tour-sidejob-card) -->
+  <?php if ($daily_quests): $all_done = $quests_done === count($daily_quests); ?>
+  <section class="h-qboard" data-rv style="--d:.06s">
+    <div class="h-qhead">
+      <span class="h-ribbon">Misi Harian</span>
+      <a href="/missions" class="h-chest<?= $all_done ? ' open' : '' ?>" aria-label="Misi harian <?= $quests_done ?> dari <?= count($daily_quests) ?> selesai">
+        <img src="<?= $ic3d($all_done ? 'chest_open' : 'chest') ?>" alt="" width="54" height="54"><em><?= $quests_done ?>/<?= count($daily_quests) ?></em>
+      </a>
+    </div>
+    <div class="h-qprog"><i style="width:<?= (int)round($quests_done / count($daily_quests) * 100) ?>%"></i></div>
+    <?php foreach ($daily_quests as $qi => [$qk, $qic, $qt, $qp, $qn, $qact, $qrew]):
+      $qdone = $qp >= $qn; $qpct = min(100, (int)round($qp / $qn * 100));
+      $rowId = $qk === 'watch' ? ' id="tour-video-mission"' : ($qk === 'farm' ? ' id="tour-sidejob-card"' : '');
+      $btnId = $qk === 'watch' ? ' id="tour-btn-watch"' : '';
+      $btnTx = $qdone ? ($qk === 'farm' ? 'Lagi' : 'Lihat') : ($qk === 'checkin' ? 'Klaim' : ($qk === 'farm' && $farm_summary && $farm_summary['ready_count'] > 0 ? 'Panen' : 'Gas!'));
+      $btnCls = $qdone ? 'h-btn sm soft' : ($qk === 'checkin' ? 'h-btn sm gold' : 'h-btn sm');
+    ?>
+    <div class="h-q<?= $qdone ? ' done' : '' ?>"<?= $rowId ?> data-rv style="--d:<?= number_format(0.1 + $qi * 0.06, 2) ?>s">
+      <span class="h-q-ic"><img src="<?= $ic3d($qic) ?>" alt="" width="40" height="40"><?php if ($qdone): ?><span class="h-q-ok"><i class="ph-bold ph-check"></i></span><?php endif; ?></span>
+      <span class="h-q-tx">
+        <b><?= $qt ?><?php if ($qk === 'farm' && $farm_summary && $farm_summary['ready_count'] > 0): ?> <em class="h-q-hot"><?= $farm_summary['ready_count'] ?> siap!</em><?php endif; ?></b>
+        <span class="h-q-bar"><i style="width:<?= $qpct ?>%"></i></span>
+        <small><?= $qp ?>/<?= $qn ?> · <span class="h-q-rew"><img src="<?= $ic3d('coins') ?>" alt="" width="14" height="14"><?= $qrew ?></span></small>
+      </span>
+      <?php if (str_starts_with($qact, 'js:')): ?>
+      <button type="button" class="<?= $btnCls ?> rp" onclick="<?= substr($qact, 3) ?>"<?= $btnId ?>><?= $btnTx ?></button>
       <?php else: ?>
-      <small><?= htmlspecialchars(mb_strimwidth((string)($FS['desc'] ?: 'Tanam, panen, jual jadi saldo.'), 0, 60, '…')) ?></small>
+      <a href="<?= htmlspecialchars($qact) ?>" class="<?= $btnCls ?> rp"<?= $btnId ?>><?= $btnTx ?></a>
       <?php endif; ?>
-      <a href="<?= htmlspecialchars((string)($FS['url'] ?: '/farm')) ?>" class="h-btn rp"><?= $farm_summary && $farm_summary['ready_count'] > 0 ? 'Panen' : 'Bertani' ?></a>
-    </section>
-    <?php endif; ?>
-  </div>
+    </div>
+    <?php endforeach; ?>
+  </section>
   <?php endif; ?>
 
   <!-- 4. STORY CAROUSEL: Survei, Threads, Promo -->
   <?php
     $slides = [];
-    if (!empty($SB['enabled'])) $slides[] = ['sv', '/survey', '', '<i class="ph-fill ph-clipboard-text"></i>', $SB['title'], $SB['desc'], $SB['badge']];
-    if (!empty($TC['enabled'])) $slides[] = ['th', '', 'openThreadsPromoModal()', '<i class="ph-bold ph-threads-logo"></i>', $TC['title'], $TC['desc'], $TC['badge_cuan']];
+    if (!empty($SB['enabled'])) $slides[] = ['sv', '/survey', '', '<img src="' . $ic3d('survey') . '" alt="">', $SB['title'], $SB['desc'], $SB['badge']];
+    if (!empty($TC['enabled'])) $slides[] = ['th', '', 'openThreadsPromoModal()', '<img src="' . $ic3d('megaphone') . '" alt="">', $TC['title'], $TC['desc'], $TC['badge_cuan']];
     if (!empty($PB['enabled']) || !empty($FP['enabled'])) $slides[] = ['pr', '', 'openPromoHubModal()', '<img src="' . $ic3d('coins') . '" alt="">', $PB['title'] ?: ($FP['title'] ?? 'Ajak teman'), $PB['desc'] ?: ($FP['sub'] ?? ''), $PB['badge'] ?? ''];
   ?>
   <?php if ($slides): ?>
@@ -663,7 +821,18 @@ require dirname(__DIR__) . '/partials/header.php';
   <!-- 5. MENU CEPAT (#tour-bento-grid) -->
   <?php
     $tiles = array_values(array_filter((array)($cms['bento']['tiles'] ?? []), fn($t) => !empty($t['enabled']) && !in_array($t['id'] ?? '', ['fishing', 'farm', 'watch'], true)));
-    $tile3d = ['redeem' => 'basket', 'upgrade' => 'coins', 'referral' => 'seed', 'checkin' => 'barn'];
+    $tile3d = ['watch' => 'watch', 'threads' => 'megaphone', 'survey' => 'survey', 'checkin' => 'checkin', 'missions' => 'missions', 'referral' => 'referral',
+               'upgrade' => 'upgrade', 'redeem' => 'redeem', 'global_chat' => 'chat', 'farm' => 'padi'];
+    $iconFor = static function (array $t) use ($tile3d): string {
+        $id = (string)($t['id'] ?? ''); $ph = (string)($t['icon'] ?? '');
+        if (isset($tile3d[$id])) return $tile3d[$id];
+        foreach (['chat' => 'chat', 'gift' => 'redeem', 'crown' => 'upgrade', 'users' => 'referral', 'target' => 'missions', 'calendar' => 'checkin',
+                  'clipboard' => 'survey', 'film' => 'watch', 'play' => 'watch', 'megaphone' => 'megaphone', 'threads' => 'megaphone', 'bell' => 'bell',
+                  'compass' => 'compass', 'wallet' => 'piggy', 'coin' => 'coins', 'bank' => 'moneybag', 'receipt' => 'receipt', 'plant' => 'padi'] as $k => $v) {
+            if (str_contains($ph, $k)) return $v;
+        }
+        return 'star';
+    };
   ?>
   <?php if (!empty($cms['bento']['show_section']) && $tiles): ?>
   <div class="h-sec" data-rv><b><img src="<?= $ic3d('star') ?>" alt=""><?= htmlspecialchars((string)($cms['bento']['title'] ?: 'Menu cepat')) ?></b></div>
@@ -672,9 +841,7 @@ require dirname(__DIR__) . '/partials/header.php';
       $tid = (string)($t['id'] ?? '');
       $mark = '';
       if ($tid === 'checkin' && !$is_guest) $mark = $has_checked_in_today ? '<span class="h-ok"><i class="ph-bold ph-check"></i></span>' : '<span class="h-ping"></span>';
-      $ic = isset($tile3d[$tid])
-        ? '<span class="h-tile-ic soft"><img src="' . $ic3d($tile3d[$tid]) . '" alt="" width="42" height="42">' . $mark . '</span>'
-        : '<span class="h-tile-ic" style="background:' . htmlspecialchars((string)($t['bg'] ?? 'var(--pc-green)')) . '"><i class="ph-fill ' . htmlspecialchars((string)$t['icon']) . '"></i>' . $mark . '</span>';
+      $ic = '<span class="h-tile-ic"><img src="' . $ic3d($iconFor($t)) . '" alt="" width="46" height="46">' . $mark . '</span>';
       $rv = 'data-rv style="--d:' . number_format(0.05 * $ti, 2) . 's"';
     ?>
       <?php if ($tid === 'checkin'): ?>
@@ -691,7 +858,7 @@ require dirname(__DIR__) . '/partials/header.php';
   <!-- 6. TIKET UNDANGAN & PANDUAN -->
   <?php if ($H['show_ref_strip'] && !$is_guest && $ref_code !== '-'): ?>
   <button type="button" class="h-ticket rp" data-rv onclick="copyRefCode('<?= htmlspecialchars($ref_code) ?>')">
-    <img src="<?= $ic3d('seed') ?>" alt="" width="46" height="46">
+    <img src="<?= $ic3d('referral') ?>" alt="" width="46" height="46">
     <span class="h-ticket-tx"><small>Kode undangan kamu</small><b><?= htmlspecialchars($ref_code) ?></b></span>
     <span class="h-ticket-cta"><i class="ph-bold ph-copy"></i>Salin</span>
   </button>
@@ -699,7 +866,7 @@ require dirname(__DIR__) . '/partials/header.php';
   <?php if (!empty($cms['tour']['show_banner'])): ?>
   <div id="tour-invite-card" data-rv>
     <button type="button" class="h-guide rp" onclick="openTourSelectModal()">
-      <span class="h-guide-ic"><i class="ph-fill ph-compass"></i></span>
+      <span class="h-guide-ic"><img src="<?= $ic3d('compass') ?>" alt="" width="36" height="36"></span>
       <span><b><?= htmlspecialchars((string)$cms['tour']['title']) ?></b><small><?= htmlspecialchars((string)$cms['tour']['desc']) ?></small></span>
       <i class="ph-bold ph-caret-right" style="color:var(--pc-muted)"></i>
     </button>
@@ -764,7 +931,7 @@ require dirname(__DIR__) . '/partials/header.php';
 <div id="custom-announcement-popup" class="h-backdrop" onclick="if(event.target===this)closeCustomPopup()">
   <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-ann">
     <?= $confetti() ?>
-    <span class="h-modal-ic"><img src="<?= $ic3d('star') ?>" alt=""></span>
+    <span class="h-modal-ic"><img src="<?= $ic3d('megaphone') ?>" alt=""></span>
     <button type="button" class="h-modal-x" onclick="closeCustomPopup()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
     <h3 id="mdl-ann"><?= htmlspecialchars($popup_title) ?></h3>
     <p><?= nl2br(htmlspecialchars($popup_body)) ?></p>
@@ -796,7 +963,7 @@ require dirname(__DIR__) . '/partials/header.php';
 <!-- MODAL 3: PILIH PANDUAN -->
 <div id="tour-select-modal" class="h-backdrop" onclick="if(event.target===this)closeTourSelectModal()">
   <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-tour">
-    <span class="h-modal-ic"><i class="ph-fill ph-compass"></i></span>
+    <span class="h-modal-ic"><img src="<?= $ic3d('compass') ?>" alt=""></span>
     <button type="button" class="h-modal-x" onclick="closeTourSelectModal()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
     <h3 id="mdl-tour">Panduan 1 menit</h3>
     <p>Kami tunjukkan langkahnya satu per satu: kuota video, cara nonton, sampai tarik saldo.</p>
@@ -812,7 +979,7 @@ require dirname(__DIR__) . '/partials/header.php';
 <div id="threads-promo-modal" class="h-backdrop" onclick="if(event.target===this)closeThreadsPromoModal()">
   <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-th">
     <?= $confetti() ?>
-    <span class="h-modal-ic dark"><i class="ph-bold ph-threads-logo"></i></span>
+    <span class="h-modal-ic"><img src="<?= $ic3d('megaphone') ?>" alt=""></span>
     <button type="button" class="h-modal-x" onclick="closeThreadsPromoModal()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
     <h3 id="mdl-th">Raih s/d <?= format_rp($threads_step1_reward + $threads_step2_reward) ?> di Threads</h3>
     <div class="h-step"><span class="h-step-n">1</span><span>Posting tentang PanenCuan di Threads, dapat <em><?= format_rp($threads_step1_reward) ?></em>.</span></div>
@@ -840,7 +1007,7 @@ require dirname(__DIR__) . '/partials/header.php';
     </div>
     <?php if ($threads_campaign_enabled): ?>
     <button type="button" class="h-guide" style="box-shadow:none;background:var(--pc-soft);margin-bottom:8px" onclick="closePromoHubModal();setTimeout(openThreadsPromoModal,300)">
-      <span class="h-guide-ic" style="background:linear-gradient(135deg,#3f3f46,#111);animation:none"><i class="ph-bold ph-threads-logo"></i></span>
+      <span class="h-guide-ic"><img src="<?= $ic3d('megaphone') ?>" alt="" width="36" height="36"></span>
       <span><b>Event promosi Threads</b><small>Dibayar sampai <?= format_rp($threads_step1_reward + $threads_step2_reward) ?></small></span>
       <i class="ph-bold ph-caret-right" style="color:var(--pc-muted)"></i>
     </button>
