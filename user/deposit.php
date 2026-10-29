@@ -169,713 +169,160 @@ end_dep:
 $deps = $pdo->prepare("SELECT * FROM deposits WHERE user_id=? ORDER BY created_at DESC LIMIT 6");
 $deps->execute([$user['id']]); $deps = $deps->fetchAll();
 
-$pageTitle  = 'Isi Saldo  ';
+$pageTitle  = 'Isi Saldo';
 $activePage = 'deposit';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══════════════════════════════════════════════════════════════
-   COMPACT & MINIMALIST REEF DEPOSIT — NO EXCESSIVE SCROLLING
-   Tema: Living Coral Reef Fantasy + 3D Tactile Claymorphism (Sleek)
-   ══════════════════════════════════════════════════════════════ */
-.depo-stage {
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 4px 10px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  position: relative;
-  z-index: 1;
-}
+/* ══ DEPOSIT — Isi Lumbung · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.dp-bal { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 18px; background: rgba(255, 255, 255, .78); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 8px 18px rgba(120, 70, 10, .12); }
+.dp-bal .t { flex: 1; min-width: 0; }
+.dp-bal small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.dp-bal b { display: block; font-family: var(--pc-font); font-size: 24px; font-weight: 700; line-height: 1.1; color: #0369a1; }
+.dp-bal b em { font-style: normal; font-size: 14px; margin-right: 3px; }
+.dp-bal .g-chip { background: #fff3c4; color: #6b4300; }
 
-/* Claymorphism Compact Card */
-.depo-clay {
-  border: 2px solid #ffffff;
-  border-radius: 18px;
-  background: var(--reef-card);
-  box-shadow: var(--reef-clay-shadow);
-  position: relative;
-}
+.dp-flash { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; line-height: 1.4; }
+.dp-flash i { font-size: 17px; flex-shrink: 0; }
+.dp-flash.success { background: #dcfce7; color: #15803d; box-shadow: 0 0 0 2px #86efac; }
+.dp-flash.error { background: #ffe4e6; color: #9f1239; box-shadow: 0 0 0 2px #fecdd3; }
 
-/* Keyframes */
-@keyframes depoShake {
-  0%, 100% { transform: translateX(0); }
-  25%, 75% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-}
+/* Pilih metode */
+.dp-methods { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.depo-segment-btn { position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 10px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; font: inherit; color: var(--pc-ink);
+  background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .15s var(--pc-ease); }
+.depo-segment-btn:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
+.depo-segment-btn .ic { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0; }
+.depo-segment-btn .ic img { max-width: 80%; max-height: 80%; object-fit: contain; }
+.depo-segment-btn .t { min-width: 0; line-height: 1.2; }
+.depo-segment-btn b { display: block; font-family: var(--pc-font); font-size: 14.5px; font-weight: 700; }
+.depo-segment-btn small { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.depo-segment-btn.active { background: linear-gradient(180deg, #f0fdf4, #fff); box-shadow: inset 0 0 0 2.5px #22c55e, 0 4px 0 #16a34a, 0 8px 16px rgba(22, 163, 74, .2); }
+.depo-segment-btn.active::after { content: '\2713'; position: absolute; top: -6px; right: -4px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 900; color: #fff; background: #16a34a; box-shadow: 0 0 0 2px #fff; animation: gStamp .4s var(--pc-ease) both; }
 
-/* ── 1. COMPACT TOP NAV ── */
-.depo-compact-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 2px;
-}
-.depo-back-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  border: 1.5px solid #ffffff;
-  background: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--reef-ink);
-  font-size: 16px;
-  text-decoration: none;
-  box-shadow: 0 3px 8px rgba(30, 27, 46, 0.06), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.9);
-  transition: transform 0.12s ease;
-}
-.depo-back-btn:active { transform: scale(0.92); }
-.depo-nav-title {
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.depo-live-tag {
-  font-size: 10px;
-  font-weight: 800;
-  color: #065f46;
-  background: #d1fae5;
-  border: 1px solid #a7f3d0;
-  padding: 3px 8px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.depo-live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10b981;
-}
+/* Nominal */
+.depo-capsule-input { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 4px 6px 4px 14px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, inset 0 2px 5px rgba(120, 70, 10, .08); transition: box-shadow .2s; }
+.depo-capsule-input:focus-within { box-shadow: inset 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, .15); }
+.depo-prefix { font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: #15803d; }
+.depo-amount-field { flex: 1; min-width: 0; height: 44px; border: 0; outline: none; background: transparent; font-family: var(--pc-font); font-size: 24px; font-weight: 700; color: var(--pc-ink); -moz-appearance: textfield; }
+.depo-amount-field::-webkit-outer-spin-button, .depo-amount-field::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.depo-clear-btn { display: none; width: 30px; height: 30px; border: 0; border-radius: 10px; cursor: pointer; place-items: center; color: #9f1239; background: #ffe4e6; }
+.depo-clear-btn.show { display: grid; }
+#live-amount-preview { font-size: 11.5px; font-weight: 900; }
+.depo-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.depo-quick-chip { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 9px 0; border-radius: 14px; cursor: pointer; user-select: none; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #6b4300;
+  background: linear-gradient(180deg, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .12s; }
+.depo-quick-chip img { width: 22px; height: 22px; object-fit: contain; transition: transform .3s var(--pc-ease); }
+.depo-quick-chip:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
+.depo-quick-chip.active { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .5), 0 4px 0 #11622f, 0 8px 16px rgba(22, 163, 74, .3); }
+.depo-quick-chip.active img { transform: scale(1.2) rotate(-12deg); }
+.depo-u-pill { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 11px; border-radius: 13px; font-size: 11.5px; font-weight: 800; color: #8a5a00; background: #fff3c4; box-shadow: inset 0 0 0 1.5px #fcd34d; }
+.depo-u-pill i { color: #f59e0b; font-size: 15px; }
+@keyframes depoShake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
-/* ── 2. COMPACT SALDO VAULT BAR ── */
-.depo-vault-compact {
-  padding: 10px 14px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background:
-    radial-gradient(circle at 90% 20%, rgba(254, 240, 138, 0.4) 0, transparent 40%),
-    linear-gradient(155deg, #ffffff 0%, #fff7ed 50%, #ffedd5 100%);
-}
-.depo-vault-left {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.depo-vault-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #fb7185, #f43f5e);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  box-shadow: 0 4px 10px rgba(244, 63, 94, 0.25);
-}
-.depo-vault-meta-lbl {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--reef-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.depo-vault-val {
-  font-size: 19px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  line-height: 1.15;
-}
-.depo-vault-val .rp {
-  font-size: 13px;
-  color: var(--reef-sun-500);
-}
-.depo-vault-min-badge {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #92400e;
-  background: rgba(254, 243, 199, 0.85);
-  border: 1px solid #fde68a;
-  padding: 3px 8px;
-  border-radius: 8px;
-  text-align: right;
-  white-space: nowrap;
-}
+/* Form per metode */
+.depo-form-box { display: none; }
+.depo-form-box.active { display: block; animation: dpIn .35s var(--pc-out) both; }
+@keyframes dpIn { from { opacity: 0; transform: translateY(8px); } }
+.depo-action-btn.g-btn { width: 100%; min-height: 52px; margin-top: 12px; font-size: 16.5px; border-radius: 17px; }
+.depo-action-btn .qris-logo { height: 18px; width: auto; padding: 3px 6px; border-radius: 6px; background: #fff; }
+.depo-wallets-subline { margin-top: 8px; text-align: center; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.depo-bank-box { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px; border-radius: 16px; background: linear-gradient(135deg, #e0f2fe, #fff); box-shadow: inset 0 0 0 2px #bae6fd; }
+.depo-bank-meta { flex: 1; min-width: 0; }
+.depo-bank-badge-title { font-size: 10.5px; font-weight: 900; color: #0369a1; }
+.depo-bank-num-clean { font-family: var(--pc-font); font-size: 20px; font-weight: 700; letter-spacing: 1px; color: var(--pc-ink); }
+.depo-bank-holder-txt { font-size: 11px; font-weight: 800; color: var(--pc-muted); }
+.depo-copy-btn-mini.copied { --c1: #4ade80; --c2: #16a34a; }
+.depo-upload-compact { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; border-radius: 16px; background: #fffaf0; border: 2px dashed #e6c886; cursor: pointer; }
+.depo-upload-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; }
+.depo-upload-icon { width: 46px; height: 46px; flex-shrink: 0; border-radius: 14px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0; }
+.depo-upload-icon img { width: 34px; height: 34px; object-fit: contain; }
+.depo-proof-thumb { display: none; width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; object-fit: cover; box-shadow: 0 0 0 2px #fff, 0 3px 8px rgba(0, 0, 0, .15); }
+.depo-upload-txt { min-width: 0; }
+.depo-upload-main-txt { font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.depo-upload-sub-txt { font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
 
-/* Flash alerts */
-.depo-flash-compact {
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1.5px solid #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.depo-flash-compact.success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
-.depo-flash-compact.error   { background: #ffe4e6; color: #9f1239; border-color: #fecdd3; }
-
-/* ── 3. METHOD SWITCHER (COMPACT SEGMENTED CONTROL) ── */
-.depo-segment {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 4px;
-  border-radius: 16px;
-  border: 1.5px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(30, 27, 46, 0.05);
-}
-.depo-segment-btn {
-  border: 1.5px solid transparent;
-  background: transparent;
-  border-radius: 12px;
-  padding: 8px 6px;
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--reef-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  user-select: none;
-}
-.depo-segment-btn:active { transform: scale(0.97); }
-.depo-segment-btn.active {
-  background: #ffffff;
-  color: var(--reef-ink);
-  border-color: #ffffff;
-  box-shadow:
-    0 4px 12px rgba(244, 63, 94, 0.12),
-    inset 1px 1px 2px rgba(255, 255, 255, 0.95);
-}
-.depo-segment-btn.active.qris {
-  border-color: #34d399;
-  color: #065f46;
-}
-.depo-segment-btn.active.bank {
-  border-color: #fbbf24;
-  color: #92400e;
-}
-.depo-segment-badge {
-  font-size: 8.5px;
-  font-weight: 900;
-  padding: 2px 5px;
-  border-radius: 5px;
-}
-.depo-segment-badge.qris { background: #dcfce7; color: #15803d; }
-.depo-segment-badge.bank { background: #fef3c7; color: #b45309; }
-
-/* QRIS Official Logo Image in Options */
-.depo-seg-qris-img {
-  height: 20px;
-  max-width: 52px;
-  object-fit: contain;
-  vertical-align: middle;
-}
-.depo-btn-qris-img {
-  height: 20px;
-  max-width: 52px;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
-  vertical-align: middle;
-}
-
-/* ── 4. QUICK AMOUNT & INPUT COMPACT CARD ── */
-.depo-main-card {
-  padding: 12px 14px;
-}
-.depo-input-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.depo-label-title {
-  font-size: 11.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-}
-.depo-label-min {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--reef-muted);
-}
-
-/* Kapsul input nominal */
-.depo-capsule-input {
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  border: 2px solid #ffffff;
-  border-radius: 15px;
-  padding: 2px 8px 2px 12px;
-  box-shadow:
-    inset 1.5px 1.5px 4px rgba(0, 0, 0, 0.05),
-    0 3px 10px rgba(30, 27, 46, 0.04);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.depo-capsule-input:focus-within {
-  border-color: var(--reef-coral-400);
-  box-shadow:
-    0 0 0 3px rgba(244, 63, 94, 0.15),
-    inset 1.5px 1.5px 3px rgba(0, 0, 0, 0.04);
-}
-.depo-prefix {
-  font-size: 15px;
-  font-weight: 900;
-  color: var(--reef-coral-500);
-  margin-right: 6px;
-}
-.depo-amount-field {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 17px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  font-family: inherit;
-  padding: 6px 0;
-  min-width: 0;
-}
-.depo-amount-field::placeholder {
-  color: #cbd5e1;
-  font-weight: 800;
-}
-.depo-clear-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: none;
-  background: #f1f5f9;
-  color: #64748b;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  cursor: pointer;
-}
-.depo-clear-btn.show { display: flex; }
-
-/* Quick amount chips SIMPEL (Grid 3x2 ultra-compact, hanya angka bersih) */
-.depo-quick-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 8px;
-}
-.depo-quick-chip {
-  border: 1.5px solid #ffffff;
-  border-radius: 11px;
-  background: #ffffff;
-  padding: 6px 4px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(30, 27, 46, 0.04), inset 1px 1px 2px rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  transition: all 0.12s ease;
-  user-select: none;
-}
-.depo-quick-chip:hover {
-  transform: translateY(-1px);
-}
-.depo-quick-chip:active {
-  transform: scale(0.95);
-}
-.depo-quick-chip.active {
-  border-color: var(--reef-sun-500);
-  background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
-  color: #92400e;
-  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.22);
-}
-
-/* Unique code pill compact */
-.depo-u-pill {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 7px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
-  font-size: 10px;
-  font-weight: 800;
-  color: #92400e;
-}
-
-/* ── 5. FORM WRAPPERS (QRIS & BANK) ── */
-.depo-form-box {
-  display: none;
-  margin-top: 10px;
-}
-.depo-form-box.active {
-  display: block;
-}
-
-/* Compact Bank Details */
-.depo-bank-box {
-  background: #fffbeb;
-  border: 1.5px solid #fde68a;
-  border-radius: 14px;
-  padding: 8px 10px;
-  margin-bottom: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-.depo-bank-meta {
-  flex: 1;
-  min-width: 0;
-}
-.depo-bank-badge-title {
-  font-size: 10px;
-  font-weight: 900;
-  color: #92400e;
-}
-.depo-bank-num-clean {
-  font-size: 15px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  font-family: monospace, sans-serif;
-  letter-spacing: 0.5px;
-}
-.depo-bank-holder-txt {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #b45309;
-}
-.depo-copy-btn-mini {
-  border: none;
-  background: var(--reef-sun-500);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 900;
-  padding: 6px 10px;
-  border-radius: 9px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
-}
-.depo-copy-btn-mini.copied {
-  background: #10b981;
-}
-
-/* Compact Upload Struk Box */
-.depo-upload-compact {
-  border: 1.5px dashed #f43f5e;
-  border-radius: 12px;
-  background: #fff1f2;
-  padding: 8px 10px;
-  position: relative;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 9px;
-  transition: background 0.15s ease;
-}
-.depo-upload-compact:hover { background: #ffe4e6; }
-.depo-upload-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
-.depo-upload-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: #ffffff;
-  color: var(--reef-coral-500);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-.depo-upload-txt {
-  flex: 1;
-  min-width: 0;
-}
-.depo-upload-main-txt {
-  font-size: 11px;
-  font-weight: 900;
-  color: var(--reef-ink);
-}
-.depo-upload-sub-txt {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--reef-muted);
-}
-.depo-proof-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  object-fit: cover;
-  display: none;
-  border: 1px solid #fecdd3;
-}
-
-/* Compact Submit Button */
-.depo-action-btn {
-  width: 100%;
-  border: 2px solid #ffffff;
-  border-radius: 15px;
-  padding: 11px 14px;
-  font-size: 13.5px;
-  font-weight: 900;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  user-select: none;
-}
-.depo-action-btn:hover { transform: translateY(-1px); }
-.depo-action-btn:active { transform: scale(0.97); }
-.depo-action-btn.qris {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  box-shadow:
-    0 8px 18px rgba(16, 185, 129, 0.32),
-    inset 2px 2px 4px rgba(255, 255, 255, 0.5),
-    inset -2px -2px 5px rgba(4, 120, 87, 0.35);
-}
-.depo-action-btn.bank {
-  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 55%, #e11d48 100%);
-  box-shadow:
-    0 8px 18px rgba(244, 63, 94, 0.32),
-    inset 2px 2px 4px rgba(255, 255, 255, 0.5),
-    inset -2px -2px 5px rgba(159, 18, 57, 0.35);
-}
-
-/* Minimalist subtitle under QRIS button */
-.depo-wallets-subline {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--reef-muted);
-  text-align: center;
-  margin-top: 6px;
-}
-
-/* ── 6. COMPACT EXPEDITION HISTORY ── */
-.depo-history-card {
-  padding: 10px 12px;
-}
-.depo-history-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.depo-history-title {
-  font-size: 11.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.depo-history-link {
-  font-size: 10px;
-  font-weight: 900;
-  color: var(--reef-coral-500);
-  text-decoration: none;
-}
-.depo-history-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px dashed rgba(226, 232, 240, 0.8);
-}
-.depo-history-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-.depo-history-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.depo-history-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-.depo-history-icon.qris { background: #dcfce7; color: #15803d; }
-.depo-history-icon.bank { background: #fef3c7; color: #b45309; }
-.depo-history-amt {
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  line-height: 1.15;
-}
-.depo-history-date {
-  font-size: 9px;
-  font-weight: 800;
-  color: var(--reef-muted);
-}
-.depo-history-right {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.depo-badge-mini {
-  font-size: 8.5px;
-  font-weight: 900;
-  padding: 2px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-.depo-badge-mini.pending { background: #fef3c7; color: #92400e; }
-.depo-badge-mini.confirmed, .depo-badge-mini.approved { background: #d1fae5; color: #065f46; }
-.depo-badge-mini.rejected { background: #fee2e2; color: #991b1b; }
-.depo-pay-fast {
-  font-size: 9px;
-  font-weight: 900;
-  color: #ffffff;
-  background: #0284c7;
-  padding: 2px 6px;
-  border-radius: 6px;
-  text-decoration: none;
-}
+/* Riwayat */
+.dp-hist { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.dp-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0; }
+.dp-row .g-slot { width: 36px; height: 36px; border-radius: 12px; }
+.dp-row .t { flex: 1; min-width: 0; }
+.dp-row b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--pc-ink); }
+.dp-row small { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.dp-row .r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.depo-badge-mini { font-size: 11px; font-weight: 900; padding: 3px 9px; border-radius: 999px; }
+.depo-badge-mini.pending { color: #b45309; background: #fef3c7; }
+.depo-badge-mini.confirmed { color: #15803d; background: #dcfce7; }
+.depo-badge-mini.rejected, .depo-badge-mini.error { color: #be123c; background: #ffe4e6; }
 </style>
 
-<div class="depo-stage">
+<div class="g-page">
 
-  <!-- ── 1. COMPACT TOP NAV ── -->
-  <div class="depo-compact-nav">
-    <a href="/home" class="depo-back-btn" title="Kembali ke Beranda">
-      <i class="ph-bold ph-caret-left"></i>
-    </a>
-    <div class="depo-nav-title">
-      <i class="ph-fill ph-wallet" style="color:var(--reef-sun-500);font-size:15px;"></i>
-      <span>Isi Saldo Kas</span>
-    </div>
-    <div class="depo-live-tag">
-      <span class="depo-live-dot"></span>
-      <span>Proses Cepat</span>
-    </div>
-  </div>
-
-  <!-- ── 2. COMPACT SALDO VAULT BAR ── -->
-  <div class="depo-clay depo-vault-compact">
-    <div class="depo-vault-left">
-      <div class="depo-vault-icon">
-        <i class="ph-fill ph-wallet"></i>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Isi Saldo</h1>
+        <p><i class="ph-fill ph-lightning"></i> QRIS masuk otomatis dalam hitungan detik.</p>
       </div>
-      <div>
-        <div class="depo-vault-meta-lbl">Saldo Beli Kamu</div>
-        <div class="depo-vault-val">
-          <span class="rp">Rp</span> <?= number_format((float)$user['balance_dep'], 0, ',', '.') ?>
-        </div>
-      </div>
+      <div class="g-hero-art"><img src="/assets/img/icons3d/piggy.png" alt=""></div>
     </div>
-    <div class="depo-vault-min-badge">
-      Min. <?= format_rp($min_deposit) ?>
+    <div class="dp-bal">
+      <span class="g-slot sm"><img src="/assets/img/icons3d/coins.png" alt=""></span>
+      <div class="t"><small>Saldo Beli kamu</small><b><em>Rp</em><?= number_format((float)$user['balance_dep'], 0, ',', '.') ?></b></div>
+      <span class="g-chip">Min <?= format_rp($min_deposit) ?></span>
     </div>
-  </div>
+  </section>
 
-  <!-- Flash Messages -->
   <?php if ($flash): ?>
-  <div class="depo-flash-compact <?= $flashType === 'error' ? 'error' : 'success' ?>">
-    <i class="ph-bold ph-<?= $flashType === 'error' ? 'warning' : 'check' ?>"></i>
+  <div class="dp-flash <?= $flashType === 'error' ? 'error' : 'success' ?>" data-rv>
+    <i class="ph-fill ph-<?= $flashType === 'error' ? 'warning-circle' : 'check-circle' ?>"></i>
     <span><?= htmlspecialchars($flash) ?></span>
   </div>
   <?php endif; ?>
 
   <?php if (!$bank_enabled && (!$qris_enabled || empty($qris_raw))): ?>
-  <div class="depo-flash-compact error">
-    <i class="ph-bold ph-warning-octagon"></i>
-    <span>Metode deposit sedang offline. Hubungi admin ya.</span>
+  <div class="g-panel g-empty" data-rv>
+    <img src="/assets/img/icons3d/lock.png" alt="">
+    <b>Deposit sedang offline</b>
+    <p>Semua metode isi saldo ditutup sementara. Hubungi admin ya.</p>
   </div>
   <?php else: ?>
 
-  <!-- ── 3. METHOD SWITCHER (COMPACT SEGMENTED CONTROL) ── -->
-  <div class="depo-segment">
+  <!-- Metode -->
+  <div class="dp-methods" data-rv style="--d:.05s">
     <?php if ($qris_enabled && !empty($qris_raw)): ?>
-    <button type="button" class="depo-segment-btn qris active" id="seg-btn-qris" onclick="switchMethod('qris')">
-      <img src="/assets/qris.png?v=3" alt="QRIS" class="depo-seg-qris-img">
-      <span class="depo-segment-badge qris">⚡ Otomatis</span>
+    <button type="button" class="depo-segment-btn active" id="seg-btn-qris" onclick="switchMethod('qris')">
+      <span class="ic"><img src="/assets/qris.png?v=3" alt="QRIS"></span>
+      <span class="t"><b>QRIS</b><small>Otomatis · semua e-wallet</small></span>
     </button>
     <?php endif; ?>
-
     <?php if ($bank_enabled): ?>
-    <button type="button" class="depo-segment-btn bank <?= (!$qris_enabled || empty($qris_raw)) ? 'active' : '' ?>" id="seg-btn-bank" onclick="switchMethod('bank')">
-      <i class="ph-bold ph-bank"></i>
-      <span>Transfer Bank</span>
-      <span class="depo-segment-badge bank"><?= htmlspecialchars($bankName) ?></span>
+    <button type="button" class="depo-segment-btn <?= (!$qris_enabled || empty($qris_raw)) ? 'active' : '' ?>" id="seg-btn-bank" onclick="switchMethod('bank')">
+      <span class="ic"><img src="/assets/img/icons3d/barn.png" alt=""></span>
+      <span class="t"><b>Transfer</b><small><?= htmlspecialchars($bankName) ?> · cek manual</small></span>
     </button>
     <?php endif; ?>
   </div>
 
-  <!-- ── 4. QUICK AMOUNT & INPUT COMPACT CARD ── -->
-  <div class="depo-clay depo-main-card">
-    <div class="depo-input-head">
-      <label class="depo-label-title" for="master-amount-input">Nominal Isi Saldo</label>
-      <span class="depo-label-min" id="live-amount-preview">Pilih atau ketik nominal</span>
-    </div>
+  <!-- Nominal + form -->
+  <section class="g-panel" data-rv style="--d:.1s">
+    <div class="g-sec"><span class="g-ribbon gold"><img src="/assets/img/icons3d/coins.png" alt="">Nominal</span><span id="live-amount-preview" style="color:var(--pc-muted)">Pilih atau ketik nominal</span></div>
 
-    <!-- Capsule Input -->
     <div class="depo-capsule-input" id="master-amount-capsule">
       <span class="depo-prefix">Rp</span>
-      <input
-        type="number"
-        id="master-amount-input"
-        class="depo-amount-field"
-        min="<?= $min_deposit ?>"
-        step="any"
-        placeholder="<?= number_format($min_deposit, 0, '', '') ?>"
-        oninput="handleManualInput(this)"
-      >
-      <button type="button" class="depo-clear-btn" id="master-amount-clear" onclick="clearAmount()" title="Hapus">
-        <i class="ph-bold ph-x"></i>
-      </button>
+      <input type="number" id="master-amount-input" class="depo-amount-field" min="<?= $min_deposit ?>" step="any" placeholder="<?= number_format($min_deposit, 0, '', '') ?>" oninput="handleManualInput(this)" aria-label="Nominal isi saldo">
+      <button type="button" class="depo-clear-btn" id="master-amount-clear" onclick="clearAmount()" title="Hapus"><i class="ph-bold ph-x"></i></button>
     </div>
 
-    <!-- Quick Amount Chips SIMPEL (Hanya angka bersih: 10k, 25k, 50k, 100k, 200k, 500k) -->
     <div class="depo-quick-grid">
       <?php
-      $quick_list = [10000, 25000, 50000, 100000, 200000, 500000];
+      $quick_list = array_values(array_filter([10000, 25000, 50000, 100000, 200000, 500000], fn($q) => $q >= $min_deposit)) ?: [(int)$min_deposit];
       foreach ($quick_list as $q):
-        $fmt_label = ($q >= 1000000) ? ($q / 1000000) . ' Jt' : ($q / 1000) . ' Rb';
+        $fmt_label = ($q >= 1000000) ? ($q / 1000000) . 'jt' : ($q / 1000) . 'rb';
       ?>
-      <div class="depo-quick-chip" onclick="applyAmount(<?= $q ?>, this)">
-        <?= $fmt_label ?>
-      </div>
+      <div class="depo-quick-chip" onclick="applyAmount(<?= $q ?>, this)"><img src="/assets/img/icons3d/coins.png" alt=""><?= $fmt_label ?></div>
       <?php endforeach; ?>
     </div>
 
@@ -886,7 +333,6 @@ require dirname(__DIR__) . '/partials/header.php';
     </div>
     <?php endif; ?>
 
-    <!-- ── 5. FORM SUBMIT SECTION (QRIS) ── -->
     <?php if ($qris_enabled && !empty($qris_raw)): ?>
     <div class="depo-form-box active" id="form-box-qris">
       <form method="POST" id="form-qris-submit" onsubmit="return validateDepoSubmit(event, 'qris')">
@@ -894,33 +340,24 @@ require dirname(__DIR__) . '/partials/header.php';
         <input type="hidden" name="form_token" value="<?= htmlspecialchars($_form_token) ?>">
         <input type="hidden" name="action" value="submit_qris">
         <input type="hidden" name="amount" id="qris-hidden-amount" value="<?= (int)$min_deposit ?>">
-
-        <button type="submit" class="depo-action-btn qris no-dbl-submit" id="btn-submit-qris">
-          <img src="/assets/qris.png?v=3" alt="QRIS" class="depo-btn-qris-img">
-          <span>Lanjut Bayar via QRIS</span>
-          <i class="ph-bold ph-arrow-right"></i>
+        <button type="submit" class="depo-action-btn g-btn shine no-dbl-submit" id="btn-submit-qris">
+          <img src="/assets/qris.png?v=3" alt="QRIS" class="qris-logo"><span>Lanjut Bayar</span><i class="ph-bold ph-arrow-right"></i>
         </button>
       </form>
-      <div class="depo-wallets-subline">
-        DANA &bull; OVO &bull; GoPay &bull; ShopeePay &bull; BCA &bull; Mandiri &bull; BRI &bull; BNI
-      </div>
+      <div class="depo-wallets-subline">DANA · OVO · GoPay · ShopeePay · BCA · Mandiri · BRI · BNI</div>
     </div>
     <?php endif; ?>
 
-    <!-- ── 5. FORM SUBMIT SECTION (BANK TRANSFER) ── -->
     <?php if ($bank_enabled): ?>
     <div class="depo-form-box <?= (!$qris_enabled || empty($qris_raw)) ? 'active' : '' ?>" id="form-box-bank">
-      <!-- Rekening Resmi Mini Box -->
       <div class="depo-bank-box">
+        <span class="g-slot sm"><img src="/assets/img/icons3d/barn.png" alt=""></span>
         <div class="depo-bank-meta">
           <div class="depo-bank-badge-title">Bank <?= htmlspecialchars($bankName) ?></div>
           <div class="depo-bank-num-clean" id="bank-acc-display"><?= htmlspecialchars($bankAccount) ?></div>
           <div class="depo-bank-holder-txt">a.n <?= htmlspecialchars($bankHolder) ?></div>
         </div>
-        <button type="button" class="depo-copy-btn-mini" id="btn-copy-acc" onclick="copyAccNumber()">
-          <i class="ph-bold ph-copy"></i>
-          <span id="copy-btn-txt">Salin</span>
-        </button>
+        <button type="button" class="depo-copy-btn-mini g-btn sky sm" id="btn-copy-acc" onclick="copyAccNumber()"><i class="ph-bold ph-copy"></i><span id="copy-btn-txt">Salin</span></button>
       </div>
 
       <form method="POST" enctype="multipart/form-data" id="form-bank-submit" onsubmit="return validateDepoSubmit(event, 'bank')">
@@ -928,71 +365,44 @@ require dirname(__DIR__) . '/partials/header.php';
         <input type="hidden" name="form_token" value="<?= htmlspecialchars($_form_token) ?>">
         <input type="hidden" name="action" value="submit_bank">
         <input type="hidden" name="amount" id="bank-hidden-amount" value="<?= (int)$min_deposit ?>">
-
-        <!-- Dropzone Mini Struk -->
         <div class="depo-upload-compact">
           <input type="file" name="proof" id="proof-file-input" class="depo-upload-input" accept="image/*" required onchange="handleProofSelect(this)">
-          <div class="depo-upload-icon" id="proof-icon-box">
-            <i class="ph-bold ph-camera"></i>
-          </div>
+          <div class="depo-upload-icon" id="proof-icon-box"><img src="/assets/img/icons3d/receipt.png" alt=""></div>
           <img src="" alt="Bukti" id="proof-preview-img" class="depo-proof-thumb">
           <div class="depo-upload-txt">
             <div class="depo-upload-main-txt" id="proof-label-main">Sentuh untuk pilih foto struk</div>
             <div class="depo-upload-sub-txt" id="proof-label-sub">JPG, PNG, atau WEBP</div>
           </div>
         </div>
-
-        <button type="submit" class="depo-action-btn bank no-dbl-submit" id="btn-submit-bank">
-          <i class="ph-bold ph-paper-plane-tilt" style="font-size:16px;"></i>
-          <span>Kirim Bukti Transfer</span>
-        </button>
+        <button type="submit" class="depo-action-btn g-btn sky no-dbl-submit" id="btn-submit-bank"><i class="ph-bold ph-paper-plane-tilt"></i><span>Kirim Bukti Transfer</span></button>
       </form>
     </div>
     <?php endif; ?>
-
-  </div>
+  </section>
   <?php endif; ?>
 
-  <!-- ── 6. COMPACT EXPEDITION HISTORY ── -->
+  <!-- Riwayat -->
   <?php if (!empty($deps)): ?>
-  <div class="depo-clay depo-history-card">
-    <div class="depo-history-head">
-      <div class="depo-history-title">
-        <i class="ph-fill ph-clock-counter-clockwise" style="color:var(--reef-sun-500);"></i>
-        <span>Riwayat Terakhir</span>
-      </div>
-      <a href="/history" class="depo-history-link">Semua &rarr;</a>
-    </div>
-
-    <div>
-      <?php foreach (array_slice($deps, 0, 4) as $d): ?>
-        <?php
+  <section class="g-panel" data-rv style="--d:.15s">
+    <div class="g-sec"><span class="g-ribbon"><img src="/assets/img/icons3d/receipt.png" alt="">Riwayat</span><a href="/history" class="g-chip" style="text-decoration:none">Semua ›</a></div>
+    <div class="dp-hist">
+      <?php foreach (array_slice($deps, 0, 4) as $d):
         $st = strtolower($d['status'] ?? 'pending');
         $bclass = 'error';
         if ($st === 'pending') $bclass = 'pending';
         elseif ($st === 'confirmed' || $st === 'approved') $bclass = 'confirmed';
-        elseif ($st === 'rejected') $bclass = 'rejected';
-        ?>
-        <div class="depo-history-row">
-          <div class="depo-history-left">
-            <div class="depo-history-icon <?= $d['method'] === 'qris' ? 'qris' : 'bank' ?>">
-              <i class="<?= $d['method'] === 'qris' ? 'ph-bold ph-qr-code' : 'ph-bold ph-bank' ?>"></i>
-            </div>
-            <div>
-              <div class="depo-history-amt"><?= format_rp((float)$d['amount']) ?></div>
-              <div class="depo-history-date"><?= strtoupper($d['method']) ?> &bull; <?= date('d M, H:i', strtotime($d['created_at'])) ?></div>
-            </div>
-          </div>
-          <div class="depo-history-right">
+        elseif ($st === 'rejected') $bclass = 'rejected'; ?>
+        <div class="dp-row">
+          <span class="g-slot"><img src="<?= $d['method'] === 'qris' ? '/assets/qris.png?v=3' : '/assets/img/icons3d/barn.png' ?>" alt=""></span>
+          <div class="t"><b><?= format_rp((float)$d['amount']) ?></b><small><?= strtoupper($d['method']) ?> · <?= date('d M, H:i', strtotime($d['created_at'])) ?></small></div>
+          <div class="r">
             <span class="depo-badge-mini <?= $bclass ?>"><?= ucfirst($d['status']) ?></span>
-            <?php if ($st === 'pending' && $d['method'] === 'qris'): ?>
-            <a href="/pay?id=<?= $d['id'] ?>" class="depo-pay-fast">Bayar</a>
-            <?php endif; ?>
+            <?php if ($st === 'pending' && $d['method'] === 'qris'): ?><a href="/pay?id=<?= $d['id'] ?>" class="g-btn gold sm" style="min-height:28px;font-size:12px">Bayar</a><?php endif; ?>
           </div>
         </div>
       <?php endforeach; ?>
     </div>
-  </div>
+  </section>
   <?php endif; ?>
 
 </div>

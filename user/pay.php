@@ -132,671 +132,172 @@ require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══════════════════════════════════════════════════════════════
-   OCEAN REEF QRIS CASHIER — DERMAGA PEMBAYARAN KASIR SAMUDRA
-   Tema: Living Coral Reef Fantasy & 3D Tactile Claymorphism
-   ══════════════════════════════════════════════════════════════ */
+/* ══ PAY — Kasir QRIS · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.py-timer { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 4px 11px; border-radius: 999px; font-family: var(--pc-font); font-size: 14px; font-weight: 700; color: #fff; background: linear-gradient(180deg, #fb7185, #e11d48); box-shadow: 0 3px 0 #9f1239; }
+.py-timer i { animation: pyFlip 2s ease-in-out infinite; }
+@keyframes pyFlip { 0%, 40% { transform: none; } 50%, 90% { transform: rotate(180deg); } }
+.py-flash { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; line-height: 1.4; }
+.py-flash i { font-size: 17px; flex-shrink: 0; }
+.py-flash.success { background: #dcfce7; color: #15803d; box-shadow: 0 0 0 2px #86efac; }
+.py-flash.error { background: #ffe4e6; color: #9f1239; box-shadow: 0 0 0 2px #fecdd3; }
 
-.pay-reef-stage {
-  width: 100%;
-  max-width: 430px;
-  margin: 0 auto;
-  padding: 4px 10px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
-}
+/* Kartu hasil (sukses / ditolak / verifikasi) */
+.py-res { text-align: center; padding: 18px 16px 16px; }
+.py-res img { display: block; width: 92px; height: 92px; margin: 0 auto 4px; object-fit: contain; filter: drop-shadow(0 8px 10px rgba(120, 70, 10, .3)); animation: gBob 2.6s ease-in-out infinite; }
+.py-res h2 { margin: 0; font-family: var(--pc-font); font-size: 21px; font-weight: 700; color: var(--pc-ink); }
+.py-res p { margin: 5px 0 14px; font-size: 12.5px; font-weight: 700; line-height: 1.5; color: var(--pc-muted); }
+.py-res p strong { color: #15803d; }
 
-/* Claymorphism Base */
-.pay-clay {
-  border: 2px solid #ffffff;
-  border-radius: 22px;
-  background: var(--reef-card);
-  box-shadow: var(--reef-clay-shadow);
-  position: relative;
-  overflow: hidden;
-}
+/* Kartu QRIS */
+.py-amt { display: flex; align-items: center; gap: 10px; }
+.py-amt .t { flex: 1; min-width: 0; }
+.py-amt small { display: block; font-size: 11px; font-weight: 900; color: var(--pc-muted); }
+.py-amt b { display: block; font-family: var(--pc-font); font-size: 28px; font-weight: 700; line-height: 1.1; color: #15803d; text-shadow: 0 2px 0 #dcfce7; }
+.py-amt .u { display: block; margin-top: 2px; font-size: 11px; font-weight: 800; color: #b45309; }
+.pay-copy-btn.copied { --c1: #4ade80; --c2: #16a34a; }
+.py-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 10px; padding: 7px 10px; border-radius: 12px; background: #f0fdf4; font-size: 11.5px; font-weight: 800; color: #15803d; }
+.py-brand span { display: inline-flex; align-items: center; gap: 5px; }
+.py-brand img { height: 20px; width: auto; }
+.pay-qr-frame { position: relative; width: 236px; max-width: 78%; margin: 0 auto; padding: 12px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 3px #f6e2b0, 0 6px 0 #e6c886, 0 14px 26px rgba(120, 70, 10, .15); }
+.pay-qr-frame img { display: block; width: 100%; aspect-ratio: 1; border-radius: 10px; }
+.pay-qr-frame::before, .pay-qr-frame::after { content: ''; position: absolute; left: 12px; right: 12px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, #22c55e, transparent); box-shadow: 0 0 10px #22c55e; animation: pyScan 2.4s ease-in-out infinite; }
+.pay-qr-frame::after { display: none; }
+@keyframes pyScan { 0%, 100% { top: 14px; opacity: .2; } 50% { top: calc(100% - 17px); opacity: 1; } }
+.py-partners { margin-top: 12px; text-align: center; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.py-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
 
-/* ── 1. COMPACT TOP NAVIGATOR ── */
-.pay-top-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 2px;
-}
-.pay-back-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 1.5px solid #ffffff;
-  background: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--reef-ink);
-  font-size: 17px;
-  text-decoration: none;
-  box-shadow: 0 3px 8px rgba(30, 27, 46, 0.05), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.95);
-  transition: transform 0.12s ease;
-}
-.pay-back-btn:active { transform: scale(0.92); }
+/* Radar status */
+.pay-radar-strip { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px #bbf7d0, 0 3px 0 #86efac; }
+.pay-radar-left { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 11.5px; font-weight: 800; color: #15803d; }
+.pay-radar-left span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pay-radar-dot { position: relative; width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; background: #22c55e; }
+.pay-radar-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #22c55e; animation: pyPing 1.4s ease-out infinite; }
+@keyframes pyPing { to { transform: scale(3); opacity: 0; } }
+.ph-spin { animation: pySpin .8s linear infinite; display: inline-block; }
+@keyframes pySpin { to { transform: rotate(360deg); } }
 
-.pay-nav-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1.5px solid #ffffff;
-  padding: 5px 12px;
-  border-radius: 999px;
-  box-shadow: 0 3px 10px rgba(30, 27, 46, 0.04);
-  font-size: 12.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-}
+/* Upload bukti */
+.pay-up-card.pulse { animation: pyPulse 1s ease-in-out 3; }
+@keyframes pyPulse { 50% { box-shadow: 0 0 0 2px #f6e2b0, 0 0 0 8px rgba(246, 183, 10, .35); } }
+.py-up-head { display: flex; align-items: center; gap: 10px; }
+.py-up-head b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--pc-ink); }
+.py-up-head small { display: block; font-size: 11.5px; font-weight: 700; color: var(--pc-muted); }
+.pay-drop { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border-radius: 16px; cursor: pointer; background: #fffaf0; border: 2px dashed #e6c886; }
+.pay-drop img { width: 52px; height: 52px; flex-shrink: 0; border-radius: 12px; object-fit: cover; box-shadow: 0 0 0 2px #fff, 0 3px 8px rgba(0, 0, 0, .15); }
+.pay-drop-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pay-drop-txt i { font-size: 22px; color: #c98a00; }
+.pay-drop-txt b { font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pay-drop-txt small { font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.pay-btn-upload { margin-top: 10px; }
+.pay-btn-upload:disabled { --c1: #e5e7eb; --c2: #d1d5db; --lip: #9ca3af; --sh: transparent; --tx: #6b7280; text-shadow: none; filter: none; opacity: 1; }
 
-.pay-timer-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #fee2e2;
-  border: 1.5px solid #fca5a5;
-  color: #dc2626;
-  font-size: 10.5px;
-  font-weight: 900;
-  padding: 4px 10px;
-  border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
-}
-
-/* ── 2. OCEAN CARGO QRIS MAIN CARD ── */
-.pay-qris-card {
-  padding: 14px 16px;
-  position: relative;
-}
-
-/* Floating micro bubbles inside card */
-.pay-bubble {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.85), rgba(34, 211, 238, 0.25));
-  pointer-events: none;
-  animation: floatPayBubble 5s ease-in-out infinite;
-}
-.pay-bubble--1 { width: 14px; height: 14px; top: 12px; right: 16px; animation-duration: 5.5s; }
-.pay-bubble--2 { width: 18px; height: 18px; bottom: 25px; left: 14px; animation-duration: 6.5s; animation-delay: -2s; }
-@keyframes floatPayBubble {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-10px) scale(1.1); }
-}
-
-/* Amount Header Row */
-.pay-amount-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 60%, #ffedd5 100%);
-  border: 1.5px solid #fde68a;
-  border-radius: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
-}
-.pay-amount-meta {
-  display: flex;
-  flex-direction: column;
-}
-.pay-amount-lbl {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--reef-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-.pay-amount-val {
-  font-size: 21px;
-  font-weight: 900;
-  color: #b45309;
-  letter-spacing: -0.4px;
-  line-height: 1.15;
-}
-.pay-copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--reef-sun-500);
-  border: none;
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 900;
-  color: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35);
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-.pay-copy-btn:active { transform: scale(0.95); }
-.pay-copy-btn.copied {
-  background: #10b981;
-}
-
-/* Official QRIS Logo Bar */
-.pay-qris-brand-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #ffffff;
-  border: 1.5px solid #a7f3d0;
-  border-radius: 14px;
-  padding: 6px 12px;
-  margin-bottom: 12px;
-}
-.pay-qris-brand-txt {
-  font-size: 10.5px;
-  font-weight: 900;
-  color: #065f46;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.pay-qris-brand-img {
-  height: 26px;
-  max-width: 86px;
-  object-fit: contain;
-}
-
-/* QR Code Display Frame */
-.pay-qr-frame {
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 10px;
-  background: #ffffff;
-  border: 2.5px solid #ffffff;
-  border-radius: 20px;
-  padding: 10px;
-  box-shadow:
-    0 8px 24px rgba(30, 27, 46, 0.08),
-    inset 2px 2px 5px rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.pay-qr-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-/* Supported Apps List */
-.pay-partners-pill {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--reef-muted);
-  letter-spacing: 0.2px;
-  text-align: center;
-  margin-bottom: 12px;
-  line-height: 1.35;
-}
-
-/* Action Buttons Grid (Unduh & Perbesar) */
-.pay-actions-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.pay-btn-act {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 9px;
-  border-radius: 14px;
-  font-size: 11.5px;
-  font-weight: 900;
-  text-decoration: none;
-  border: 1.5px solid #ffffff;
-  transition: all 0.15s ease;
-  user-select: none;
-}
-.pay-btn-act:hover { transform: translateY(-1px); }
-.pay-btn-act:active { transform: scale(0.96); }
-.pay-btn-act.download {
-  background: linear-gradient(135deg, #fef08a 0%, #f59e0b 100%);
-  color: #78350f;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
-}
-.pay-btn-act.zoom {
-  background: linear-gradient(135deg, #a5f3fc 0%, #06b6d4 100%);
-  color: #083344;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
-}
-
-/* ── 3. REALTIME RADAR MONITOR STRIP ── */
-.pay-radar-strip {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1.5px solid #ffffff;
-  border-radius: 16px;
-  padding: 9px 12px;
-  box-shadow: 0 4px 14px rgba(30, 27, 46, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.pay-radar-left {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #065f46;
-}
-.pay-radar-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  animation: radarSonar 1.8s infinite;
-  flex-shrink: 0;
-}
-@keyframes radarSonar {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-.pay-btn-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #10b981;
-  color: #ffffff;
-  border: 1.5px solid #ffffff;
-  border-radius: 10px;
-  padding: 5px 11px;
-  font-size: 10.5px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
-  transition: transform 0.12s ease;
-}
-.pay-btn-check:active { transform: scale(0.95); }
-
-/* ── 4. OCEAN ACCORDIONS (CARA BAYAR & UPLOAD STRUK) ── */
-.pay-accordion {
-  background: #ffffff;
-  border: 1.5px solid #ffffff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 3px 10px rgba(30, 27, 46, 0.04);
-}
-.pay-acc-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px;
-  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
-  font-size: 11px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  cursor: pointer;
-  user-select: none;
-}
-.pay-acc-header i.ph-caret-down {
-  transition: transform 0.2s;
-  color: var(--reef-coral-500);
-}
-.pay-acc-header.open i.ph-caret-down {
-  transform: rotate(180deg);
-}
-.pay-acc-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.25s ease, padding 0.25s ease;
-  padding: 0 12px;
-}
-.pay-acc-content.open {
-  max-height: 260px;
-  padding: 10px 12px 12px;
-  border-top: 1px dashed rgba(251, 146, 60, 0.3);
-}
-
-.pay-step-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 7px;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--reef-ink);
-  line-height: 1.35;
-}
-.pay-step-row:last-child { margin-bottom: 0; }
-.pay-step-badge {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  background: #ffedd5;
-  color: #ea580c;
-  font-size: 9.5px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* Upload input */
-.pay-file-input {
-  width: 100%;
-  background: #fff1f2;
-  border: 1.5px dashed #f43f5e;
-  border-radius: 10px;
-  padding: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-.pay-file-input::file-selector-button {
-  background: #ffffff;
-  border: 1px solid #fecdd3;
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--reef-coral-500);
-  margin-right: 6px;
-  cursor: pointer;
-}
-.pay-btn-upload {
-  width: 100%;
-  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
-  border: 1.5px solid #ffffff;
-  border-radius: 12px;
-  padding: 8px;
-  font-size: 11.5px;
-  font-weight: 900;
-  color: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(244, 63, 94, 0.25);
-  font-family: inherit;
-}
-
-/* ── Kartu upload bukti (mudah dilihat & ditekan) ── */
-.pay-up-card { padding: 13px 14px 14px; border-color: #fecdd3; background: linear-gradient(160deg, #fff1f2 0%, #ffffff 55%); }
-.pay-up-card.pulse { animation: upPulse 1.2s ease 3; }
-@keyframes upPulse {
-  0%, 100% { box-shadow: var(--reef-clay-shadow); }
-  50% { box-shadow: 0 0 0 5px rgba(244, 63, 94, 0.28), var(--reef-clay-shadow); }
-}
-.pay-up-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.pay-up-ic { width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; background: linear-gradient(135deg, #fb7185, #e11d48); border: 2px solid #fff; box-shadow: 0 3px 0 #be123c; }
-.pay-up-title { font-size: 13px; font-weight: 900; color: var(--reef-ink); line-height: 1.2; }
-.pay-up-sub { font-size: 10.5px; font-weight: 700; color: var(--reef-muted); margin-top: 1px; }
-.pay-drop { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 96px; padding: 10px; border: 2px dashed #fda4af; border-radius: 16px; background: #fff; cursor: pointer; margin-bottom: 9px; text-align: center; transition: background .15s, border-color .15s; }
-.pay-drop:active { background: #fff1f2; border-color: #f43f5e; }
-.pay-drop img { width: 74px; height: 74px; object-fit: cover; border-radius: 10px; border: 2px solid #fff; box-shadow: 0 3px 10px rgba(30, 27, 46, .12); flex-shrink: 0; }
-.pay-drop-txt { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
-.pay-drop-txt i { font-size: 28px; color: #f43f5e; }
-.pay-drop-txt b { font-size: 12.5px; font-weight: 900; color: var(--reef-ink); word-break: break-all; }
-.pay-drop-txt small { font-size: 10px; font-weight: 700; color: var(--reef-muted); }
-.pay-drop img:not([hidden]) + .pay-drop-txt { align-items: flex-start; text-align: left; }
-.pay-up-card .pay-btn-upload { padding: 12px; font-size: 13px; border-radius: 14px; box-shadow: 0 4px 12px rgba(244, 63, 94, .3), 0 3px 0 #be123c; }
-.pay-up-card .pay-btn-upload:disabled { background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
-.pay-up-fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 60; display: inline-flex; align-items: center; gap: 6px; padding: 11px 18px; border-radius: 999px; border: 2px solid #fff; background: linear-gradient(135deg, #fb7185, #e11d48); color: #fff; font: 900 12.5px/1 inherit; font-family: inherit; box-shadow: 0 8px 20px rgba(225, 29, 72, .35), 0 3px 0 #be123c; cursor: pointer; white-space: nowrap; }
+/* Cara bayar */
+.pay-acc-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.pay-acc-header > i { font-size: 16px; color: #c98a00; transition: transform .3s var(--pc-ease); }
+.pay-acc-header.open > i { transform: rotate(180deg); }
+.pay-acc-content { display: none; flex-direction: column; gap: 8px; margin-top: 10px; }
+.pay-acc-content.open { display: flex; animation: pyIn .3s var(--pc-out) both; }
+@keyframes pyIn { from { opacity: 0; transform: translateY(-6px); } }
+.pay-step-row { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; font-weight: 700; line-height: 1.45; color: var(--pc-ink); }
+.pay-step-badge { width: 24px; height: 24px; flex-shrink: 0; border-radius: 8px; display: grid; place-items: center; font-family: var(--pc-font); font-size: 13px; font-weight: 700; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.pay-btn-cancel { width: 100%; padding: 11px; border: 0; border-radius: 14px; cursor: pointer; font-family: var(--pc-font); font-size: 14px; font-weight: 600; color: #be123c; background: transparent; box-shadow: inset 0 0 0 2px #fecdd3; }
+.pay-btn-cancel:disabled { color: #9ca3af; box-shadow: inset 0 0 0 2px #e5e7eb; cursor: not-allowed; }
+.pay-up-fab { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 600; transform: translateX(-50%); animation: pyFab 1.6s var(--pc-ease) infinite; }
+@keyframes pyFab { 50% { transform: translateX(-50%) translateY(-4px); } }
 .pay-up-fab[hidden] { display: none; }
-.pay-up-fab:active { transform: translateX(-50%) translateY(2px); }
-
-/* Cancel Link */
-.pay-btn-cancel {
-  background: none;
-  border: none;
-  font-size: 11px;
-  font-weight: 800;
-  color: #b91c1c;
-  cursor: pointer;
-  padding: 6px;
-  width: 100%;
-  text-align: center;
-  font-family: inherit;
-  text-decoration: underline;
-  transition: opacity 0.15s ease;
-}
-.pay-btn-cancel:disabled {
-  color: #94a3b8;
-  cursor: not-allowed;
-  text-decoration: none;
-}
-
-/* Flash alert */
-.pay-flash-box {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 800;
-  border: 1.5px solid #ffffff;
-}
-.pay-flash-box.error {
-  background: #ffe4e6;
-  color: #9f1239;
-  border-color: #fecdd3;
-}
-.pay-flash-box.success {
-  background: #d1fae5;
-  color: #065f46;
-  border-color: #a7f3d0;
-}
-
-/* Result Cards (Sukses & Menunggu Verifikasi) */
-.pay-result-card {
-  padding: 26px 18px;
-  text-align: center;
-}
-.pay-res-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  margin: 0 auto 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  border: 2px solid #ffffff;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-}
-.pay-res-icon.success {
-  background: linear-gradient(135deg, #a7f3d0, #10b981);
-  color: #ffffff;
-}
-.pay-res-icon.pending {
-  background: linear-gradient(135deg, #fef08a, #f59e0b);
-  color: #78350f;
-}
-.pay-res-title {
-  font-size: 17px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  margin-bottom: 3px;
-}
-.pay-res-desc {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--reef-muted);
-  line-height: 1.35;
-  margin-bottom: 16px;
-}
 </style>
 
-<div class="pay-reef-stage">
+<div class="g-page">
 
-  <!-- ── 1. COMPACT TOP NAVIGATOR ── -->
-  <div class="pay-top-nav">
-    <a href="/deposit" class="pay-back-btn" title="Kembali ke Deposit">
-      <i class="ph-bold ph-caret-left"></i>
-    </a>
-    <div class="pay-nav-title">
-      <i class="ph-fill ph-anchor" style="color:var(--reef-coral-500);"></i>
-      <span>Kasir QRIS #<?= $dep_id ?></span>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Kasir QRIS</h1>
+        <p>Deposit #<?= $dep_id ?><?= $dep['status'] === 'pending' ? ' · scan &amp; bayar sebelum waktu habis.' : '' ?></p>
+        <?php if ($dep['status'] === 'pending'): ?><span class="py-timer"><i class="ph-fill ph-hourglass-medium"></i><span id="exp-timer">--:--</span></span><?php endif; ?>
+      </div>
+      <div class="g-hero-art"><img src="/assets/img/icons3d/shop.png" alt=""></div>
     </div>
-    <div class="pay-timer-badge">
-      <i class="ph-bold ph-hourglass-medium"></i>
-      <span id="exp-timer"><?= $dep['status'] === 'pending' ? '--:--' : 'Tidak aktif' ?></span>
-    </div>
-  </div>
+  </section>
 
   <?php if ($flash): ?>
-  <div class="pay-flash-box <?= $flashType === 'error' ? 'error' : 'success' ?>">
-    <i class="ph-bold ph-<?= $flashType === 'error' ? 'warning-circle' : 'check-circle' ?>" style="font-size:16px;"></i>
+  <div class="py-flash <?= $flashType === 'error' ? 'error' : 'success' ?>" data-rv>
+    <i class="ph-fill ph-<?= $flashType === 'error' ? 'warning-circle' : 'check-circle' ?>"></i>
     <span><?= htmlspecialchars($flash) ?></span>
   </div>
   <?php endif; ?>
 
-  <!-- ── 2. STATE SUDAH TERKONFIRMASI ── -->
   <?php if ($dep['status'] === 'confirmed'): ?>
-  <div class="pay-clay pay-result-card">
-    <div class="pay-res-icon success">
-      <i class="ph-fill ph-check-circle"></i>
-    </div>
-    <div class="pay-res-title">Pembayaran Berhasil!</div>
-    <div class="pay-res-desc">
-      Saldo beli sebesar <strong><?= format_rp((float)$amount) ?></strong> telah masuk ke akunmu dan siap dibelanjakan.
-    </div>
-    <a href="/home" class="pay-btn-act" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:11px;font-size:13px;">
-      <i class="ph-bold ph-house"></i> Kembali ke Beranda
-    </a>
-  </div>
+  <section class="g-panel py-res" data-rv>
+    <img src="/assets/img/icons3d/chest_open.png" alt="">
+    <h2>Pembayaran berhasil!</h2>
+    <p>Saldo Beli <strong><?= format_rp((float)$amount) ?></strong> sudah masuk dan siap dipakai.</p>
+    <a href="/home" class="g-btn full"><i class="ph-bold ph-house"></i>Kembali ke Beranda</a>
+  </section>
 
-  <!-- ── 3. STATE DEPOSIT TIDAK AKTIF (EXPIRED / DITOLAK / DIBATALKAN) ── -->
   <?php elseif ($dep['status'] === 'rejected'): ?>
-  <div class="pay-clay pay-result-card">
-    <div class="pay-res-icon" style="background:linear-gradient(135deg,#fecdd3,#f43f5e);color:#fff;">
-      <i class="ph-fill ph-x-circle"></i>
-    </div>
-    <div class="pay-res-title">Deposit Tidak Aktif</div>
-    <div class="pay-res-desc">
-      <?= htmlspecialchars($dep['admin_note'] ?: 'Deposit ini sudah tidak menunggu pembayaran.') ?><br>
-      Jangan bayar ke QR deposit ini. Buat deposit baru ya.
-    </div>
-    <a href="/deposit" class="pay-btn-act download" style="padding:11px;font-size:13px;">
-      <i class="ph-bold ph-plus-circle"></i> Buat Deposit Baru
-    </a>
-  </div>
+  <section class="g-panel py-res" data-rv>
+    <img src="/assets/img/icons3d/lock.png" alt="">
+    <h2>Deposit tidak aktif</h2>
+    <p><?= htmlspecialchars($dep['admin_note'] ?: 'Deposit ini sudah tidak menunggu pembayaran.') ?><br>Jangan bayar ke QR ini. Buat deposit baru ya.</p>
+    <a href="/deposit" class="g-btn gold full"><i class="ph-bold ph-plus-circle"></i>Buat Deposit Baru</a>
+  </section>
 
-  <!-- ── 4. STATE BUKTI TERUPLOAD MENUNGGU VERIFIKASI ── -->
   <?php elseif ($dep['proof_image']): ?>
-  <div class="pay-clay pay-result-card">
-    <div class="pay-res-icon pending">
-      <i class="ph-fill ph-clock-countdown"></i>
-    </div>
-    <div class="pay-res-title">Bukti Sedang Diverifikasi</div>
-    <div class="pay-res-desc">
-      Struk pembayaran sudah kami terima dan sedang dicek admin. Halaman ini akan berpindah otomatis begitu saldo masuk.
-    </div>
-    <a href="/history" class="pay-btn-act download" style="padding:11px;font-size:13px;">
-      <i class="ph-bold ph-receipt"></i> Cek Riwayat Transaksi
-    </a>
-  </div>
-  <div class="pay-radar-strip">
-    <div class="pay-radar-left">
-      <div class="pay-radar-dot"></div>
-      <span id="radar-txt">Status diperbarui otomatis</span>
-    </div>
-    <button id="btn-check-status" onclick="manualCheckStatus()" class="pay-btn-check" type="button">
-      <i class="ph-bold ph-arrows-clockwise"></i>
-      <span>Cek Status</span>
-    </button>
+  <section class="g-panel py-res" data-rv>
+    <img src="/assets/img/icons3d/receipt.png" alt="">
+    <h2>Bukti sedang dicek</h2>
+    <p>Struk sudah kami terima dan sedang dicek admin. Halaman ini pindah otomatis begitu saldo masuk.</p>
+    <a href="/history" class="g-btn sky full"><i class="ph-bold ph-receipt"></i>Cek Riwayat Transaksi</a>
+  </section>
+  <div class="pay-radar-strip" data-rv style="--d:.05s">
+    <div class="pay-radar-left"><div class="pay-radar-dot"></div><span id="radar-txt">Status diperbarui otomatis</span></div>
+    <button id="btn-check-status" onclick="manualCheckStatus()" class="g-btn sm" type="button"><i class="ph-bold ph-arrows-clockwise"></i><span>Cek</span></button>
   </div>
 
-  <!-- ── 5. STATE UTAMA: MENUNGGU PEMBAYARAN QRIS ── -->
   <?php else: ?>
 
-  <div class="pay-clay pay-qris-card">
-    <div class="pay-bubble pay-bubble--1"></div>
-    <div class="pay-bubble pay-bubble--2"></div>
-
-    <div class="pay-amount-header">
-      <div class="pay-amount-meta">
-        <span class="pay-amount-lbl">Total Tagihan Pembayaran</span>
-        <span class="pay-amount-val"><?= format_rp((float)$amount) ?></span>
+  <section class="g-panel" data-rv style="--d:.04s">
+    <div class="py-amt">
+      <span class="g-slot"><img src="/assets/img/icons3d/coins.png" alt=""></span>
+      <div class="t">
+        <small>Total tagihan</small>
+        <b><?= format_rp((float)$amount) ?></b>
         <?php if (setting($pdo, 'depo_unique_code_enabled', '0') === '1'): ?>
-          <span style="font-size:9.5px;font-weight:800;color:#b45309;">Bayar persis sampai digit terakhir (sudah termasuk kode unik)</span>
+          <span class="u">Bayar persis sampai digit terakhir (termasuk kode unik)</span>
         <?php endif; ?>
       </div>
-      <button type="button" class="pay-copy-btn" id="btn-copy-amt" onclick="copyAmount()">
-        <i class="ph-bold ph-copy"></i>
-        <span id="copy-amt-txt">Salin</span>
-      </button>
+      <button type="button" class="pay-copy-btn g-btn gold sm" id="btn-copy-amt" onclick="copyAmount()"><i class="ph-bold ph-copy"></i><span id="copy-amt-txt">Salin</span></button>
     </div>
 
-    <div class="pay-qris-brand-bar">
-      <div class="pay-qris-brand-txt">
-        <i class="ph-fill ph-shield-check" style="font-size:16px;color:#10b981;"></i>
-        <span>Standar Pembayaran Nasional</span>
-      </div>
-      <img src="/assets/qris.png?v=3" alt="QRIS" class="pay-qris-brand-img">
-    </div>
+    <div class="py-brand"><span><i class="ph-fill ph-shield-check"></i>Standar Pembayaran Nasional</span><img src="/assets/qris.png?v=3" alt="QRIS"></div>
 
     <?php if ($qr_url): ?>
-    <div class="pay-qr-frame">
-      <img id="qr-img" src="<?= htmlspecialchars($qr_url) ?>" alt="QRIS Code">
-    </div>
-
-    <div class="pay-partners-pill">
-      DANA &bull; OVO &bull; GoPay &bull; ShopeePay &bull; BCA &bull; Mandiri &bull; BRI &bull; BNI
-    </div>
-
-    <div class="pay-actions-grid">
-      <a href="<?= htmlspecialchars($qr_dl_url) ?>" class="pay-btn-act download">
-        <i class="ph-bold ph-download-simple"></i>
-        <span>Unduh Gambar QR</span>
-      </a>
-      <a href="<?= htmlspecialchars($qr_url) ?>" target="_blank" class="pay-btn-act zoom">
-        <i class="ph-bold ph-arrows-out-simple"></i>
-        <span>Perbesar QR</span>
-      </a>
+    <div class="pay-qr-frame"><img id="qr-img" src="<?= htmlspecialchars($qr_url) ?>" alt="QRIS Code"></div>
+    <div class="py-partners">DANA · OVO · GoPay · ShopeePay · BCA · Mandiri · BRI · BNI</div>
+    <div class="py-acts">
+      <a href="<?= htmlspecialchars($qr_dl_url) ?>" class="g-btn sky sm"><i class="ph-bold ph-download-simple"></i>Unduh QR</a>
+      <a href="<?= htmlspecialchars($qr_url) ?>" target="_blank" rel="noopener" class="g-btn soft sm"><i class="ph-bold ph-arrows-out-simple"></i>Perbesar</a>
     </div>
     <?php else: ?>
-    <div style="font-size:11px;color:#dc2626;padding:12px;font-weight:800;text-align:center;">
-      <i class="ph-bold ph-warning-circle"></i> QRIS belum dikonfigurasi. Hubungi Admin.
-    </div>
+    <div class="py-flash error"><i class="ph-fill ph-warning-circle"></i><span>QRIS belum dikonfigurasi. Hubungi Admin.</span></div>
     <?php endif; ?>
+  </section>
+
+  <div class="pay-radar-strip" data-rv style="--d:.08s">
+    <div class="pay-radar-left"><div class="pay-radar-dot"></div><span id="radar-txt">Cek otomatis setiap 5 detik</span></div>
+    <button id="btn-check-status" onclick="manualCheckStatus()" class="g-btn sm" type="button"><i class="ph-bold ph-arrows-clockwise"></i><span>Cek</span></button>
   </div>
 
-  <div class="pay-radar-strip">
-    <div class="pay-radar-left">
-      <div class="pay-radar-dot"></div>
-      <span id="radar-txt">Cek otomatis setiap 5 detik</span>
-    </div>
-    <button id="btn-check-status" onclick="manualCheckStatus()" class="pay-btn-check" type="button">
-      <i class="ph-bold ph-arrows-clockwise"></i>
-      <span>Cek Status</span>
-    </button>
-  </div>
-
-  <!-- ── UPLOAD BUKTI: muncul tepat di bawah status, terbuka & mudah ditekan ── -->
   <?php
   $pending_secs = time() - $created_ts;
   $show_upload  = ($confirm_mode !== 'auto' || $pending_secs >= 300);
   ?>
-  <div class="pay-clay pay-up-card" id="upload-card" style="<?= $show_upload ? '' : 'display:none;' ?>">
-    <div class="pay-up-head">
-      <div class="pay-up-ic"><i class="ph-fill ph-receipt"></i></div>
-      <div>
-        <div class="pay-up-title">Sudah bayar tapi saldo belum masuk?</div>
-        <div class="pay-up-sub">Kirim screenshot bukti bayar, admin cek manual.</div>
-      </div>
+  <section class="g-panel pay-up-card" id="upload-card" style="<?= $show_upload ? '' : 'display:none;' ?>">
+    <div class="py-up-head">
+      <span class="g-slot"><img src="/assets/img/icons3d/receipt.png" alt=""></span>
+      <div><b>Sudah bayar, saldo belum masuk?</b><small>Kirim screenshot bukti bayar, admin cek manual.</small></div>
     </div>
     <form id="upload-form" method="POST" enctype="multipart/form-data">
       <?= csrf_field() ?>
@@ -805,51 +306,34 @@ require dirname(__DIR__) . '/partials/header.php';
         <input type="file" name="proof" id="proof-input" accept="image/*" required hidden>
         <img id="proof-preview" alt="" hidden>
         <span class="pay-drop-txt" id="drop-txt">
-          <i class="ph-bold ph-image-square"></i>
+          <i class="ph-fill ph-image-square"></i>
           <b>Pilih / foto bukti pembayaran</b>
           <small>JPG, PNG, atau WEBP</small>
         </span>
       </label>
-      <button type="submit" class="pay-btn-upload" id="btn-upload" disabled>
-        <i class="ph-bold ph-paper-plane-tilt"></i> <span>Kirim Bukti Pembayaran</span>
-      </button>
+      <button type="submit" class="pay-btn-upload g-btn full" id="btn-upload" disabled><i class="ph-bold ph-paper-plane-tilt"></i> <span>Kirim Bukti Pembayaran</span></button>
     </form>
-  </div>
+  </section>
 
-  <div class="pay-accordion">
+  <section class="g-panel" data-rv style="--d:.12s">
     <div class="pay-acc-header" onclick="toggleAcc('steps')" id="hdr-steps">
-      <span style="display:inline-flex;align-items:center;gap:6px;">
-        <i class="ph-fill ph-compass" style="color:var(--reef-coral-500);font-size:14px;"></i>
-        <span>Cara Pembayaran QRIS Cepat</span>
-      </span>
+      <span class="g-ribbon gold"><img src="/assets/img/icons3d/compass.png" alt="">Cara Bayar</span>
       <i class="ph-bold ph-caret-down"></i>
     </div>
     <div class="pay-acc-content" id="body-steps">
-      <div class="pay-step-row">
-        <div class="pay-step-badge">1</div>
-        <div>Buka m-Banking (BCA, Mandiri, BRI, BNI) atau E-Wallet (DANA, GoPay, OVO, ShopeePay).</div>
-      </div>
-      <div class="pay-step-row">
-        <div class="pay-step-badge">2</div>
-        <div>Pilih menu <strong>Scan QRIS</strong> dan arahkan kamera ke barcode di atas (atau pilih dari galeri).</div>
-      </div>
-      <div class="pay-step-row">
-        <div class="pay-step-badge">3</div>
-        <div>Konfirmasi pembayaran. Saldo beli akan masuk secara otomatis dalam hitungan detik!</div>
-      </div>
+      <div class="pay-step-row"><div class="pay-step-badge">1</div><div>Buka m-Banking (BCA, Mandiri, BRI, BNI) atau e-wallet (DANA, GoPay, OVO, ShopeePay).</div></div>
+      <div class="pay-step-row"><div class="pay-step-badge">2</div><div>Pilih menu <strong>Scan QRIS</strong>, arahkan kamera ke kode di atas (atau pilih dari galeri).</div></div>
+      <div class="pay-step-row"><div class="pay-step-badge">3</div><div>Konfirmasi pembayaran. Saldo Beli masuk otomatis dalam hitungan detik!</div></div>
     </div>
-  </div>
+  </section>
 
-  <form method="POST" style="margin: 4px 0 0;">
+  <form method="POST" style="margin:0" data-rv>
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="cancel_deposit">
     <button id="btn-cancel-dep" type="submit" class="pay-btn-cancel">Batalkan Deposit</button>
   </form>
 
-  <!-- Tombol melayang ke form upload (muncul bila form tidak terlihat di layar) -->
-  <button type="button" class="pay-up-fab" id="upload-fab" onclick="goUpload()" hidden>
-    <i class="ph-bold ph-upload-simple"></i> Upload Bukti Bayar
-  </button>
+  <button type="button" class="pay-up-fab g-btn gold" id="upload-fab" onclick="goUpload()" hidden><i class="ph-bold ph-upload-simple"></i>Upload Bukti Bayar</button>
   <?php endif; ?>
 
   <?php if ($dep['status'] === 'pending'): ?>
