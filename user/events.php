@@ -50,7 +50,7 @@ require dirname(__DIR__) . '/partials/header.php';
     text-decoration: none;
     transition: transform 0.1s, box-shadow 0.1s;
   " onmouseover="this.style.transform='translate(-1.5px, -1.5px)'; this.style.boxShadow='4px 4px 0 var(--ink)';" onmouseout="this.style.transform='none'; this.style.boxShadow='3px 3px 0 var(--ink)';">
-    🏠 Kembali ke Beranda
+    🏠 Kembali ke Home
   </a>
 </div>
 

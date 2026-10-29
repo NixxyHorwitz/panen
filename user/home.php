@@ -248,7 +248,7 @@ if (!empty($cms['farm_spotlight']['enabled'])) {
 }
 $quests_done = count(array_filter($daily_quests, fn($q) => $q[3] >= $q[4]));
 
-$pageTitle = 'Beranda';
+$pageTitle = 'Home';
 $activePage = 'home';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
@@ -725,7 +725,7 @@ require dirname(__DIR__) . '/partials/header.php';
           <div class="h-coins"><img class="k1" src="<?= $ic3d('coins') ?>" alt="" width="56" height="56"><img class="k2" src="<?= $ic3d('coins') ?>" alt="" width="30" height="30"></div>
         </div>
         <?php if (!$is_guest): ?>
-        <div class="h-dep">Saldo beli <b>Rp <?= $rp0((float)($user['balance_dep'] ?? 0)) ?></b><a href="/deposit" class="rp"><i class="ph-bold ph-plus"></i>Isi</a></div>
+        <div class="h-dep">Saldo beli <b>Rp <?= $rp0((float)($user['balance_dep'] ?? 0)) ?></b><a href="/deposit" class="rp"><i class="ph-bold ph-plus"></i>Deposit</a></div>
         <?php endif; ?>
         <?php endif; ?>
 
@@ -737,10 +737,10 @@ require dirname(__DIR__) . '/partials/header.php';
           <a href="/panduan" class="h-act a4"><span class="h-act-ic rp"><img src="<?= $ic3d('compass') ?>" alt="" width="40" height="40"></span>Panduan</a>
           <a href="/farm" class="h-act a3"><span class="h-act-ic rp"><img src="<?= $ic3d('padi') ?>" alt="" width="40" height="40"></span>Sawah</a>
           <?php else: ?>
-          <a href="/withdraw" class="h-act a1" id="tour-btn-withdraw"><span class="h-act-ic rp"><img src="<?= $ic3d('moneybag') ?>" alt="" width="40" height="40"></span>Tarik</a>
-          <a href="/deposit" class="h-act a2"><span class="h-act-ic rp"><img src="<?= $ic3d('piggy') ?>" alt="" width="40" height="40"></span>Isi Kas</a>
-          <a href="/missions" class="h-act a3"><span class="h-act-ic rp"><img src="<?= $ic3d('missions') ?>" alt="" width="40" height="40"></span>Misi</a>
-          <a href="/history" class="h-act a4"><span class="h-act-ic rp"><img src="<?= $ic3d('receipt') ?>" alt="" width="40" height="40"></span>Riwayat</a>
+          <a href="/withdraw" class="h-act a1" id="tour-btn-withdraw"><span class="h-act-ic rp"><img src="<?= $ic3d('moneybag') ?>" alt="" width="40" height="40"></span>Withdraw</a>
+          <a href="/deposit" class="h-act a2"><span class="h-act-ic rp"><img src="<?= $ic3d('piggy') ?>" alt="" width="40" height="40"></span>Deposit</a>
+          <a href="/missions" class="h-act a3"><span class="h-act-ic rp"><img src="<?= $ic3d('missions') ?>" alt="" width="40" height="40"></span>Quest</a>
+          <a href="/history" class="h-act a4"><span class="h-act-ic rp"><img src="<?= $ic3d('receipt') ?>" alt="" width="40" height="40"></span>Transaksi</a>
           <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -766,7 +766,7 @@ require dirname(__DIR__) . '/partials/header.php';
   <?php if ($daily_quests): $all_done = $quests_done === count($daily_quests); ?>
   <section class="h-qboard" data-rv style="--d:.06s">
     <div class="h-qhead">
-      <span class="h-ribbon">Misi Harian</span>
+      <span class="h-ribbon">Quest Harian</span>
       <a href="/missions" class="h-chest<?= $all_done ? ' open' : '' ?>" aria-label="Misi harian <?= $quests_done ?> dari <?= count($daily_quests) ?> selesai">
         <img src="<?= $ic3d($all_done ? 'chest_open' : 'chest') ?>" alt="" width="54" height="54"><em><?= $quests_done ?>/<?= count($daily_quests) ?></em>
       </a>
@@ -833,9 +833,15 @@ require dirname(__DIR__) . '/partials/header.php';
         }
         return 'star';
     };
+    // Label lama (warisan web sebelumnya) yang masih tersimpan di CMS diganti nama baru
+    $relabel = ['Tonton' => 'Video', 'Check-in' => 'Bonus Harian', 'Misi' => 'Quest', 'Undang' => 'Referral', 'VIP Upgrade' => 'Level Up',
+                'Upgrade' => 'Level Up', 'Global Chat' => 'Komunitas', 'Menu Cepat & Fitur Cuan' => 'Pintasan Cuan', 'Menu cepat' => 'Pintasan Cuan'];
+    foreach ($tiles as &$t) { $t['label'] = $relabel[$t['label'] ?? ''] ?? ($t['label'] ?? ''); } unset($t);
+    $bento_title = (string)($cms['bento']['title'] ?: 'Pintasan Cuan');
+    $bento_title = $relabel[$bento_title] ?? $bento_title;
   ?>
   <?php if (!empty($cms['bento']['show_section']) && $tiles): ?>
-  <div class="h-sec" data-rv><b><img src="<?= $ic3d('star') ?>" alt=""><?= htmlspecialchars((string)($cms['bento']['title'] ?: 'Menu cepat')) ?></b></div>
+  <div class="h-sec" data-rv><b><img src="<?= $ic3d('star') ?>" alt=""><?= htmlspecialchars($bento_title) ?></b></div>
   <nav class="h-menu" id="tour-bento-grid">
     <?php foreach ($tiles as $ti => $t):
       $tid = (string)($t['id'] ?? '');

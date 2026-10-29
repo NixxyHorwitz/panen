@@ -176,12 +176,12 @@ body { margin: 0; padding: 0; overflow: hidden; color: var(--ink); font-family: 
     <div class="ic"><i class="ph-fill ph-clock-countdown"></i></div>
     <h2>Live Chat Sedang Tutup</h2>
     <p><?= nl2br(htmlspecialchars(setting($pdo, 'lc_offline_msg', 'Layanan live chat saat ini tidak tersedia. Silakan coba lagi nanti pada jam operasional.'))) ?></p>
-    <a href="/home" class="btn-main"><i class="ph-bold ph-house"></i> Kembali ke Beranda</a>
+    <a href="/home" class="btn-main"><i class="ph-bold ph-house"></i> Kembali ke Home</a>
   </div>
 </div>
 <?php else: ?>
 <header class="chat-topbar" id="chat-topbar">
-  <a href="/home" class="chat-back-btn" title="Kembali ke Beranda"><i class="ph-bold ph-caret-left"></i></a>
+  <a href="/home" class="chat-back-btn" title="Kembali ke Home"><i class="ph-bold ph-caret-left"></i></a>
   <span class="chat-ava"><?php if ($_logo): ?><img src="<?= htmlspecialchars($_logo) ?>" alt=""><?php endif; ?></span>
   <div class="chat-topbar__info">
     <span class="chat-topbar__title">Live Support</span>

@@ -804,7 +804,7 @@ require dirname(__DIR__) . '/partials/header.php';
 
   <!-- ── 1. COMPACT TOP NAVIGATOR ── -->
   <div class="th-top-nav">
-    <a href="/home" class="th-back-btn" title="Kembali ke Beranda">
+    <a href="/home" class="th-back-btn" title="Kembali ke Home">
       <i class="ph-bold ph-caret-left"></i>
     </a>
     <div class="th-nav-title">

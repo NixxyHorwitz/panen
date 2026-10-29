@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insNotif   = $pdo->prepare("
                         INSERT INTO notifications 
                         (title, message, type, icon, target_type, target_user_ids, action_url, action_text, created_at)
-                        VALUES (?, ?, 'congrats', '🎁', 'single', ?, '/withdraw', 'Tarik Saldo', NOW())
+                        VALUES (?, ?, 'congrats', '🎁', 'single', ?, '/withdraw', 'Withdraw', NOW())
                     ");
                     $insNotif->execute([$notifTitle, $notifMsg, (string)$user['id']]);
 
@@ -755,7 +755,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
   <!-- ── 1. COMPACT TOP NAVIGATOR ── -->
   <div class="survey-top-nav">
-    <a href="/home" class="survey-back-btn" title="Kembali ke Beranda">
+    <a href="/home" class="survey-back-btn" title="Kembali ke Home">
       <i class="ph-bold ph-caret-left"></i>
     </a>
     <div class="survey-nav-title">
@@ -852,7 +852,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <div class="survey-actions-grid" style="grid-template-columns:1fr;margin-top:12px;">
           <a href="/home" class="btn-marine-act light">
-            <i class="ph-bold ph-house"></i> Kembali ke Beranda
+            <i class="ph-bold ph-house"></i> Kembali ke Home
           </a>
         </div>
       </div>
@@ -926,10 +926,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <div class="survey-actions-grid">
           <a href="/withdraw" class="btn-marine-act gold">
-            <i class="ph-bold ph-hand-coins"></i> Tarik Saldo
+            <i class="ph-bold ph-hand-coins"></i> Withdraw
           </a>
           <a href="/home" class="btn-marine-act light">
-            <i class="ph-bold ph-house"></i> Ke Beranda
+            <i class="ph-bold ph-house"></i> Ke Home
           </a>
         </div>
       </div>

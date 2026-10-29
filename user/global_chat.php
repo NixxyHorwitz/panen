@@ -201,7 +201,7 @@ body { overflow: hidden; color: var(--ink); font-family: 'Nunito', -apple-system
   <div class="gc-notice" id="gc-notice" <?= $cfg['enabled'] ? 'hidden' : '' ?>><i class="ph-fill ph-lock-simple"></i><span id="gc-notice-txt"><?= htmlspecialchars((string)$cfg['closed_message']) ?></span></div>
   <div class="gc-msgs" id="gc-msgs"><div class="gc-empty" id="gc-empty"><i class="ph-fill ph-chats-circle"></i>Memuat obrolan...</div></div>
 
-  <div class="gc-lock" id="gc-lock" hidden><i class="ph-fill ph-lock-key"></i><span id="gc-lock-txt"></span><a href="/upgrade" id="gc-lock-up" hidden>Naik Pangkat</a></div>
+  <div class="gc-lock" id="gc-lock" hidden><i class="ph-fill ph-lock-key"></i><span id="gc-lock-txt"></span><a href="/upgrade" id="gc-lock-up" hidden>Level Up</a></div>
   <form class="gc-input" id="gc-form" autocomplete="off" onsubmit="gcSend(event)">
     <button type="button" class="gc-ib attach" id="gc-attach" title="Kirim gambar" onclick="document.getElementById('gc-file').click()" <?= $perm['image'] ? '' : 'hidden' ?>><i class="ph-bold ph-image"></i></button>
     <input type="file" id="gc-file" accept="image/jpeg,image/png,image/gif,image/webp" hidden onchange="gcPreview(this)">

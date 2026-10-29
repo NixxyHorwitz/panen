@@ -276,7 +276,7 @@ function gc_ensure_home_tile(PDO $pdo): void {
     $cfg = home_cms_config($pdo);
     $ids = array_column((array)($cfg['bento']['tiles'] ?? []), 'id');
     if (!in_array('global_chat', $ids, true)) {
-        $cfg['bento']['tiles'][] = ['id' => 'global_chat', 'enabled' => true, 'label' => 'Global Chat', 'url' => '/global-chat',
+        $cfg['bento']['tiles'][] = ['id' => 'global_chat', 'enabled' => true, 'label' => 'Komunitas', 'url' => '/global-chat',
                                     'icon' => 'ph-chats-circle', 'bg' => 'linear-gradient(135deg,#22d3ee,#0891b2)'];
         home_cms_config_set($pdo, $cfg);
     }

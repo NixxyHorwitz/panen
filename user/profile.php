@@ -68,7 +68,7 @@ try {
     $_contact_btns = $pdo->query("SELECT * FROM contact_buttons WHERE is_active=1 ORDER BY sort_order ASC, id ASC")->fetchAll();
 } catch (\Throwable) { $_contact_btns = []; }
 
-$pageTitle  = 'Profil Petani';
+$pageTitle  = 'Akun Saya';
 $activePage = 'profile';
 require dirname(__DIR__) . '/partials/header.php';
 
@@ -94,8 +94,8 @@ $xp_span = max(1, $farm_lv['xp_next'] - $farm_lv['xp_cur']);
 $xp_pct  = (int)min(100, max(0, round(($farm_lv['xp'] - $farm_lv['xp_cur']) / $xp_span * 100)));
 
 $PF_MENU = [
-    ['/videos', 'watch', 'Nonton'], ['/farm', 'padi', 'Sawah'], ['/missions', 'missions', 'Misi'], ['/upgrade', 'upgrade', 'Upgrade'],
-    ['/history', 'receipt', 'Riwayat'], ['/edit-rekening', 'piggy', 'Rekening'], ['/referral', 'referral', 'Undang'], ['/panduan', 'compass', 'Panduan'],
+    ['/videos', 'watch', 'Video'], ['/farm', 'padi', 'Sawah'], ['/missions', 'missions', 'Quest'], ['/upgrade', 'upgrade', 'Level Up'],
+    ['/history', 'receipt', 'Transaksi'], ['/edit-rekening', 'piggy', 'Bank Saya'], ['/referral', 'referral', 'Referral'], ['/panduan', 'compass', 'Tutorial'],
 ];
 ?>
 <style>
@@ -223,7 +223,7 @@ $PF_MENU = [
         <span class="meta"><?= number_format($total_withdrawals) ?>x penarikan</span>
       </a>
       <a href="/deposit" class="pf-slot">
-        <span class="go">Top Up ›</span>
+        <span class="go">Deposit ›</span>
         <span class="g-slot sm"><img src="/assets/img/icons3d/piggy.png" alt=""></span>
         <div><small>Saldo Beli</small><b><?= format_rp((float)$user['balance_dep']) ?></b></div>
         <span class="meta"><?= number_format($total_deposits) ?>x top up</span>

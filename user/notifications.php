@@ -526,7 +526,7 @@ $type_cfg = [
 
   <!-- ── 1. COMPACT TOP NAVIGATOR ── -->
   <div class="ntf-top-nav">
-    <a href="/home" class="ntf-back-btn" title="Kembali ke Beranda">
+    <a href="/home" class="ntf-back-btn" title="Kembali ke Home">
       <i class="ph-bold ph-caret-left"></i>
     </a>
     <div class="ntf-nav-title">
@@ -595,7 +595,7 @@ $type_cfg = [
       </div>
       <a href="/home" class="btn-marine-home">
         <i class="ph-bold ph-house"></i>
-        <span>Kembali ke Beranda</span>
+        <span>Kembali ke Home</span>
       </a>
     </div>
   <?php else: ?>

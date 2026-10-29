@@ -218,7 +218,7 @@ require dirname(__DIR__) . '/partials/header.php';
     <i class="ph-bold ph-caret-right"></i>
     <a href="/missions"><span class="ico i-sun"><i class="ph-fill ph-target"></i></span><b>Kejar Misi</b></a>
     <i class="ph-bold ph-caret-right"></i>
-    <a href="/withdraw"><span class="ico i-kelp"><i class="ph-fill ph-hand-coins"></i></span><b>Tarik Saldo</b></a>
+    <a href="/withdraw"><span class="ico i-kelp"><i class="ph-fill ph-hand-coins"></i></span><b>Withdraw</b></a>
   </div>
 
   <nav class="pd-nav" id="pd-nav">
@@ -241,7 +241,7 @@ require dirname(__DIR__) . '/partials/header.php';
       <a href="/checkin" class="pd-tile"><span class="amt"><?= $rp_short($ci_min) ?>–<?= $rp_short($ci_max) ?></span>
         <span class="ico i-kelp"><i class="ph-fill ph-calendar-check"></i></span><b>Check-in</b><p>Klaim hadiah acak sekali sehari.</p></a>
       <a href="/referral" class="pd-tile"><span class="amt"><?= $rp_short($ref_bonus) ?>/kawan</span>
-        <span class="ico i-violet"><i class="ph-fill ph-users-three"></i></span><b>Ajak Kawan</b><p>+<?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari isi kas mereka.</p></a>
+        <span class="ico i-violet"><i class="ph-fill ph-users-three"></i></span><b>Referral</b><p>+<?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari deposit mereka.</p></a>
       <a href="/redeem" class="pd-tile"><span class="ico i-sand"><i class="ph-fill ph-ticket"></i></span><b>Kode Redeem</b><p>Tukar kode dari event &amp; pengumuman.</p></a>
       <a href="/threads" class="pd-tile wide"><span class="ico i-violet"><i class="ph-fill ph-megaphone"></i></span>
         <div class="tx"><b>Event Threads</b><p>Promosikan PanenCuan di Threads, kirim bukti, tunggu verifikasi.</p></div>
@@ -278,8 +278,8 @@ require dirname(__DIR__) . '/partials/header.php';
         <small>Dari</small><ul><li>Video &amp; jual panen</li><li>Misi &amp; check-in</li><li>Referral &amp; event</li></ul>
         <small>Untuk</small><ul><li>Dicairkan ke rekening</li></ul></div>
       <div class="pd-wal dep"><i class="ph-fill ph-vault big"></i><b>Saldo Beli</b>
-        <small>Dari</small><ul><li>Isi Kas (deposit)</li></ul>
-        <small>Untuk</small><ul><li>Naik pangkat</li><li>Beli bibit &amp; pupuk</li><li>Buka petak sawah</li></ul></div>
+        <small>Dari</small><ul><li>Deposit</li></ul>
+        <small>Untuk</small><ul><li>Level up</li><li>Beli bibit &amp; pupuk</li><li>Buka petak sawah</li></ul></div>
     </div>
   </section>
 
@@ -301,7 +301,7 @@ require dirname(__DIR__) . '/partials/header.php';
           </div>
         <?php endforeach; ?>
       </div>
-      <a href="/upgrade" class="pd-btn sun"><i class="ph-fill ph-crown"></i>Lihat Benefit &amp; Naik Pangkat</a>
+      <a href="/upgrade" class="pd-btn sun"><i class="ph-fill ph-crown"></i>Lihat Benefit &amp; Level Up</a>
     </div>
   </section>
   <?php endif; ?>
@@ -320,7 +320,7 @@ require dirname(__DIR__) . '/partials/header.php';
           <?= implode(', ', array_filter([$wd_free_dana ? 'hanya ke DANA' : '', $wd_free_1x ? 'maksimal 1x penarikan' : '', $wd_free_1day ? 'akun minimal 1 hari' : ''])) ?>.</span></div>
       <?php endif; ?>
       <div class="pd-rule"><span class="ico i-violet"><i class="ph-bold ph-identification-card"></i></span><span>Rekening harus <strong>atas nama sendiri</strong>.<?= $wallets ? ' Tersedia: ' . htmlspecialchars(implode(', ', $wallets)) . '.' : '' ?></span></div>
-      <a href="/withdraw" class="pd-btn lag" style="margin-top:4px"><i class="ph-fill ph-hand-coins"></i>Tarik Saldo</a>
+      <a href="/withdraw" class="pd-btn lag" style="margin-top:4px"><i class="ph-fill ph-hand-coins"></i>Withdraw</a>
     </div>
   </section>
 
@@ -333,9 +333,9 @@ require dirname(__DIR__) . '/partials/header.php';
       <details class="pd-q"><summary>Kuota video habis, lalu apa?<i class="ph-bold ph-caret-down"></i></summary>
         <div>Kuota video reset tiap hari. Sambil menunggu, kamu tetap bisa bertani, kejar misi, dan check-in. Kuota lebih banyak tersedia di pangkat lebih tinggi.</div></details>
       <details class="pd-q"><summary>Bibit habis, bisa tanam gratis?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Setiap tanam butuh 1 bibit. Bibit dibeli dengan Saldo Beli lewat Isi Kas, lalu hasil jual panennya masuk Saldo Tarik.</div></details>
+        <div>Setiap tanam butuh 1 bibit. Bibit dibeli dengan Saldo Beli lewat Deposit, lalu hasil jual panennya masuk Saldo Tarik.</div></details>
       <details class="pd-q"><summary>Kapan bonus referral cair?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Bonus <?= format_rp($ref_bonus) ?> per kawan yang daftar<?= $ref_hold > 0 ? ' ditahan ' . $ref_hold . ' hari dulu' : '' ?>, plus <?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari setiap isi kas mereka. Akun palsu atau daftar sendiri terdeteksi otomatis dan bonusnya tidak diberikan.</div></details>
+        <div>Bonus <?= format_rp($ref_bonus) ?> per kawan yang daftar<?= $ref_hold > 0 ? ' ditahan ' . $ref_hold . ' hari dulu' : '' ?>, plus <?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari setiap deposit mereka. Akun palsu atau daftar sendiri terdeteksi otomatis dan bonusnya tidak diberikan.</div></details>
       <details class="pd-q"><summary>Bagaimana ganti rekening?<i class="ph-bold ph-caret-down"></i></summary>
         <div>Buka <a href="/edit-rekening" style="color:#0891b2;font-weight:900">Edit Rekening</a>. Pengajuan dicek admin dulu. Fitur ini tersedia untuk pangkat tertentu dan butuh Saldo Beli mengendap.</div></details>
       <details class="pd-q"><summary>Butuh bantuan?<i class="ph-bold ph-caret-down"></i></summary>

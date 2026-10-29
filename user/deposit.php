@@ -169,7 +169,7 @@ end_dep:
 $deps = $pdo->prepare("SELECT * FROM deposits WHERE user_id=? ORDER BY created_at DESC LIMIT 6");
 $deps->execute([$user['id']]); $deps = $deps->fetchAll();
 
-$pageTitle  = 'Isi Saldo';
+$pageTitle  = 'Deposit';
 $activePage = 'deposit';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
@@ -263,7 +263,7 @@ require dirname(__DIR__) . '/partials/header.php';
     <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
     <div class="g-hero-row">
       <div style="flex:1;min-width:0">
-        <h1>Isi Saldo</h1>
+        <h1>Deposit</h1>
         <p><i class="ph-fill ph-lightning"></i> QRIS masuk otomatis dalam hitungan detik.</p>
       </div>
       <div class="g-hero-art"><img src="/assets/img/icons3d/piggy.png" alt=""></div>

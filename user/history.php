@@ -183,8 +183,8 @@ foreach ($wds as $w) {
 foreach ($deposits as $d) {
     $unified[] = [
         'type'        => 'deposit',
-        'sub_type'    => 'Top Up Saldo',
-        'title'       => 'Top Up ' . strtoupper((string)$d['method']),
+        'sub_type'    => 'Deposit Saldo',
+        'title'       => 'Deposit ' . strtoupper((string)$d['method']),
         'sub'         => 'Metode ' . strtoupper((string)$d['method']),
         'amount'      => (float)$d['amount'],
         'is_income'   => true,
@@ -234,7 +234,7 @@ foreach ($surveys as $sv) {
 foreach ($missions as $m) {
     $unified[] = [
         'type'        => 'bonus',
-        'sub_type'    => 'Misi Harian',
+        'sub_type'    => 'Quest Harian',
         'title'       => $m['mission_title'],
         'sub'         => 'Klaim Hadiah Misi Selesai',
         'amount'      => (float)$m['reward_amount'],
@@ -332,7 +332,7 @@ $counts = [
     'bonus'    => count($surveys) + count($missions) + count($commissions) + count($redeems),
 ];
 
-$pageTitle  = 'Riwayat Keuangan';
+$pageTitle  = 'Riwayat Transaksi';
 $activePage = 'history';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
@@ -473,8 +473,8 @@ $hx_tabs = [
     'all'      => ['Semua', 'ph-squares-four'],
     'farm'     => ['Jual Panen', 'ph-basket'],
     'withdraw' => ['Tarik', 'ph-paper-plane-tilt'],
-    'deposit'  => ['Top Up', 'ph-wallet'],
-    'reward'   => ['Nonton', 'ph-play-circle'],
+    'deposit'  => ['Deposit', 'ph-wallet'],
+    'reward'   => ['Video', 'ph-play-circle'],
     'bonus'    => ['Bonus & Misi', 'ph-gift'],
 ];
 if (!isset($hx_tabs[$tab])) $tab = 'all';
@@ -482,10 +482,10 @@ $hx_items = $tab === 'all' ? $unified : array_values(array_filter($unified, fn($
 $hx_empty = [
     'all'      => ['ph-clock-counter-clockwise', 'Belum ada transaksi', 'Tonton video, bertani, atau selesaikan misi untuk mengisi buku kasmu!', '/home', 'Mulai Cuan'],
     'farm'     => ['ph-basket', 'Belum ada hasil panen terjual', 'Tanam &amp; panen di Sawah Panen Cuan, lalu jual di Pasar Pengepul untuk mencairkannya jadi Saldo Tarik.', '/farm', 'Mulai Bertani'],
-    'withdraw' => ['ph-paper-plane-tilt', 'Belum ada penarikan', 'Kumpulkan saldo lalu tarik ke e-wallet atau rekening bankmu.', '/withdraw', 'Tarik Saldo'],
-    'deposit'  => ['ph-wallet', 'Belum ada top up', 'Top up saldo untuk upgrade paket atau beli bibit di Sawah Panen Cuan.', '/deposit', 'Top Up'],
+    'withdraw' => ['ph-paper-plane-tilt', 'Belum ada penarikan', 'Kumpulkan saldo lalu tarik ke e-wallet atau rekening bankmu.', '/withdraw', 'Withdraw'],
+    'deposit'  => ['ph-wallet', 'Belum ada deposit', 'Deposit saldo untuk upgrade paket atau beli bibit di Sawah Panen Cuan.', '/deposit', 'Deposit'],
     'reward'   => ['ph-play-circle', 'Belum ada riwayat nonton', 'Tonton video untuk mendapatkan rupiah di setiap video.', '/home', 'Nonton Sekarang'],
-    'bonus'    => ['ph-gift', 'Belum ada bonus masuk', 'Selesaikan survei, misi harian, atau ajak kawan untuk dapat bonus.', '/referral', 'Ajak Kawan'],
+    'bonus'    => ['ph-gift', 'Belum ada bonus masuk', 'Selesaikan survei, misi harian, atau referral untuk dapat bonus.', '/referral', 'Referral'],
 ][$tab];
 $HX_PAGE = 25;
 ?>
@@ -502,7 +502,7 @@ $HX_PAGE = 25;
   <section class="hx-ledger">
     <div class="hx-led-top">
       <div class="hx-led-bal">
-        <small><i class="ph-fill ph-book-open-text"></i> Buku Kas · Saldo Siap WD</small>
+        <small><i class="ph-fill ph-book-open-text"></i> Ringkasan Saldo · Siap Withdraw</small>
         <b><?= format_rp($balance_wd) ?></b>
       </div>
       <a href="/withdraw" class="hx-wd"><i class="ph-bold ph-arrow-up-right"></i> Tarik</a>
@@ -510,7 +510,7 @@ $HX_PAGE = 25;
     <div class="hx-mini">
       <div><i class="ph-fill ph-sparkle"></i><b><?= format_rp($total_earned) ?></b><small>Total Cuan</small></div>
       <div><i class="ph-fill ph-basket"></i><b><?= format_rp($farm_sales_total) ?></b><small>Jual Panen</small></div>
-      <div><i class="ph-fill ph-arrow-down-left"></i><b><?= format_rp($total_dep) ?></b><small>Top Up</small></div>
+      <div><i class="ph-fill ph-arrow-down-left"></i><b><?= format_rp($total_dep) ?></b><small>Deposit</small></div>
       <div><i class="ph-fill ph-hand-coins"></i><b><?= format_rp($total_wd) ?></b><small>Ditarik</small></div>
     </div>
   </section>

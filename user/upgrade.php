@@ -362,7 +362,7 @@ if ($active_membership) {
     $active_membership = $ms->fetch() ?: $active_membership;
 }
 
-$pageTitle  = 'Naik Pangkat';
+$pageTitle  = 'Level Up';
 $activePage = 'upgrade';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
@@ -507,7 +507,7 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
     <div class="pk-st">
       <span class="ic wal"><i class="ph-fill ph-wallet"></i></span>
       <span class="tx"><small>Saldo Beli</small><b><?= format_rp((float)$user['balance_dep']) ?></b></span>
-      <a href="/deposit" class="add" aria-label="Isi Saldo Beli"><i class="ph-bold ph-plus"></i></a>
+      <a href="/deposit" class="add" aria-label="Deposit Saldo Beli"><i class="ph-bold ph-plus"></i></a>
     </div>
     <div class="pk-st">
       <span class="ic rank"><i class="ph-fill <?= htmlspecialchars((string)($active_membership['icon'] ?? ($free_rank['icon'] ?? 'ph-fish-simple'))) ?>"></i></span>
@@ -586,7 +586,7 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
           onclick="<?= !$can_afford && !$is_cur ? "location.href='/deposit'" : 'openConfirm(' . (int)$m['id'] . ", '" . htmlspecialchars($m['name'], ENT_QUOTES) . "', " . $active_price . ', ' . (int)$m['duration_days'] . ')' ?>">
           <?php if ($is_cur): ?><i class="ph-bold ph-arrows-clockwise"></i> Perpanjang Pangkat
           <?php elseif ($can_afford): ?><i class="ph-fill ph-rocket-launch"></i> Naik ke <?= htmlspecialchars($m['name']) ?>
-          <?php else: ?><i class="ph-bold ph-plus-circle"></i> Isi Saldo · kurang <?= format_rp($active_price - (float)$user['balance_dep']) ?><?php endif; ?>
+          <?php else: ?><i class="ph-bold ph-plus-circle"></i> Deposit · kurang <?= format_rp($active_price - (float)$user['balance_dep']) ?><?php endif; ?>
         </button>
         <?php if ($h): ?><div class="pk-note">Estimasi dari rata-rata <?= format_rp($avg_video_reward) ?>/video</div><?php endif; ?>
       </div>
@@ -601,7 +601,7 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
   </div>
 
   <details class="pk-guide">
-    <summary><i class="ph-fill ph-compass"></i> Cara naik pangkat <i class="ph-bold ph-caret-down chev"></i></summary>
+    <summary><i class="ph-fill ph-compass"></i> Cara level up <i class="ph-bold ph-caret-down chev"></i></summary>
     <ol class="pk-steps">
       <li><span>1</span><small>Isi <b>Saldo Beli</b> lewat tombol +</small></li>
       <li><span>2</span><small>Pilih pangkat, tekan tombol, konfirmasi</small></li>

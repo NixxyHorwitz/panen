@@ -134,7 +134,7 @@ if (isset($_GET['ajax'])) {
     exit;
 }
 
-$pageTitle  = 'Pusat Nonton Video';
+$pageTitle  = 'Video Cuan';
 $activePage = 'videos';
 require dirname(__DIR__) . '/partials/header.php';
 $pct  = $watch_limit > 0 ? min(100, (int)round(($watch_today / $watch_limit) * 100)) : 0;

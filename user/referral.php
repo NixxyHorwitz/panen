@@ -74,7 +74,7 @@ $referreds = $refs->fetchAll();
 $ref_url = base_url('register/' . $user['referral_code']);
 $share_text = 'Gabung dan hasilkan cuan bersama! Daftar menggunakan tautan referralku: ' . $ref_url;
 
-$pageTitle  = 'Misi Referral';
+$pageTitle  = 'Program Referral';
 $activePage = 'referral';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
@@ -333,8 +333,8 @@ $code_color   = static fn(string $name): string => 'c' . (crc32($name) % 5);
   <!-- HERO: jendela kapal berisi jumlah kru -->
   <section class="kru-hero">
     <div class="kru-hero-txt">
-      <span class="kru-chip"><i class="ph-fill ph-anchor-simple"></i> Misi Kru Kapal</span>
-      <div class="kru-hero-title">Ajak Kawan Melaut, Panen Cuan Bareng</div>
+      <span class="kru-chip"><i class="ph-fill ph-plant"></i> Program Referral</span>
+      <div class="kru-hero-title">Ajak Teman Bertani, Panen Cuan Bareng</div>
       <div class="kru-hero-sub">Bonus <b><?= format_rp($ref_bonus) ?></b> tiap kawan daftar &amp; komisi <b><?= (float)$ref_pct ?>%</b> dari setiap isi saldonya, seumur hidup.</div>
     </div>
     <div class="kru-port" aria-label="Jumlah kawan terdaftar">
@@ -367,7 +367,7 @@ $code_color   = static fn(string $name): string => 'c' . (crc32($name) % 5);
   <!-- TIKET UNDANGAN -->
   <div class="kru-ticket">
     <div class="kru-ticket-main">
-      <div class="kru-tk-row"><span>Tiket Undangan Kapal</span><i class="ph-fill ph-ticket"></i></div>
+      <div class="kru-tk-row"><span>Kode Referral Kamu</span><i class="ph-fill ph-ticket"></i></div>
       <div class="kru-code" id="ref-code-val"><?= htmlspecialchars($user['referral_code']) ?></div>
       <div class="kru-url"><i class="ph-bold ph-link-simple"></i> <?= htmlspecialchars(preg_replace('~^https?://~', '', $ref_url)) ?></div>
     </div>
@@ -437,7 +437,7 @@ $code_color   = static fn(string $name): string => 'c' . (crc32($name) % 5);
   <div class="kru-sec-title"><span><i class="ph-fill ph-compass"></i> Cara Kerjanya</span></div>
   <div class="kru-how">
     <div class="kru-how-row"><span class="kru-how-num"><i class="ph-fill ph-paper-plane-tilt"></i></span><span><b>Bagikan tiketmu</b><small>Kirim link atau kode ke kawan</small></span></div>
-    <div class="kru-how-row"><span class="kru-how-num"><i class="ph-fill ph-user-plus"></i></span><span><b>Kawan naik kapal</b><small>Daftar memakai kodemu</small></span><span class="gain">+<?= format_rp($ref_bonus) ?></span></div>
+    <div class="kru-how-row"><span class="kru-how-num"><i class="ph-fill ph-user-plus"></i></span><span><b>Teman bergabung</b><small>Daftar memakai kodemu</small></span><span class="gain">+<?= format_rp($ref_bonus) ?></span></div>
     <div class="kru-how-row"><span class="kru-how-num"><i class="ph-fill ph-coins"></i></span><span><b>Kawan isi saldo</b><small>Komisi tiap deposit, seumur hidup</small></span><span class="gain">+<?= (float)$ref_pct ?>%</span></div>
   </div>
 
@@ -456,7 +456,7 @@ $code_color   = static fn(string $name): string => 'c' . (crc32($name) % 5);
     <?php if (empty($referreds)): ?>
       <div class="kru-empty">
         <div class="ic"><i class="ph-fill ph-user-plus"></i></div>
-        <b>Kapalmu masih sepi</b>
+        <b>Belum ada teman yang bergabung</b>
         <small>Bagikan tiket undanganmu untuk mulai mengumpulkan kru dan komisi!</small>
       </div>
     <?php else: ?>

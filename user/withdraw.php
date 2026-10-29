@@ -238,7 +238,7 @@ if (!$wd_global_enabled) {
     }
 }
 
-$pageTitle  = 'Tarik Saldo';
+$pageTitle  = 'Withdraw';
 $activePage = 'withdraw';
 require dirname(__DIR__) . '/partials/header.php';
 
@@ -376,7 +376,7 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
     <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
     <div class="g-hero-row">
       <div style="flex:1;min-width:0">
-        <h1>Tarik Saldo</h1>
+        <h1>Withdraw</h1>
         <p><i class="ph-fill ph-lightning"></i> Cair 1–10 menit ke rekeningmu.</p>
       </div>
       <div class="g-hero-art"><img src="/assets/img/icons3d/moneybag.png" alt=""></div>
@@ -457,7 +457,7 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
 
     <div data-rv style="--d:.14s;display:flex;flex-direction:column;gap:10px">
       <?php if ($wd_btn[1]): ?>
-        <button type="submit" id="wd-submit-btn" class="wx-go g-btn full shine"><i class="ph-fill ph-paper-plane-tilt"></i><span>Tarik Sekarang</span></button>
+        <button type="submit" id="wd-submit-btn" class="wx-go g-btn full shine"><i class="ph-fill ph-paper-plane-tilt"></i><span>Withdraw Sekarang</span></button>
       <?php else: ?>
         <button type="button" class="wx-go g-btn full" disabled><i class="ph-fill ph-lock-simple"></i><?= htmlspecialchars($wd_btn[0]) ?></button>
         <?php if ($free_wd_limit_reached || ($wd_btn[0] === 'Butuh upgrade level')): ?>
@@ -516,7 +516,7 @@ function selectWdAmount(btn, val) {
   const btn   = document.getElementById('wd-submit-btn');
   const minWd = <?= (int)$min_withdraw ?>;
   const maxWd = <?= (float)$max_available ?>;
-  const label = '<i class="ph-fill ph-paper-plane-tilt"></i><span>Tarik Sekarang</span>';
+  const label = '<i class="ph-fill ph-paper-plane-tilt"></i><span>Withdraw Sekarang</span>';
 
   if (!form) return;
 

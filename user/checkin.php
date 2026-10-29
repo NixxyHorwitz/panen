@@ -289,7 +289,7 @@ $SACKS = [['padi', 'Padi'], ['jagung', 'Jagung'], ['cabai', 'Cabai'], ['semangka
     <h3>Panen berhasil</h3>
     <div class="ci-amt" id="clam-modal-amt">+Rp 0</div>
     <div class="dest"><i class="ph-fill ph-check-circle" style="color:#16a34a"></i>Langsung masuk ke Saldo Tarik</div>
-    <a href="/withdraw" class="g-btn gold full shine"><img src="/assets/img/icons3d/moneybag.png" alt="">Tarik Saldo Sekarang</a>
+    <a href="/withdraw" class="g-btn gold full shine"><img src="/assets/img/icons3d/moneybag.png" alt="">Withdraw Sekarang</a>
     <button type="button" onclick="closeClamModal()" class="g-btn soft full">Simpan &amp; lanjut</button>
   </div>
 </div>

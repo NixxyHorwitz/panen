@@ -233,7 +233,7 @@ require dirname(__DIR__) . '/partials/header.php';
     <img src="/assets/img/icons3d/chest_open.png" alt="">
     <h2>Pembayaran berhasil!</h2>
     <p>Saldo Beli <strong><?= format_rp((float)$amount) ?></strong> sudah masuk dan siap dipakai.</p>
-    <a href="/home" class="g-btn full"><i class="ph-bold ph-house"></i>Kembali ke Beranda</a>
+    <a href="/home" class="g-btn full"><i class="ph-bold ph-house"></i>Kembali ke Home</a>
   </section>
 
   <?php elseif ($dep['status'] === 'rejected'): ?>

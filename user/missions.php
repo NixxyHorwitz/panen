@@ -154,7 +154,7 @@ $TABS = ['daily' => ['Harian', 'ph-sun', 'Reset tiap 00:00'], 'weekly' => ['Ming
 $active_tab = 'daily';
 foreach ($groups as $cat => $list) { foreach ($list as $m) if ($m['done'] && !$m['claimed']) { $active_tab = $cat; break 2; } }
 
-$pageTitle  = 'Misi Harian';
+$pageTitle  = 'Quest Harian';
 $activePage = 'missions';
 require dirname(__DIR__) . '/partials/header.php';
 ?>

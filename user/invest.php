@@ -685,7 +685,7 @@ require dirname(__DIR__) . '/partials/header.php';
       <div class="guide-step">
         <div class="guide-step__num">1</div>
         <div class="guide-step__content">
-          <h4 class="guide-step__title">Top Up Saldo Beli</h4>
+          <h4 class="guide-step__title">Deposit Saldo Beli</h4>
           <p class="guide-step__text">Beli paket investasi menggunakan **Saldo Beli**. Lakukan isi ulang terlebih dahulu via menu Deposit jika saldo Anda belum mencukupi.</p>
         </div>
       </div>
@@ -768,7 +768,7 @@ require dirname(__DIR__) . '/partials/header.php';
             Beli Sekarang
           </button>
           <a href="/deposit" id="purchase-topup-btn" class="btn btn--green btn--sm" style="display:none;flex:1.5;background:var(--green);color:var(--ink);border:2px solid var(--ink);font-weight:900;border-radius:8px;box-shadow:2px 2px 0 var(--ink);text-align:center;text-decoration:none;">
-            Isi Saldo
+            Deposit
           </a>
         </div>
       </form>

@@ -245,12 +245,12 @@ function home_cms_config(PDO $pdo): array {
         // 3. BENTO QUICK TILES
         'bento' => [
             'show_section' => true,
-            'title'        => 'Menu Cepat & Fitur Cuan',
+            'title'        => 'Pintasan Cuan',
             'tiles'        => [
                 [
                     'id'      => 'watch',
                     'enabled' => true,
-                    'label'   => 'Tonton',
+                    'label'   => 'Video',
                     'url'     => '/videos',
                     'icon'    => 'ph-film-strip',
                     'bg'      => 'linear-gradient(135deg,#f97316,#ea580c)',
@@ -282,7 +282,7 @@ function home_cms_config(PDO $pdo): array {
                 [
                     'id'      => 'checkin',
                     'enabled' => true,
-                    'label'   => 'Check-in',
+                    'label'   => 'Bonus Harian',
                     'url'     => '/checkin',
                     'icon'    => 'ph-calendar-check',
                     'bg'      => 'linear-gradient(135deg,#f59e0b,#d97706)',
@@ -290,7 +290,7 @@ function home_cms_config(PDO $pdo): array {
                 [
                     'id'      => 'missions',
                     'enabled' => true,
-                    'label'   => 'Misi',
+                    'label'   => 'Quest',
                     'url'     => '/missions',
                     'icon'    => 'ph-target',
                     'bg'      => 'linear-gradient(135deg,#8b5cf6,#6d28d9)',
@@ -306,7 +306,7 @@ function home_cms_config(PDO $pdo): array {
                 [
                     'id'      => 'referral',
                     'enabled' => true,
-                    'label'   => 'Undang',
+                    'label'   => 'Referral',
                     'url'     => '/referral',
                     'icon'    => 'ph-users-three',
                     'bg'      => 'linear-gradient(135deg,#10b981,#047857)',
@@ -314,7 +314,7 @@ function home_cms_config(PDO $pdo): array {
                 [
                     'id'      => 'upgrade',
                     'enabled' => true,
-                    'label'   => 'VIP Upgrade',
+                    'label'   => 'Level Up',
                     'url'     => '/upgrade',
                     'icon'    => 'ph-crown',
                     'bg'      => 'linear-gradient(135deg,#fbbf24,#d97706)',

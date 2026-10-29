@@ -512,7 +512,7 @@ require dirname(__DIR__) . '/partials/header.php';
 
   <!-- ── 1. COMPACT TOP NAVIGATOR ── -->
   <div class="rdm-top-nav">
-    <a href="/home" class="rdm-back-btn" title="Kembali ke Beranda">
+    <a href="/home" class="rdm-back-btn" title="Kembali ke Home">
       <i class="ph-bold ph-caret-left"></i>
     </a>
     <div class="rdm-nav-title">

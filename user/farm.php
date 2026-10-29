@@ -408,7 +408,7 @@ img { -webkit-user-drag: none; }
 <!-- ── TOP BAR ── -->
 <header class="topbar">
   <div class="top-left">
-    <a class="icon-btn" href="/home" aria-label="Kembali ke Beranda"><i class="ph-bold ph-arrow-left"></i></a>
+    <a class="icon-btn" href="/home" aria-label="Kembali ke Home"><i class="ph-bold ph-arrow-left"></i></a>
     <button class="icon-btn" id="btn-mute" type="button" aria-label="Suara"><i class="ph-bold ph-speaker-high"></i></button>
   </div>
   <div class="lvl">
@@ -586,7 +586,7 @@ img { -webkit-user-drag: none; }
     if (res && res.state) setState(res.state);
     const reason = res && res.reason;
     if (reason === 'auth') { location.href = '/login'; return; }
-    if (reason === 'no_balance') return toast('', 'err', 'ph-wallet', esc(res.msg) + ' <a href="/deposit" style="pointer-events:auto">Top Up</a>');
+    if (reason === 'no_balance') return toast('', 'err', 'ph-wallet', esc(res.msg) + ' <a href="/deposit" style="pointer-events:auto">Deposit</a>');
     if (reason === 'barn_full') { toast(res.msg, 'err', 'ph-warehouse'); return openLayer('market'); }
     toast((res && res.msg) || 'Terjadi kesalahan.', 'err');
   }
@@ -745,7 +745,7 @@ img { -webkit-user-drag: none; }
       <div class="row"><span class="ic sm">${img('coins', 'ph-coins')}</span><div class="grow">Saldo Beli kamu</div><b>${fmtRp(S.balance_dep)}</b></div>
       <p class="note">Lahan baru dibersihkan dari rumput liar &amp; batu, siap ditanami. Harga petak berikutnya naik bertahap.</p>
       ${enough ? `<button class="nb-btn green block" type="button" id="do-unlock">Buka Petak</button>`
-        : `<a class="nb-btn yellow block" href="/deposit" style="text-decoration:none">Top Up Saldo Beli</a>`}`;
+        : `<a class="nb-btn yellow block" href="/deposit" style="text-decoration:none">Deposit Saldo Beli</a>`}`;
     if (enough) $('do-unlock').addEventListener('click', () => unlock(plotCardIdx));
   }
 

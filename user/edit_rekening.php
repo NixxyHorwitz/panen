@@ -275,7 +275,7 @@ $rk_flash_tone = $flashType === 'error' ? 'err' : ($flashType === 'warn' ? 'warn
       <div class="tx"><b>Saldo Beli mengendap min. <?= format_rp($min_saldo_edit) ?></b>
         <div class="rk-bar"><i style="width:<?= round($rk_pct, 1) ?>%"></i></div>
         <span>Saldo beli kamu <?= format_rp((float)$user['balance_dep']) ?></span></div>
-      <?php if (!$rk_saldo_ok && !$is_promotor): ?><a href="/deposit" class="act"><i class="ph-bold ph-plus"></i>Isi Kas</a><?php endif; ?>
+      <?php if (!$rk_saldo_ok && !$is_promotor): ?><a href="/deposit" class="act"><i class="ph-bold ph-plus"></i>Deposit</a><?php endif; ?>
     </div>
 
     <div class="rk-rule info">

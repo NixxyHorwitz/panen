@@ -295,7 +295,7 @@ i[class^="ph-"] { display: inline-flex; align-items: center; justify-content: ce
         if (preg_match('/^(.+?)([A-Z][a-z0-9]+)$/u', trim($_site_name), $_bm)) { $_brand_a = $_bm[1]; $_brand_b = $_bm[2]; }
         $_brand_page = trim((string)($pageTitle ?? ''));
       ?>
-      <a href="/home" class="island-brand-pill" aria-label="Beranda <?= htmlspecialchars($_site_name) ?>">
+      <a href="/home" class="island-brand-pill" aria-label="Home <?= htmlspecialchars($_site_name) ?>">
         <span class="brand-logo">
           <?php if ($_site_logo): ?>
           <img src="<?= htmlspecialchars($_site_logo) ?>" alt="" width="34" height="34" decoding="async"

@@ -76,11 +76,11 @@
   <?php
     $_ap = $activePage ?? '';
     $_tabs = [
-      ['home', '/home', 'ph-house-simple', 'Beranda'],
-      ['videos', '/videos', 'ph-play-circle', 'Nonton'],
+      ['home', '/home', 'ph-house-simple', 'Home'],
+      ['videos', '/videos', 'ph-play-circle', 'Video'],
       ['farm', '/farm', '', 'Sawah'],
-      ['referral', '/referral', 'ph-users-three', 'Undang'],
-      ['profile', '/profile', 'ph-user-circle', 'Profil'],
+      ['referral', '/referral', 'ph-users-three', 'Referral'],
+      ['profile', '/profile', 'ph-user-circle', 'Akun'],
     ];
     // Jumlah petak siap panen (badge di tombol Sawah)
     $_ready_badge = 0;
@@ -544,17 +544,17 @@ if ($show_wd_notif) {
         title: '<i class="ph-fill ph-target" style="color:#8b5cf6;"></i> Misi & Tantangan Harian',
         desc: 'Dapatkan saldo tambahan berlipat dengan menyelesaikan berbagai misi harian, mingguan, dan pencapaian spesial!',
         tip: 'Tekan tombol Klaim begitu progress misi sudah tercapai 100%.',
-        btnNext: 'Lanjut ke Tarik Saldo',
+        btnNext: 'Lanjut ke Withdraw',
         pad: 6
       },
       {
         url: '/withdraw',
         selector: '.wd-top-banner, .wd-balance-card, .wd-form',
         trackName: 'Panduan PanenCuan',
-        title: '<i class="ph-fill ph-arrow-up-right" style="color:#059669;"></i> Tarik Saldo ke Rekening',
+        title: '<i class="ph-fill ph-arrow-up-right" style="color:#059669;"></i> Withdraw ke Rekening',
         desc: 'Klaim uang tunaimu! Tarik saldo langsung ke rekening DANA, GoPay, OVO, ShopeePay, atau Bank transfer dalam hitungan menit.',
         tip: 'Penarikan diproses setiap hari dengan proses pencairan cepat dan aman.',
-        btnNext: 'Kembali ke Beranda',
+        btnNext: 'Kembali ke Home',
         pad: 6
       },
       {
