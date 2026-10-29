@@ -60,19 +60,20 @@ if (!$is_guest) {
     try {
         farm_ensure_schema($pdo);
         $now = time();
+        // Hanya petak yang sedang ditanami (status 'growing'); siap panen = sudah lewat matures_at
         $plotStmt = $pdo->prepare("
-            SELECT 
+            SELECT
                 COUNT(*) as total_planted,
-                COALESCE(SUM(CASE WHEN matures_at <= ? THEN 1 ELSE 0 END), 0) as ready_count,
-                COALESCE(SUM(CASE WHEN matures_at > ? THEN 1 ELSE 0 END), 0) as growing_count
+                COALESCE(SUM(matures_at <= ?), 0) as ready_count,
+                COALESCE(SUM(matures_at > ?), 0) as growing_count
             FROM farm_plots
-            WHERE user_id = ?
+            WHERE user_id = ? AND status <> 'empty'
         ");
         $plotStmt->execute([$now, $now, $user['id']]);
         $plotsData = $plotStmt->fetch(PDO::FETCH_ASSOC);
 
         $invStmt = $pdo->prepare("
-            SELECT COALESCE(SUM(amount), 0) FROM farm_inventory WHERE user_id = ? AND kind = 'harvest'
+            SELECT COALESCE(SUM(qty), 0) FROM farm_inventory WHERE user_id = ? AND kind = 'harvest'
         ");
         $invStmt->execute([$user['id']]);
         $harvestCount = (int)$invStmt->fetchColumn();
@@ -206,1517 +207,526 @@ if (!$is_guest && !empty($user['id'])) {
     } catch (\Throwable) {}
 }
 
-$pageTitle = 'Nonton Video & Panen Cuan';
+$pageTitle = 'Beranda';
 $activePage = 'home';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
-
 <style>
-/* ============================================================
-   BERANDA SAWAH PANEN CUAN — LEMBAH PERKAMEN & KAYU GAME UI
-   Tidak ada neo-brutalism: tanpa border hitam tebal, tanpa shadow hitam offset.
-   ============================================================ */
+/* ══════════════════════════════════════════════════════════
+   BERANDA PANENCUAN — lihat DESIGN.md (ENERGY 2 · RHYTHM 2 · MOTION 2)
+   Fokus: kartu saldo. Aksen emas hanya untuk momen uang.
+   ══════════════════════════════════════════════════════════ */
+.h-wrap { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 6px; }
+.h-wrap img { -webkit-user-drag: none; }
 
-body {
-  background: linear-gradient(180deg, #8fd3ff 0%, #c9ecff 35%, #dcefff 100%) !important;
-  color: var(--ink);
-  font-family: var(--font-body);
-}
+/* Muncul bertahap saat masuk layar (dipicu scroll) */
+[data-rv] { opacity: 0; transform: translateY(10px); transition: opacity .45s ease, transform .5s var(--pc-ease); transition-delay: var(--d, 0s); }
+[data-rv].in { opacity: 1; transform: none; }
 
-.valley-home-stage {
-  position: relative;
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 10px 12px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* Tombol: tinggi 44 px (target sentuh) */
+.h-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px;
+  border: 0; border-radius: 12px; cursor: pointer; text-decoration: none; white-space: nowrap;
+  font-family: var(--pc-font); font-size: 15px; font-weight: 600; color: #fff; background: var(--pc-green);
+  transition: transform .15s var(--pc-ease), background .15s;
 }
-.valley-home-stage > * {
-  position: relative;
-  z-index: 1;
-}
+.h-btn:active { transform: scale(.95); }
+.h-btn:focus-visible, .h-tile:focus-visible, .h-row:focus-visible, .h-act:focus-visible { outline: 3px solid rgba(21, 128, 61, .35); outline-offset: 2px; }
+.h-btn img { width: 24px; height: 24px; object-fit: contain; }
+.h-btn.gold { background: var(--pc-gold); color: #3d2a00; }
+.h-btn.soft { background: var(--pc-soft); color: var(--pc-ink); }
+.h-btn.full { width: 100%; }
 
-/* 1. Latar Pegunungan Low-Poly Inline SVG di Bagian Atas */
-.valley-sky-deco {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 210px;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-.valley-sky-deco svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+/* Judul seksi */
+.h-sec { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 6px 2px -2px; }
+.h-sec b { font-family: var(--pc-font); font-size: 16px; font-weight: 600; }
+.h-sec a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; font-size: 12.5px; font-weight: 800; color: var(--pc-green); text-decoration: none; }
 
-/* 2. User Hero & Saldo Showcase */
-.user-hero-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-.user-greet-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.user-avatar-slot {
-  width: 46px;
-  height: 46px;
-  border-radius: 15px;
-  background: radial-gradient(circle at 35% 35%, #fff, var(--parch-2));
-  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .18);
-  display: grid;
-  place-items: center;
-  padding: 5px;
-  flex-shrink: 0;
-}
-.user-avatar-slot img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.user-name-meta {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-  min-width: 0;
-}
-.user-name-meta b {
-  font-family: var(--font-game);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.user-name-meta .lvl {
-  margin-top: 3px;
-  align-self: flex-start;
-}
+/* Kartu dasar: putih + garis tipis, tanpa bayangan */
+.h-card { border-radius: 18px; background: var(--pc-card); box-shadow: inset 0 0 0 1px var(--pc-line); }
 
-.today-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #fff3b0, var(--y1));
-  box-shadow: 0 2px 0 var(--y2), 0 2px 5px rgba(60, 30, 5, .15);
-  font-family: var(--font-game);
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #5b3405;
-  white-space: nowrap;
+/* ── 1. KARTU SALDO (fokus layar) ── */
+.h-hero {
+  position: relative; overflow: hidden; border-radius: 22px; padding: 14px 14px 12px; color: #fff;
+  background: linear-gradient(170deg, #166534 0%, #14532d 100%);
+  box-shadow: 0 12px 28px rgba(20, 83, 45, .28);
 }
+.h-hero-field { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 46px; pointer-events: none; }
+.h-hero-top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.h-who { min-width: 0; font-size: 13px; font-weight: 800; color: #dcfce7; }
+.h-who b { color: #fff; font-family: var(--pc-font); font-weight: 600; font-size: 15px; }
+.h-rank { display: inline-flex; align-items: center; gap: 4px; margin-top: 1px; font-size: 11.5px; font-weight: 800; color: #bbf7d0; }
+.h-rank i { color: var(--pc-gold); }
+.h-today { flex-shrink: 0; font-size: 11.5px; font-weight: 800; color: #bbf7d0; text-align: right; line-height: 1.2; }
+.h-today b { display: block; font-family: var(--pc-font); font-size: 14px; font-weight: 600; color: #fff; }
 
-/* Showcase Dua Dompet (Saldo Siap Tarik & Saldo Beli/Kas) */
-.wallets-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 6px 0 4px;
+.h-bal { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.h-bal small { display: block; font-size: 12px; font-weight: 800; color: #bbf7d0; }
+.h-bal-num { font-family: var(--pc-font); font-size: clamp(26px, 8.4vw, 32px); font-weight: 700; line-height: 1.05; letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
+.h-bal-num span { font-size: .55em; margin-right: 3px; color: #bbf7d0; }
+.h-bal-coin { width: 58px; height: 58px; object-fit: contain; margin-bottom: -2px; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .25)); }
+.h-dep { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .14); font-size: 12px; font-weight: 800; color: #bbf7d0; }
+.h-dep b { font-family: var(--pc-font); font-size: 14px; font-weight: 600; color: #fff; margin-left: 4px; }
+.h-dep a { display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: 0 10px; border-radius: 10px; color: #fff; font-weight: 900; text-decoration: none; background: rgba(255, 255, 255, .12); }
+.h-acts { position: relative; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+.h-act {
+  display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border-radius: 12px; text-decoration: none;
+  font-family: var(--pc-font); font-size: 14px; font-weight: 600; color: #fff; background: rgba(255, 255, 255, .12);
+  transition: transform .15s var(--pc-ease), background .15s;
 }
-.wallet-box {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px 8px 8px;
-  border-radius: 18px;
-  background: rgba(59, 36, 20, .82);
-  color: #fff;
-  box-shadow: 0 3px 0 rgba(59, 36, 20, .45), 0 5px 12px rgba(0, 0, 0, .22), inset 0 1px 1px rgba(255, 255, 255, .25);
-}
-.wallet-box.wallet-box--primary {
-  background: linear-gradient(180deg, rgba(65, 40, 22, .92), rgba(45, 26, 12, .94));
-  padding: 10px 14px 10px 10px;
-}
-.wallet-lead {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-}
-.wallet-lead .wal-3d-ic {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-}
-.wallet-box.wallet-box--primary .wallet-lead .wal-3d-ic {
-  width: 44px;
-  height: 44px;
-}
-.wallet-meta {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-.wallet-meta small {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #fde68a;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  margin-bottom: 2px;
-}
-.wallet-meta b {
-  font-family: var(--font-game);
-  font-size: 17px;
-  font-weight: 700;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-}
-.wallet-box.wallet-box--primary .wallet-meta b {
-  font-size: 23px;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, .5);
-}
+.h-act:active { transform: scale(.94); background: rgba(255, 255, 255, .2); }
+.h-act.gold { background: var(--pc-gold); color: #3d2a00; }
+.h-act i { font-size: 18px; }
 
-.hero-actions-row {
-  display: grid;
-  grid-template-columns: 1.2fr 1.2fr 0.9fr;
-  gap: 8px;
-  margin-top: 6px;
-}
+/* ── 2. KARTU SAWAH (motif identitas) ── */
+.h-farm { overflow: hidden; }
+.h-farm-scene { position: relative; height: 78px; background: linear-gradient(180deg, #d9f1ff 0%, #eef9e8 100%); }
+.h-farm-scene svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.h-rice { transform-origin: 50% 100%; transform-box: fill-box; }
+.h-farm.in .h-rice { animation: hRice 2.4s ease-in-out 3; }
+.h-farm.in .h-rice.d2 { animation-delay: .4s; } .h-farm.in .h-rice.d3 { animation-delay: .8s; }
+@keyframes hRice { 50% { transform: rotate(-8deg); } }
+.h-farm-props { position: absolute; right: 12px; bottom: 4px; display: flex; align-items: flex-end; }
+.h-farm-props img { object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .18)); }
+.h-farm-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; }
+.h-farm-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.h-farm-head h2 { margin: 0; font-family: var(--pc-font); font-size: 18px; font-weight: 700; }
+.h-farm-head small { font-size: 11.5px; font-weight: 800; color: var(--pc-muted); }
+.h-farm-body p { margin: -4px 0 0; font-size: 12.5px; font-weight: 700; color: var(--pc-muted); line-height: 1.4; }
+.h-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.h-stat { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 9px 0 4px; border-radius: 10px; font-size: 12px; font-weight: 800; background: var(--pc-soft); }
+.h-stat img { width: 22px; height: 22px; object-fit: contain; }
+.h-stat.ready { background: var(--pc-gold-l); color: #6b4a00; }
 
-/* 3. Strip Ringan (Mascot, Notice, Tour, Referral) */
-.farm-mascot-strip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 16px;
-  background: var(--slot);
-  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .08);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.35;
-}
-.farm-mascot-strip img {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  object-fit: contain;
-}
+/* ── 3. MISI NONTON ── */
+.h-watch { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.h-ring { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+.h-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.h-ring circle { fill: none; stroke-width: 6; }
+.h-ring .bg { stroke: var(--pc-green-l); }
+.h-ring .fg { stroke: var(--pc-green); stroke-linecap: round; stroke-dasharray: 151; stroke-dashoffset: 151; transition: stroke-dashoffset 1.1s var(--pc-ease) .25s; }
+.h-ring span { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--pc-font); font-size: 12.5px; font-weight: 700; color: var(--pc-green); }
+.h-watch-tx { flex: 1; min-width: 0; line-height: 1.25; }
+.h-watch-tx b { display: block; font-family: var(--pc-font); font-size: 15.5px; font-weight: 600; }
+.h-watch-tx small { font-size: 12px; font-weight: 700; color: var(--pc-muted); }
 
-.farm-strip-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 16px;
-  background: var(--slot);
-  box-shadow: 0 0 0 2px var(--slot-bd), 0 2px 5px rgba(60, 30, 5, .08);
-  color: var(--ink);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  border: 0;
-  width: 100%;
-  text-align: left;
-  transition: transform .08s;
+/* ── 4. PINTASAN (satu baris, bisa digeser) ── */
+.h-tiles { display: flex; gap: 4px; overflow-x: auto; margin: 0 -12px; padding: 2px 12px; scrollbar-width: none; scroll-snap-type: x proximity; }
+.h-tiles::-webkit-scrollbar { display: none; }
+.h-tile {
+  flex: 0 0 68px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px 0;
+  border: 0; background: none; text-decoration: none; color: var(--pc-ink); font: inherit; cursor: pointer;
 }
-.farm-strip-btn:active { transform: translateY(2px); }
-.farm-strip-ic {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, var(--wood-l), var(--wood));
-  box-shadow: 0 2px 0 var(--wood-d);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 17px;
-  flex-shrink: 0;
-}
-.farm-strip-tx {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-.farm-strip-tx b {
-  font-family: var(--font-game);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.farm-strip-tx small {
-  font-size: 10.5px;
-  color: var(--muted);
-}
+.h-tile-ic { position: relative; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-size: 24px; color: var(--pc-green); background: var(--pc-card); box-shadow: inset 0 0 0 1px var(--pc-line); transition: transform .2s var(--pc-ease); }
+.h-tile-ic img { width: 38px; height: 38px; object-fit: contain; }
+.h-tile:active .h-tile-ic { transform: scale(.88); }
+.h-tile span { font-size: 11.5px; font-weight: 800; text-align: center; line-height: 1.15; }
+.h-dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pc-red); box-shadow: 0 0 0 2px #fff; }
+.h-done { position: absolute; bottom: -3px; right: -3px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: #fff; background: var(--pc-green); box-shadow: 0 0 0 2px #fff; }
 
-/* 4. Portal Cards Grid */
-.portals-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* ── 5. DAFTAR (info & promo dalam satu kartu) ── */
+.h-list { padding: 2px 0; }
+.h-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 12px; border: 0; background: none;
+  text-align: left; text-decoration: none; color: var(--pc-ink); font: inherit; cursor: pointer; transition: background .15s;
 }
+.h-row + .h-row { box-shadow: 0 -1px 0 var(--pc-line); }
+.h-row:active { background: var(--pc-soft); }
+.h-row-ic { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; font-size: 20px; color: var(--pc-green); background: var(--pc-green-l); }
+.h-row-ic img { width: 30px; height: 30px; object-fit: contain; }
+.h-row-ic.dark { background: #18181b; color: #fff; }
+.h-row-tx { flex: 1; min-width: 0; line-height: 1.25; }
+.h-row-tx b { display: block; font-size: 13.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-row-tx small { display: block; font-size: 11.5px; font-weight: 700; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-row-end { flex-shrink: 0; font-size: 12px; font-weight: 900; color: var(--pc-green); }
+.h-row-end.money { padding: 3px 8px; border-radius: 8px; background: var(--pc-gold-l); color: #6b4a00; }
+.h-code { font-family: var(--pc-font); font-size: 15px; font-weight: 700; letter-spacing: .5px; color: var(--pc-green); }
 
-/* Portal Utama: Sawah Panen Cuan (#tour-sidejob-card) */
-.portal-farm-panel {
-  position: relative;
-  background: var(--wood);
-  padding: 7px;
-  border-radius: 26px;
-  box-shadow: 0 6px 0 var(--wood-d), 0 14px 30px rgba(45, 25, 10, .28), inset 0 2px 0 rgba(255, 255, 255, .35);
-}
-.portal-farm-card {
-  position: relative;
-  background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .85), transparent 45%), var(--parch);
-  border-radius: 20px;
-  padding: 16px 14px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-decoration: none;
-  color: var(--ink);
-}
-.portal-farm-banner {
-  position: relative;
-  width: 100%;
-  height: 100px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 0 0 2px var(--slot-bd), inset 0 2px 4px rgba(0, 0, 0, .15);
-  background: linear-gradient(180deg, #7dd3fc 0%, #bae6fd 45%, #86efac 75%, #22c55e 100%);
-}
-.portal-farm-banner svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.portal-farm-meta {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.portal-farm-title h2 {
-  font-family: var(--font-game);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.1;
-  margin: 0;
-}
-.portal-farm-title p {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 700;
-  margin-top: 3px;
-  line-height: 1.35;
-}
+/* ── 6. VIDEO (geser) ── */
+.h-hscroll { display: flex; gap: 8px; overflow-x: auto; margin: 0 -12px; padding: 2px 12px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
+.h-hscroll::-webkit-scrollbar { display: none; }
+.h-vid { flex: 0 0 148px; scroll-snap-align: start; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: var(--pc-ink); }
+.h-vid.wide { flex-basis: 210px; }
+.h-thumb { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #e3ead9; }
+.h-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.h-rew { position: absolute; left: 6px; bottom: 6px; padding: 2px 7px; border-radius: 8px; font-size: 11px; font-weight: 900; background: var(--pc-gold); color: #3d2a00; }
+.h-dur { position: absolute; right: 6px; bottom: 6px; padding: 2px 6px; border-radius: 6px; font-size: 10.5px; font-weight: 900; background: rgba(0, 0, 0, .62); color: #fff; }
+.h-vid .h-done { top: 6px; right: 6px; bottom: auto; }
+.h-vid-b { padding: 7px 9px 9px; }
+.h-vid-b b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; font-weight: 800; line-height: 1.3; min-height: 31px; }
+.h-bar { height: 4px; margin-top: 6px; border-radius: 999px; background: var(--pc-soft); overflow: hidden; }
+.h-bar i { display: block; height: 100%; border-radius: 999px; background: var(--pc-green); }
 
-/* Farm Summary Chip (Status Sawah User) */
-.farm-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.farm-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px 4px 6px;
-  border-radius: 999px;
-  font-family: var(--font-game);
-  font-size: 11.5px;
-  font-weight: 700;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
-}
-.farm-chip img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-.farm-chip.ready {
-  background: linear-gradient(180deg, #fff3b0, var(--y1));
-  color: #5b3405;
-  box-shadow: 0 2px 0 var(--y2);
-  animation: farmPulse 2s infinite ease-in-out;
-}
-.farm-chip.barn {
-  background: linear-gradient(180deg, #dcfce7, var(--g1));
-  color: #064e3b;
-  box-shadow: 0 2px 0 var(--g2);
-}
-.farm-chip.growing {
-  background: linear-gradient(180deg, #e0f2fe, var(--b1));
-  color: #0c4a6e;
-  box-shadow: 0 2px 0 var(--b2);
-}
-.farm-chip.empty {
-  background: var(--slot);
-  color: var(--muted);
-  box-shadow: 0 0 0 1.5px var(--slot-bd);
-}
-@keyframes farmPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-
-/* Portal 2: Nonton Video (#tour-video-mission) */
-.portal-watch-card {
-  position: relative;
-  background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .8), transparent 45%), var(--parch);
-  border-radius: 20px;
-  padding: 14px 14px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  text-decoration: none;
-  color: var(--ink);
-}
-.watch-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.watch-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.watch-icon-slot {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #7dd3fc, var(--b1));
-  box-shadow: 0 3px 0 var(--b2);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  flex-shrink: 0;
-}
-.watch-title-group b {
-  font-family: var(--font-game);
-  font-size: 16px;
-  font-weight: 700;
-  display: block;
-  line-height: 1.15;
-}
-.watch-title-group small {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-/* 5. Menu Cepat / Bento Grid (#tour-bento-grid) */
-.bento-tiles-grid {
-  display: grid;
-  gap: 8px;
-}
-.bento-item-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 5px;
-  padding: 8px 4px 6px;
-  border-radius: 16px;
-  background: var(--slot);
-  box-shadow: 0 0 0 2px var(--slot-bd), 0 2px 5px rgba(60, 30, 5, .08);
-  text-decoration: none;
-  color: var(--ink);
-  cursor: pointer;
-  border: 0;
-  transition: transform .08s;
-}
-.bento-item-slot:active {
-  transform: translateY(2px);
-}
-.bento-slot-ic {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  display: grid;
-  place-items: center;
-  padding: 5px;
-}
-.bento-slot-ic img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.bento-slot-ic i {
-  font-size: 22px;
-}
-.bento-ping-dot {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--r1);
-  box-shadow: 0 0 0 2px #fff;
-}
-.bento-label-tx {
-  font-family: var(--font-game);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-/* 6. Banner Promosi (Survei, Threads, Promo Hub) */
-.promo-banners-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.promo-banner-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 18px;
-  background: var(--slot);
-  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .08);
-  text-decoration: none;
-  color: var(--ink);
-  cursor: pointer;
-  border: 0;
-  width: 100%;
-  text-align: left;
-  transition: transform .08s;
-}
-.promo-banner-card:active { transform: translateY(2px); }
-.promo-banner-ic {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  font-size: 20px;
-  color: #fff;
-}
-.promo-banner-tx {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.25;
-}
-.promo-banner-tx b {
-  font-family: var(--font-game);
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.promo-banner-tx small {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 700;
-}
-.promo-banner-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  flex-shrink: 0;
-}
-.promo-banner-badge {
-  font-family: var(--font-game);
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #fff3b0, var(--y1));
-  box-shadow: 0 2px 0 var(--y2);
-  color: #5b3405;
-  white-space: nowrap;
-}
-
-/* 7. Video Pilihan & Riwayat Tontonan */
-.video-grid-2col {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 4px;
-}
-.video-card-item {
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  background: var(--slot);
-  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .08);
-  overflow: hidden;
-  text-decoration: none;
-  color: var(--ink);
-  transition: transform .08s;
-}
-.video-card-item:active { transform: translateY(2px); }
-.video-thumb-slot {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
-  background: #000;
-  overflow: hidden;
-}
-.video-thumb-slot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.video-reward-pill {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #a6f08a, var(--g1));
-  box-shadow: 0 2px 0 var(--g2);
-  color: #fff;
-  font-family: var(--font-game);
-  font-size: 11px;
-  font-weight: 700;
-  text-shadow: 0 1px 0 var(--g2);
-}
-.video-dur-pill {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, .75);
-  color: #fff;
-  font-family: var(--font-game);
-  font-size: 10px;
-  font-weight: 700;
-}
-.video-card-body {
-  padding: 8px 10px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-.video-card-title {
-  font-family: var(--font-game);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Lanjutkan Menonton Compact Rows */
-.cw-item-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 16px;
-  background: var(--slot);
-  box-shadow: 0 0 0 2px var(--slot-bd);
-  text-decoration: none;
-  color: var(--ink);
-}
-.cw-thumb {
-  width: 58px;
-  height: 38px;
-  border-radius: 10px;
-  overflow: hidden;
-  flex-shrink: 0;
-  position: relative;
-  background: #000;
-}
-.cw-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.cw-thumb i { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
-.cw-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.cw-info b { font-family: var(--font-game); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* 8. Floating Promo Button */
-.cms-float {
-  position: fixed;
-  right: 14px;
-  bottom: calc(96px + env(safe-area-inset-bottom));
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 12px 6px 6px;
-  border-radius: 999px;
-  cursor: pointer;
-  color: #fff;
-  border: 0;
-  background: linear-gradient(180deg, #ff8080, var(--r1) 50%, var(--r2));
-  box-shadow: 0 4px 0 var(--r2), 0 8px 18px rgba(225, 29, 72, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.5);
-  animation: floatBob 3s ease-in-out infinite;
-  text-decoration: none;
-}
-.cms-float:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--r2); }
-.cms-float-ic {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 18px;
-}
-.cms-float b { font-family: var(--font-game); font-size: 12px; font-weight: 700; line-height: 1.1; display: block; }
-.cms-float small { font-size: 9.5px; opacity: 0.95; display: block; }
-.cms-float em {
-  position: absolute;
-  top: -6px;
-  right: -3px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-style: normal;
-  font-family: var(--font-game);
-  font-size: 9px;
-  font-weight: 700;
-  background: var(--y1);
-  color: #5b3405;
-  box-shadow: 0 2px 0 var(--y2);
-}
-@keyframes floatBob { 50% { transform: translateY(-5px); } }
+/* ── 7. TIPS ── */
+.h-tip { display: flex; gap: 8px; align-items: flex-start; padding: 2px 4px; font-size: 12px; font-weight: 700; color: var(--pc-muted); line-height: 1.45; }
+.h-tip i { font-size: 18px; color: var(--pc-gold); margin-top: 1px; }
+.h-tip b { color: var(--pc-ink); }
 
 /* Toast */
 .cuan-toast {
-  position: fixed;
-  z-index: 9999;
-  top: calc(var(--safe-t) + 75px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-10px);
-  background: rgba(59, 36, 20, .94);
-  color: #fff;
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-family: var(--font-game);
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .3), 0 0 0 2px var(--wood);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s, transform .25s;
+  position: fixed; z-index: 99998; left: 50%; top: 68px; transform: translate(-50%, -16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 6px; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800;
+  background: #1d2b1f; color: #fff; box-shadow: 0 10px 24px rgba(0, 0, 0, .2); transition: transform .3s var(--pc-ease), opacity .2s;
 }
-.cuan-toast.show {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-.cuan-toast i { font-size: 18px; color: #ffd43b; }
+.cuan-toast.show { transform: translate(-50%, 0); opacity: 1; }
 
-@media (max-width: 380px) {
-  .hero-actions-row { grid-template-columns: 1fr 1fr; }
-  .hero-actions-row a:nth-child(3) { grid-column: span 2; }
+/* ── MODAL ── */
+.h-backdrop {
+  position: fixed; inset: 0; z-index: 99990; display: flex; align-items: flex-end; justify-content: center; padding: 12px;
+  background: rgba(15, 30, 18, .45); opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
 }
+.h-backdrop.open { opacity: 1; visibility: visible; }
+.h-modal {
+  position: relative; width: 100%; max-width: 420px; padding: 18px 16px 14px; border-radius: 22px; background: var(--pc-card);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .25); transform: translateY(40px); transition: transform .4s var(--pc-ease);
+  margin-bottom: env(safe-area-inset-bottom);
+}
+.h-backdrop.open .h-modal { transform: none; }
+.h-modal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding-right: 40px; }
+.h-modal-ic { width: 52px; height: 52px; flex-shrink: 0; border-radius: 16px; display: grid; place-items: center; font-size: 26px; color: var(--pc-green); background: var(--pc-green-l); }
+.h-modal-ic img { width: 42px; height: 42px; object-fit: contain; }
+.h-modal-ic.dark { background: #18181b; color: #fff; }
+.h-modal h3 { margin: 0; font-family: var(--pc-font); font-size: 18px; font-weight: 700; line-height: 1.25; }
+.h-modal-x { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border: 0; border-radius: 12px; background: none; color: var(--pc-muted); font-size: 18px; cursor: pointer; display: grid; place-items: center; }
+.h-modal p { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--pc-muted); line-height: 1.5; }
+.h-modal-acts { display: flex; flex-direction: column; gap: 6px; }
+.h-step { display: flex; gap: 10px; padding: 9px 0; font-size: 12.5px; font-weight: 700; line-height: 1.45; }
+.h-step + .h-step { box-shadow: 0 -1px 0 var(--pc-line); }
+.h-step-n { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; display: grid; place-items: center; font-family: var(--pc-font); font-weight: 700; color: var(--pc-green); background: var(--pc-green-l); }
+.h-step em { font-style: normal; font-weight: 900; color: #6b4a00; background: var(--pc-gold-l); padding: 0 5px; border-radius: 5px; }
+.h-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0 10px; }
+.h-row3 .h-btn { padding: 0 8px; font-size: 13.5px; }
+
 @media (prefers-reduced-motion: reduce) {
-  .cms-float, .farm-chip.ready { animation: none !important; }
+  [data-rv] { opacity: 1; transform: none; transition: none; }
+  .h-farm.in .h-rice { animation: none; }
+  .h-ring .fg, .h-modal { transition: none; }
 }
 </style>
 
-<div class="valley-home-stage">
+<?php
+  $ic3d = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png';
+  $rp0  = static fn(float $n): string => number_format($n, 0, ',', '.');
+  $FS = $cms['farm_spotlight'] ?? [];
+  $SB = $cms['survey_banner']; $PB = $cms['promo_banner']; $TC = $cms['threads_card']; $FP = $cms['floating_promo'] ?? [];
+  if (setting($pdo, 'survey_enabled', '1') !== '1' || $user_has_surveyed) $SB['enabled'] = false;
+?>
+<div class="h-wrap">
 
-  <!-- 1. Siluet Pegunungan & Lembah Sawah Hijau Low-Poly (Inline SVG) -->
-  <div class="valley-sky-deco" aria-hidden="true">
-    <svg viewBox="0 0 440 210" preserveAspectRatio="xMidYMin slice" fill="none">
-      <defs>
-        <linearGradient id="vSkySun" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9"/>
-          <stop offset="100%" stop-color="#fef08a" stop-opacity="0"/>
-        </linearGradient>
-        <linearGradient id="vMtnFar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#bae6fd"/>
-          <stop offset="100%" stop-color="#7dd3fc"/>
-        </linearGradient>
-        <linearGradient id="vMtnMid" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#86efac"/>
-          <stop offset="100%" stop-color="#4ade80"/>
-        </linearGradient>
-        <linearGradient id="vHillNear" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#4ade80"/>
-          <stop offset="100%" stop-color="#22c55e"/>
-        </linearGradient>
-      </defs>
-
-      <!-- Matahari Pagi Hangat -->
-      <circle cx="370" cy="40" r="32" fill="url(#vSkySun)"/>
-      <circle cx="370" cy="40" r="18" fill="#fde047"/>
-
-      <!-- Awan Lembut Low-Poly -->
-      <path d="M40 50 Q50 35 65 40 Q80 30 95 42 Q110 38 120 50 Z" fill="#ffffff" opacity="0.65"/>
-      <path d="M220 30 Q230 18 245 22 Q260 14 275 25 Q285 22 295 32 Z" fill="#ffffff" opacity="0.55"/>
-
-      <!-- Lapisan Pegunungan Jauh (Biru Muda Pastel) -->
-      <polygon points="0,140 45,95 90,130 150,75 210,125 275,68 340,120 395,85 440,118 440,210 0,210" fill="url(#vMtnFar)" opacity="0.75"/>
-      <!-- Salju / Sorot Puncak Gunung -->
-      <polygon points="150,75 142,88 150,92 158,86" fill="#ffffff" opacity="0.8"/>
-      <polygon points="275,68 266,82 276,86 284,80" fill="#ffffff" opacity="0.8"/>
-
-      <!-- Lapisan Bukit Sedang (Hijau Muda Segar) -->
-      <path d="M0 135 C60 110, 140 140, 220 120 C300 100, 380 135, 440 125 V210 H0 Z" fill="url(#vMtnMid)" opacity="0.85"/>
-
-      <!-- Petak Terasering Sawah Berundak -->
-      <path d="M0 162 C70 145, 170 170, 270 155 C360 142, 410 160, 440 155 V210 H0 Z" fill="url(#vHillNear)"/>
-      <path d="M0 182 C90 170, 200 190, 310 175 C390 165, 420 178, 440 174 V210 H0 Z" fill="#16a34a"/>
-
-      <!-- Pematang Sawah Cokelat Subur -->
-      <path d="M0 172 C80 158, 180 180, 280 166 C360 155, 420 170, 440 166" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
-      <path d="M0 192 C95 182, 210 200, 320 186 C400 176, 430 188, 440 185" stroke="#78350f" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
-    </svg>
-  </div>
-
-  <!-- 2. USER HERO & SALDO SHOWCASE (#tour-balance-box) -->
+  <!-- 1. KARTU SALDO (#tour-balance-box) -->
   <?php if ($H['show_user_bar'] || $H['show_balance_card'] || $H['show_quick_actions']): ?>
-  <div class="game-panel" id="tour-balance-box">
-    <div class="parch-card">
+  <section class="h-hero" id="tour-balance-box" data-rv>
+    <svg class="h-hero-field" viewBox="0 0 400 46" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 22 C90 8 180 30 270 16 C330 8 370 18 400 14 V46 H0 Z" fill="rgba(255,255,255,.05)"/>
+      <path d="M0 34 C100 22 200 42 300 30 C350 25 380 32 400 30 V46 H0 Z" fill="rgba(0,0,0,.10)"/>
+    </svg>
 
-      <?php if ($H['show_user_bar']): ?>
-      <div class="user-hero-top">
-        <div class="user-greet-group">
-          <div class="user-avatar-slot">
-            <img src="/assets/img/icons3d/star.png" alt="Petani">
-          </div>
-          <div class="user-name-meta">
-            <b>Halo, <?= htmlspecialchars($user['username'] ?? 'Petani Cuan') ?></b>
-            <div class="lvl">
-              <span class="lvl-star"><img src="/assets/img/icons3d/star.png" alt=""></span>
-              <b><?= htmlspecialchars($membership_name ?? 'Petani Pemula') ?></b>
-            </div>
-          </div>
-        </div>
-
-        <?php if ($H['show_today_stats']): ?>
-        <div class="today-chip">
-          <i class="ph-bold ph-trend-up"></i>
-          <span>+Rp <?= number_format($today_watch_earned, 0, ',', '.') ?></span>
-        </div>
-        <?php endif; ?>
+    <?php if ($H['show_user_bar']): ?>
+    <div class="h-hero-top">
+      <div class="h-who">
+        Halo, <b><?= htmlspecialchars((string)($user['username'] ?? 'Petani')) ?></b>
+        <div class="h-rank"><i class="ph-fill ph-crown-simple" aria-hidden="true"></i><?= htmlspecialchars((string)$membership_name) ?></div>
       </div>
+      <?php if ($H['show_today_stats'] && !$is_guest): ?>
+      <div class="h-today">Hari ini<b>+Rp <?= $rp0($today_watch_earned) ?></b></div>
       <?php endif; ?>
-
-      <?php if ($H['show_balance_card']): ?>
-      <div class="wallets-container">
-        <!-- Saldo Siap Tarik (WD) -->
-        <div class="wallet-box wallet-box--primary">
-          <div class="wallet-lead">
-            <div class="wal-3d-ic">
-              <img src="/assets/img/icons3d/coins.png" alt="Saldo Tarik">
-            </div>
-            <div class="wallet-meta">
-              <small>Saldo Siap Tarik (WD)</small>
-              <b>Rp <?= number_format((float)($user['balance_wd'] ?? 0), 0, ',', '.') ?></b>
-            </div>
-          </div>
-          <span style="font-size:11px;font-weight:800;color:#86efac;display:flex;align-items:center;gap:3px;">
-            <i class="ph-fill ph-check-circle"></i> Cair Tunai
-          </span>
-        </div>
-
-        <!-- Saldo Beli / Kas Petani -->
-        <div class="wallet-box">
-          <div class="wallet-lead">
-            <div class="wal-3d-ic">
-              <img src="/assets/img/icons3d/seed.png" alt="Kas Beli">
-            </div>
-            <div class="wallet-meta">
-              <small>Saldo Beli / Kas</small>
-              <b>Rp <?= number_format((float)($user['balance_dep'] ?? 0), 0, ',', '.') ?></b>
-            </div>
-          </div>
-          <a href="/deposit" class="wal-add" title="Isi Kas"><i class="ph-bold ph-plus"></i></a>
-        </div>
-      </div>
-      <?php endif; ?>
-
-      <?php if ($H['show_quick_actions']): ?>
-      <div class="hero-actions-row">
-        <a href="/withdraw" class="nb-btn g lg" id="tour-btn-withdraw">
-          <i class="ph-bold ph-arrow-up-right"></i>
-          <span>Tarik</span>
-        </a>
-        <a href="/deposit" class="nb-btn y lg">
-          <i class="ph-bold ph-plus-circle"></i>
-          <span>Isi Kas</span>
-        </a>
-        <a href="/history" class="nb-btn ghost" style="font-size:13.5px;">
-          <i class="ph-bold ph-clock-counter-clockwise"></i>
-          <span>Riwayat</span>
-        </a>
-      </div>
-      <?php endif; ?>
-
     </div>
+    <?php endif; ?>
+
+    <?php if ($H['show_balance_card']): ?>
+    <div class="h-bal">
+      <div>
+        <small>Saldo siap tarik</small>
+        <div class="h-bal-num"><span>Rp</span><b data-count="<?= (int)round((float)($user['balance_wd'] ?? 0)) ?>"><?= $rp0((float)($user['balance_wd'] ?? 0)) ?></b></div>
+      </div>
+      <img class="h-bal-coin" src="<?= $ic3d('coins') ?>" alt="" width="58" height="58">
+    </div>
+    <?php if (!$is_guest): ?>
+    <div class="h-dep">
+      <span>Saldo Beli <b>Rp <?= $rp0((float)($user['balance_dep'] ?? 0)) ?></b></span>
+      <a href="/deposit"><i class="ph-bold ph-plus" aria-hidden="true"></i>Isi</a>
+    </div>
+    <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($H['show_quick_actions']): ?>
+    <div class="h-acts">
+      <?php if ($is_guest): ?>
+      <a href="/register" class="h-act gold">Daftar gratis</a>
+      <a href="/login" class="h-act">Masuk</a>
+      <a href="/panduan" class="h-act">Panduan</a>
+      <?php else: ?>
+      <a href="/withdraw" class="h-act gold" id="tour-btn-withdraw"><i class="ph-bold ph-hand-coins" aria-hidden="true"></i>Tarik saldo</a>
+      <a href="/missions" class="h-act"><i class="ph-bold ph-target" aria-hidden="true"></i>Misi</a>
+      <a href="/history" class="h-act"><i class="ph-bold ph-receipt" aria-hidden="true"></i>Riwayat</a>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
+  </section>
+  <?php endif; ?>
+
+  <!-- 2. SAWAH PANENCUAN (#tour-sidejob-card) -->
+  <?php if (!empty($FS['enabled'])): ?>
+  <section class="h-card h-farm" id="tour-sidejob-card" data-rv style="--d:.05s">
+    <div class="h-farm-scene" aria-hidden="true">
+      <svg viewBox="0 0 400 78" preserveAspectRatio="xMidYMax slice" fill="none">
+        <circle cx="64" cy="20" r="11" fill="#fde047" opacity=".9"/>
+        <polygon points="0,44 50,20 96,40 150,14 210,42 262,22 320,42 400,24 400,78 0,78" fill="#bbf7d0"/>
+        <path d="M0 50 C80 38 170 56 260 46 C330 38 370 48 400 45 V78 H0 Z" fill="#86efac"/>
+        <path d="M0 62 C90 54 200 70 300 60 C350 55 380 61 400 60 V78 H0 Z" fill="#4ade80"/>
+        <path d="M0 70 C100 64 220 76 320 68 C360 65 390 70 400 69 V78 H0 Z" fill="#22c55e"/>
+        <g stroke="#a16207" stroke-width="2" stroke-linecap="round">
+          <g class="h-rice"><path d="M26 74 V60"/><path d="M33 73 V57"/><path d="M40 74 V61"/></g>
+          <g class="h-rice d2"><path d="M104 72 V58"/><path d="M111 71 V55"/><path d="M118 72 V59"/></g>
+          <g class="h-rice d3"><path d="M182 73 V59"/><path d="M189 72 V56"/><path d="M196 73 V60"/></g>
+        </g>
+      </svg>
+      <div class="h-farm-props"><img src="<?= $ic3d('padi') ?>" alt="" width="46" height="46" style="width:46px;height:46px"><img src="<?= $ic3d('basket') ?>" alt="" width="58" height="58" style="width:58px;height:58px;margin-left:-10px"></div>
+    </div>
+    <div class="h-farm-body">
+      <div class="h-farm-head">
+        <h2><?= htmlspecialchars((string)($FS['title'] ?: 'Sawah PanenCuan')) ?></h2>
+        <?php if ($farm_summary && $farm_summary['total_planted'] > 0): ?><small><?= $farm_summary['total_planted'] ?> petak ditanami</small><?php endif; ?>
+      </div>
+      <p><?= htmlspecialchars((string)($FS['desc'] ?: 'Tanam bibit, panen, lalu jual ke pasar jadi saldo tarik.')) ?></p>
+      <?php if ($farm_summary && ($farm_summary['ready_count'] || $farm_summary['growing_count'] || $farm_summary['harvest_count'])): ?>
+      <div class="h-stats">
+        <?php if ($farm_summary['ready_count'] > 0): ?><span class="h-stat ready"><img src="<?= $ic3d('padi') ?>" alt="" width="22" height="22"><?= $farm_summary['ready_count'] ?> siap panen</span><?php endif; ?>
+        <?php if ($farm_summary['growing_count'] > 0): ?><span class="h-stat"><img src="<?= $ic3d('seed') ?>" alt="" width="22" height="22"><?= $farm_summary['growing_count'] ?> tumbuh</span><?php endif; ?>
+        <?php if ($farm_summary['harvest_count'] > 0): ?><span class="h-stat"><img src="<?= $ic3d('barn') ?>" alt="" width="22" height="22"><?= $farm_summary['harvest_count'] ?> di lumbung</span><?php endif; ?>
+      </div>
+      <?php endif; ?>
+      <a href="<?= htmlspecialchars((string)($FS['url'] ?: '/farm')) ?>" class="h-btn full">
+        <?= $farm_summary && $farm_summary['ready_count'] > 0 ? 'Panen sekarang' : htmlspecialchars((string)($FS['cta'] ?: 'Buka sawah')) ?>
+      </a>
+    </div>
+  </section>
+  <?php endif; ?>
+
+  <!-- 3. MISI NONTON (#tour-video-mission) -->
+  <?php if (!empty($H['show_watch_cta'])): ?>
+  <section class="h-card h-watch" id="tour-video-mission" data-rv style="--d:.08s">
+    <?php if ($H['show_watch_mission']): ?>
+    <div class="h-ring" data-ring="<?= $watch_pct ?>" role="img" aria-label="<?= $watch_today ?> dari <?= $watch_limit ?> video hari ini">
+      <svg viewBox="0 0 60 60" aria-hidden="true"><circle class="bg" cx="30" cy="30" r="24"/><circle class="fg" cx="30" cy="30" r="24"/></svg>
+      <span aria-hidden="true"><?= $watch_today ?>/<?= $watch_limit ?></span>
+    </div>
+    <?php endif; ?>
+    <div class="h-watch-tx">
+      <b>Nonton video harian</b>
+      <small><?= $watch_remaining > 0 ? $watch_remaining . ' video lagi bisa dibayar hari ini' : 'Kuota hari ini penuh, buka lagi besok' ?></small>
+    </div>
+    <a href="/videos" class="h-btn" id="tour-btn-watch"><i class="ph-fill ph-play" aria-hidden="true"></i>Nonton</a>
+  </section>
+  <?php endif; ?>
+
+  <!-- 4. PINTASAN (#tour-bento-grid) -->
+  <?php
+    $tiles = array_values(array_filter((array)($cms['bento']['tiles'] ?? []), fn($t) => !empty($t['enabled']) && !in_array($t['id'] ?? '', ['fishing', 'farm', 'watch'], true)));
+    $tile3d = ['redeem' => 'basket', 'upgrade' => 'coins', 'referral' => 'seed'];
+  ?>
+  <?php if (!empty($cms['bento']['show_section']) && $tiles): ?>
+  <nav class="h-tiles" id="tour-bento-grid" aria-label="<?= htmlspecialchars((string)($cms['bento']['title'] ?: 'Pintasan')) ?>">
+    <?php foreach ($tiles as $ti => $t):
+      $tid = (string)($t['id'] ?? '');
+      $mark = '';
+      if ($tid === 'checkin' && !$is_guest) $mark = $has_checked_in_today ? '<span class="h-done" aria-label="sudah absen"><i class="ph-bold ph-check"></i></span>' : '<span class="h-dot" aria-label="belum absen"></span>';
+      $ic = isset($tile3d[$tid])
+        ? '<span class="h-tile-ic"><img src="' . $ic3d($tile3d[$tid]) . '" alt="" width="38" height="38">' . $mark . '</span>'
+        : '<span class="h-tile-ic"><i class="ph-fill ' . htmlspecialchars((string)$t['icon']) . '" aria-hidden="true"></i>' . $mark . '</span>';
+      $rv = 'data-rv style="--d:' . number_format(0.03 * $ti, 2) . 's"';
+    ?>
+      <?php if ($tid === 'checkin'): ?>
+        <button type="button" class="h-tile" <?= $rv ?> onclick="openCheckinModal()"><?= $ic ?><span><?= htmlspecialchars((string)$t['label']) ?></span></button>
+      <?php elseif ($tid === 'threads'): ?>
+        <button type="button" class="h-tile" id="tour-threads-promo-card" <?= $rv ?> onclick="openThreadsPromoModal()"><?= $ic ?><span><?= htmlspecialchars((string)$t['label']) ?></span></button>
+      <?php else: ?>
+        <a href="<?= htmlspecialchars((string)$t['url']) ?>" class="h-tile" <?= $rv ?>><?= $ic ?><span><?= htmlspecialchars((string)$t['label']) ?></span></a>
+      <?php endif; ?>
+    <?php endforeach; ?>
+  </nav>
+  <?php endif; ?>
+
+  <!-- 5. INFO & PELUANG CUAN (satu daftar) -->
+  <?php
+    $show_notif = !empty($cms['notif_inbox']['enabled']) && $notif_preview;
+    $show_ref   = $H['show_ref_strip'] && !$is_guest && $ref_code !== '-';
+    $show_tour  = !empty($cms['tour']['show_banner']);
+    $has_list   = $show_notif || $show_ref || $show_tour || !empty($SB['enabled']) || !empty($TC['enabled']) || !empty($PB['enabled']) || !empty($FP['enabled']);
+  ?>
+  <?php if ($has_list): ?>
+  <div class="h-card h-list" data-rv>
+    <?php if ($show_notif): foreach ($notif_preview as $nf): ?>
+    <a href="/notifications" class="h-row">
+      <span class="h-row-ic" style="background:#ffe4e6;color:var(--pc-red)"><i class="ph-fill ph-bell-ringing" aria-hidden="true"></i></span>
+      <span class="h-row-tx"><b><?= htmlspecialchars((string)($nf['title'] ?? 'Pengumuman')) ?></b><small><?= htmlspecialchars(mb_strimwidth(strip_tags((string)($nf['message'] ?? $nf['body'] ?? '')), 0, 70, '…')) ?></small></span>
+    </a>
+    <?php endforeach; endif; ?>
+
+    <?php if (!empty($SB['enabled'])): ?>
+    <a href="/survey" class="h-row">
+      <span class="h-row-ic"><i class="ph-fill ph-clipboard-text" aria-hidden="true"></i></span>
+      <span class="h-row-tx"><b><?= htmlspecialchars((string)$SB['title']) ?></b><small><?= htmlspecialchars((string)$SB['desc']) ?></small></span>
+      <?php if ($SB['badge']): ?><span class="h-row-end money"><?= htmlspecialchars((string)$SB['badge']) ?></span><?php endif; ?>
+    </a>
+    <?php endif; ?>
+
+    <?php if (!empty($TC['enabled'])): ?>
+    <button type="button" class="h-row" onclick="openThreadsPromoModal()">
+      <span class="h-row-ic dark"><i class="ph-bold ph-threads-logo" aria-hidden="true"></i></span>
+      <span class="h-row-tx"><b><?= htmlspecialchars((string)$TC['title']) ?></b><small><?= htmlspecialchars((string)$TC['desc']) ?></small></span>
+      <?php if ($TC['badge_cuan']): ?><span class="h-row-end money"><?= htmlspecialchars((string)$TC['badge_cuan']) ?></span><?php endif; ?>
+    </button>
+    <?php endif; ?>
+
+    <?php if (!empty($PB['enabled']) || !empty($FP['enabled'])): ?>
+    <button type="button" class="h-row" onclick="openPromoHubModal()">
+      <span class="h-row-ic"><img src="<?= $ic3d('coins') ?>" alt="" width="30" height="30"></span>
+      <span class="h-row-tx"><b><?= htmlspecialchars((string)($PB['title'] ?: $FP['title'] ?? 'Ajak teman')) ?></b><small><?= htmlspecialchars((string)($PB['desc'] ?: $FP['sub'] ?? '')) ?></small></span>
+      <?php if (!empty($PB['badge'])): ?><span class="h-row-end money"><?= htmlspecialchars((string)$PB['badge']) ?></span><?php endif; ?>
+    </button>
+    <?php endif; ?>
+
+    <?php if ($show_ref): ?>
+    <button type="button" class="h-row" onclick="copyRefCode('<?= htmlspecialchars($ref_code) ?>')">
+      <span class="h-row-ic"><img src="<?= $ic3d('seed') ?>" alt="" width="30" height="30"></span>
+      <span class="h-row-tx"><small>Kode undanganmu</small><span class="h-code"><?= htmlspecialchars($ref_code) ?></span></span>
+      <span class="h-row-end"><i class="ph-bold ph-copy" aria-hidden="true"></i> Salin</span>
+    </button>
+    <?php endif; ?>
+
+    <?php if ($show_tour): ?>
+    <div id="tour-invite-card">
+      <button type="button" class="h-row" onclick="openTourSelectModal()">
+        <span class="h-row-ic" style="background:var(--pc-soft);color:var(--pc-ink)"><i class="ph-fill ph-compass" aria-hidden="true"></i></span>
+        <span class="h-row-tx"><b><?= htmlspecialchars((string)$cms['tour']['title']) ?></b><small><?= htmlspecialchars((string)$cms['tour']['desc']) ?></small></span>
+      </button>
+    </div>
+    <?php endif; ?>
   </div>
   <?php endif; ?>
 
-  <!-- 3. MASKOT, NOTIFIKASI, TOUR & REFERRAL (CMS) -->
-  <?php if ($H['show_mascot'] && trim((string)$H['mascot_text']) !== ''): ?>
-  <div class="farm-mascot-strip">
-    <img src="/assets/img/icons3d/star.png" alt="Mascot">
-    <div><?= htmlspecialchars($cms_txt((string)$H['mascot_text'])) ?></div>
-  </div>
-  <?php endif; ?>
-
-  <?php if (!empty($cms['notif_inbox']['enabled']) && $notif_preview): ?>
-  <div style="display:flex;flex-direction:column;gap:6px;">
-    <?php foreach ($notif_preview as $nf): ?>
-    <a href="/notifications" class="farm-strip-btn">
-      <span class="farm-strip-ic"><i class="ph-fill ph-bell-ringing"></i></span>
-      <span class="farm-strip-tx">
-        <b><?= htmlspecialchars((string)($nf['title'] ?? 'Pengumuman')) ?></b>
-        <small><?= htmlspecialchars(mb_strimwidth(strip_tags((string)($nf['message'] ?? $nf['body'] ?? '')), 0, 70, '...')) ?></small>
-      </span>
-      <i class="ph-bold ph-caret-right" style="color:var(--muted)"></i>
+  <!-- 6. LANJUTKAN MENONTON -->
+  <?php if (!empty($cms['continue_watching']['enabled']) && $continue_watching_home): ?>
+  <div class="h-sec" data-rv><b><?= htmlspecialchars((string)$cms['continue_watching']['title']) ?></b></div>
+  <div class="h-hscroll" data-rv>
+    <?php foreach ($continue_watching_home as $cw):
+      $cwDur = max(1, (int)($cw['watch_duration'] ?: $cw['duration'] ?: 1));
+      $cwPct = min(100, (int)round(((float)$cw['seconds_watched'] / $cwDur) * 100));
+    ?>
+    <a href="/watch/<?= (int)$cw['id'] ?>" class="h-card h-vid wide">
+      <span class="h-thumb"><img src="<?= htmlspecialchars(yt_thumb($cw['youtube_id'])) ?>" alt="" loading="lazy" width="210" height="131"><span class="h-rew">+<?= format_rp((float)$cw['reward_amount']) ?></span></span>
+      <span class="h-vid-b"><b><?= htmlspecialchars((string)$cw['title']) ?></b><span class="h-bar"><i style="width:<?= $cwPct ?>%"></i></span></span>
     </a>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
 
-  <?php if (!empty($cms['tour']['show_banner'])): ?>
-  <button type="button" class="farm-strip-btn" onclick="openTourSelectModal()">
-    <span class="farm-strip-ic" style="background:linear-gradient(180deg,#fde047,var(--y1));color:#5b3405;">
-      <i class="ph-fill ph-compass"></i>
-    </span>
-    <span class="farm-strip-tx">
-      <b><?= htmlspecialchars((string)$cms['tour']['title']) ?></b>
-      <small><?= htmlspecialchars((string)$cms['tour']['desc']) ?></small>
-    </span>
-    <i class="ph-bold ph-caret-right" style="color:var(--muted)"></i>
-  </button>
-  <?php endif; ?>
-
-  <?php if ($H['show_ref_strip'] && !$is_guest && $ref_code !== '-'): ?>
-  <div class="slot-row" style="background:var(--parch);">
-    <div class="ic sm" style="background:#fff;">
-      <img src="/assets/img/icons3d/coins.png" alt="Ref">
-    </div>
-    <div style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;">
-      <small style="font-size:10px;color:var(--muted);font-weight:800;">Kode Undangan Petani</small>
-      <b style="font-family:var(--font-game);font-size:15px;color:var(--wood-d);letter-spacing:0.5px;"><?= htmlspecialchars($ref_code) ?></b>
-    </div>
-    <button type="button" class="nb-btn sm y" onclick="copyRefCode('<?= htmlspecialchars($ref_code) ?>')">
-      <i class="ph-bold ph-copy"></i> Salin
-    </button>
-  </div>
-  <?php endif; ?>
-
-  <!-- 4. DUA PORTAL: SAWAH PANEN CUAN (HERO) & MISI NONTON VIDEO -->
-  <?php
-    $FS = $cms['farm_spotlight'] ?? ($cms['fishing_spotlight'] ?? []);
-    $show_farm_portal  = true; // portal sawah selalu aktif sebagai fokus utama
-    $show_watch_portal = !empty($H['show_watch_cta']);
-  ?>
-  <div class="portals-wrap">
-
-    <!-- PORTAL 1: SAWAH PANEN CUAN (KARTU PALING MENONJOL) -->
-    <?php if ($show_farm_portal): ?>
-    <div class="portal-farm-panel" id="tour-sidejob-card">
-      <div class="portal-farm-card">
-
-        <!-- Ribbon Judul Game -->
-        <div class="ribbon y" style="margin-top:-24px;margin-bottom:2px;">
-          <img src="/assets/img/icons3d/padi.png" alt="" style="width:20px;height:20px;">
-          <span>SAWAH PANEN CUAN</span>
-        </div>
-
-        <!-- Banner Ilustrasi Lembah Sawah -->
-        <div class="portal-farm-banner">
-          <svg viewBox="0 0 380 100" preserveAspectRatio="xMidYMid slice" fill="none">
-            <!-- Matahari & Cahaya -->
-            <circle cx="320" cy="24" r="16" fill="#fde047"/>
-            <circle cx="320" cy="24" r="28" fill="#fde047" opacity="0.3"/>
-            <!-- Awan -->
-            <path d="M40 22 Q50 12 65 16 Q80 8 95 18 Z" fill="#ffffff" opacity="0.7"/>
-            <!-- Gunung Hijau -->
-            <polygon points="0,65 50,30 110,60 170,25 240,65 310,28 380,62 380,100 0,100" fill="#86efac"/>
-            <polygon points="170,25 162,35 170,38 176,33" fill="#ffffff" opacity="0.75"/>
-            <!-- Bukit Terasering & Pematang -->
-            <path d="M0 68 C80 55, 180 75, 280 62 C340 54, 380 64, 380 64 V100 H0 Z" fill="#4ade80"/>
-            <path d="M0 80 C90 70, 200 88, 300 76 C350 70, 380 78, 380 78 V100 H0 Z" fill="#22c55e"/>
-            <path d="M0 90 C100 82, 220 96, 320 86 C360 82, 380 88, 380 88 V100 H0 Z" fill="#15803d"/>
-            <!-- Padi Emas Bergoyang -->
-            <g stroke="#ca8a04" stroke-width="2" stroke-linecap="round">
-              <path d="M45 88 V70"/><path d="M52 87 V68"/><path d="M59 89 V72"/>
-              <path d="M190 85 V68"/><path d="M197 84 V66"/><path d="M204 86 V70"/>
-              <path d="M330 84 V68"/><path d="M337 83 V65"/><path d="M344 85 V69"/>
-            </g>
-            <g fill="#fde047">
-              <ellipse cx="46" cy="68" rx="2.5" ry="5" transform="rotate(20 46 68)"/>
-              <ellipse cx="53" cy="66" rx="2.5" ry="5" transform="rotate(25 53 66)"/>
-              <ellipse cx="60" cy="70" rx="2.5" ry="5" transform="rotate(18 60 70)"/>
-              <ellipse cx="191" cy="66" rx="2.5" ry="5" transform="rotate(20 191 66)"/>
-              <ellipse cx="198" cy="64" rx="2.5" ry="5" transform="rotate(25 198 64)"/>
-              <ellipse cx="205" cy="68" rx="2.5" ry="5" transform="rotate(18 205 68)"/>
-              <ellipse cx="331" cy="66" rx="2.5" ry="5" transform="rotate(20 331 66)"/>
-              <ellipse cx="338" cy="63" rx="2.5" ry="5" transform="rotate(25 338 63)"/>
-              <ellipse cx="345" cy="67" rx="2.5" ry="5" transform="rotate(18 345 67)"/>
-            </g>
-            <!-- Kilau Bintang Emas -->
-            <polygon points="120,40 122,46 128,48 122,50 120,56 118,50 112,48 118,46" fill="#fff" opacity="0.9"/>
-            <polygon points="260,35 262,40 267,42 262,44 260,49 258,44 253,42 258,40" fill="#fff" opacity="0.9"/>
-          </svg>
-        </div>
-
-        <div class="portal-farm-meta">
-          <div class="portal-farm-title">
-            <h2>Sawah Panen Cuan</h2>
-            <p>Tanam bibit unggul, rawat petak sawah, & jual hasil panen langsung ke Saldo Tarik!</p>
-          </div>
-          <div class="ic lg" style="margin-top:-2px;">
-            <img src="/assets/img/icons3d/basket.png" alt="Panen">
-          </div>
-        </div>
-
-        <!-- Ringkasan Status Sawah User (Realtime dari farm_plots & farm_inventory) -->
-        <div class="farm-chips-row">
-          <?php if (!empty($farm_summary['ready_count']) && $farm_summary['ready_count'] > 0): ?>
-          <span class="farm-chip ready">
-            <img src="/assets/img/icons3d/padi.png" alt="">
-            <b><?= $farm_summary['ready_count'] ?> Petak Siap Panen!</b>
-          </span>
-          <?php endif; ?>
-
-          <?php if (!empty($farm_summary['harvest_count']) && $farm_summary['harvest_count'] > 0): ?>
-          <span class="farm-chip barn">
-            <img src="/assets/img/icons3d/barn.png" alt="">
-            <b><?= $farm_summary['harvest_count'] ?> Hasil di Lumbung</b>
-          </span>
-          <?php endif; ?>
-
-          <?php if (!empty($farm_summary['growing_count']) && $farm_summary['growing_count'] > 0): ?>
-          <span class="farm-chip growing">
-            <img src="/assets/img/icons3d/seed.png" alt="">
-            <b><?= $farm_summary['growing_count'] ?> Sedang Tumbuh</b>
-          </span>
-          <?php endif; ?>
-
-          <?php if (empty($farm_summary['total_planted']) || $farm_summary['total_planted'] === 0): ?>
-          <span class="farm-chip empty">
-            <i class="ph-fill ph-plant" style="color:var(--g2);"></i>
-            <b>Petak Lahan Siap Ditanami</b>
-          </span>
-          <?php endif; ?>
-        </div>
-
-        <!-- Tombol Aksi Utama Sawah -->
-        <a href="/farm" class="nb-btn g lg full" style="font-size:16px;">
-          <img src="/assets/img/icons3d/padi.png" alt="">
-          <span>Masuk ke Sawah Panen</span>
-          <i class="ph-bold ph-arrow-right"></i>
-        </a>
-
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- PORTAL 2: NONTON VIDEO (#tour-video-mission) -->
-    <?php if ($show_watch_portal): ?>
-    <div class="game-panel" id="tour-video-mission">
-      <div class="portal-watch-card">
-
-        <div class="ribbon b" style="margin-top:-22px;margin-bottom:2px;">
-          <i class="ph-fill ph-play-circle" style="font-size:18px;"></i>
-          <span>MISI NONTON VIDEO</span>
-        </div>
-
-        <div class="watch-top-row">
-          <div class="watch-title-group">
-            <div class="watch-icon-slot">
-              <i class="ph-fill ph-film-strip"></i>
-            </div>
-            <div>
-              <b>Tonton Video Harian</b>
-              <small><?= $H['show_watch_mission'] ? $watch_today . ' / ' . $watch_limit . ' Video Tuntas' : 'Nonton & raih saldo' ?></small>
-            </div>
-          </div>
-          <span class="today-chip" style="background:linear-gradient(180deg,#cffafe,var(--b1));box-shadow:0 2px 0 var(--b2);color:#083344;">
-            <i class="ph-fill ph-sparkle"></i> Kuota Harian
-          </span>
-        </div>
-
-        <?php if ($H['show_watch_mission']): ?>
-        <div class="prog">
-          <div class="prog-fill" style="width: <?= $watch_pct ?>%;"></div>
-          <span class="prog-text"><?= $watch_today ?> / <?= $watch_limit ?> Video (<?= $watch_pct ?>%)</span>
-        </div>
-        <?php endif; ?>
-
-        <a href="/videos" class="nb-btn b full" id="tour-btn-watch">
-          <span><?= htmlspecialchars((string)($H['watch_cta_text'] ?: 'Mulai Nonton Sekarang')) ?></span>
-          <i class="ph-bold ph-arrow-right"></i>
-        </a>
-
-      </div>
-    </div>
-    <?php endif; ?>
-
-  </div>
-
-  <!-- 5. MENU CEPAT / BENTO TILES (#tour-bento-grid) -->
-  <?php
-    $tiles = array_values(array_filter((array)($cms['bento']['tiles'] ?? []), function ($t) {
-        return !empty($t['enabled']) && ($t['id'] ?? '') !== 'fishing'; // tile mancing lama dihapus
-    }));
-    $bento_cnt = count($tiles);
-    $bento_cols = ($bento_cnt >= 9 || $bento_cnt === 5) ? 5 : ($bento_cnt === 6 ? 3 : min(4, max(3, $bento_cnt)));
-  ?>
-  <?php if (!empty($cms['bento']['show_section']) && $tiles): ?>
-  <div class="game-panel" id="tour-bento-grid">
-    <div class="parch-card" style="padding:14px 10px 10px;">
-
-      <div class="ribbon wood" style="margin-top:-22px;margin-bottom:6px;font-size:15px;padding:4px 18px 5px;">
-        <span><?= htmlspecialchars((string)($cms['bento']['title'] ?: 'Menu Cepat & Fitur Cuan')) ?></span>
-      </div>
-
-      <div class="bento-tiles-grid" style="grid-template-columns: repeat(<?= $bento_cols ?>, 1fr)">
-        <?php foreach ($tiles as $t):
-          $tid = (string)($t['id'] ?? '');
-          $lbl = ($tid === 'checkin' && $has_checked_in_today) ? 'Absen ✓' : (string)$t['label'];
-
-          // Ikon 3D jika cocok, atau Phosphor Icon dalam frame slot
-          $iconImg = '';
-          if ($tid === 'farming' || $tid === 'minigame') {
-              $iconImg = '<img src="/assets/img/icons3d/padi.png" alt="">';
-          } elseif ($tid === 'redeem') {
-              $iconImg = '<img src="/assets/img/icons3d/basket.png" alt="">';
-          } elseif ($tid === 'upgrade') {
-              $iconImg = '<img src="/assets/img/icons3d/star.png" alt="">';
-          } elseif ($tid === 'referral') {
-              $iconImg = '<img src="/assets/img/icons3d/coins.png" alt="">';
-          } else {
-              $iconImg = '<i class="ph-fill ' . htmlspecialchars((string)$t['icon']) . '" style="color:' . htmlspecialchars((string)($t['bg'] ?? '#3b2414')) . '"></i>';
-          }
-        ?>
-
-          <?php if ($tid === 'checkin'): ?>
-            <button type="button" class="bento-item-slot" onclick="openCheckinModal()">
-              <div class="bento-slot-ic">
-                <?= $iconImg ?>
-                <?php if (!$has_checked_in_today && !$is_guest): ?><span class="bento-ping-dot"></span><?php endif; ?>
-              </div>
-              <span class="bento-label-tx"><?= htmlspecialchars($lbl) ?></span>
-            </button>
-          <?php elseif ($tid === 'threads'): ?>
-            <button type="button" class="bento-item-slot" id="tour-threads-promo-card" onclick="openThreadsPromoModal()">
-              <div class="bento-slot-ic">
-                <?= $iconImg ?>
-              </div>
-              <span class="bento-label-tx"><?= htmlspecialchars($lbl) ?></span>
-            </button>
-          <?php else: ?>
-            <a href="<?= htmlspecialchars((string)$t['url']) ?>" class="bento-item-slot">
-              <div class="bento-slot-ic">
-                <?= $iconImg ?>
-              </div>
-              <span class="bento-label-tx"><?= htmlspecialchars($lbl) ?></span>
-            </a>
-          <?php endif; ?>
-
-        <?php endforeach; ?>
-      </div>
-
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <!-- 6. BANNER PROMOSI (Survei, Threads, Promo Hub) -->
-  <?php
-    $SB = $cms['survey_banner']; $PB = $cms['promo_banner']; $TC = $cms['threads_card'];
-    if (setting($pdo, 'survey_enabled', '1') !== '1') $SB['enabled'] = false;
-  ?>
-  <?php if (!empty($SB['enabled']) || !empty($PB['enabled']) || !empty($TC['enabled'])): ?>
-  <div class="promo-banners-list">
-
-    <?php if (!empty($SB['enabled'])): ?>
-    <a href="/survey" class="promo-banner-card">
-      <div class="promo-banner-ic" style="background:linear-gradient(180deg,#34d399,var(--g2));box-shadow:0 2px 0 var(--g2);">
-        <i class="ph-fill ph-clipboard-text"></i>
-      </div>
-      <div class="promo-banner-tx">
-        <b><?= htmlspecialchars((string)$SB['title']) ?></b>
-        <small><?= htmlspecialchars((string)$SB['desc']) ?></small>
-      </div>
-      <div class="promo-banner-side">
-        <?php if ($SB['badge']): ?><span class="promo-banner-badge"><?= htmlspecialchars((string)$SB['badge']) ?></span><?php endif; ?>
-        <span class="nb-btn sm g" style="padding:4px 10px;font-size:11.5px;"><?= htmlspecialchars((string)($SB['cta'] ?: 'Isi')) ?></span>
-      </div>
-    </a>
-    <?php endif; ?>
-
-    <?php if (!empty($TC['enabled'])): ?>
-    <button type="button" class="promo-banner-card" onclick="openThreadsPromoModal()">
-      <div class="promo-banner-ic" style="background:linear-gradient(180deg,#52525b,#27272a);box-shadow:0 2px 0 #18181b;">
-        <i class="ph-bold ph-threads-logo"></i>
-      </div>
-      <div class="promo-banner-tx">
-        <b><?= htmlspecialchars((string)$TC['title']) ?></b>
-        <small><?= htmlspecialchars((string)$TC['desc']) ?></small>
-      </div>
-      <div class="promo-banner-side">
-        <?php if ($TC['badge_cuan']): ?><span class="promo-banner-badge"><?= htmlspecialchars((string)$TC['badge_cuan']) ?></span><?php endif; ?>
-        <span class="nb-btn sm y" style="padding:4px 10px;font-size:11.5px;">Ikuti</span>
-      </div>
-    </button>
-    <?php endif; ?>
-
-    <?php if (!empty($PB['enabled'])): ?>
-    <button type="button" class="promo-banner-card" onclick="openPromoHubModal()">
-      <div class="promo-banner-ic" style="background:linear-gradient(180deg,#fde047,var(--y1));box-shadow:0 2px 0 var(--y2);color:#5b3405;">
-        <i class="ph-fill ph-megaphone"></i>
-      </div>
-      <div class="promo-banner-tx">
-        <b><?= htmlspecialchars((string)$PB['title']) ?></b>
-        <small><?= htmlspecialchars((string)$PB['desc']) ?></small>
-      </div>
-      <div class="promo-banner-side">
-        <?php if ($PB['badge']): ?><span class="promo-banner-badge"><?= htmlspecialchars((string)$PB['badge']) ?></span><?php endif; ?>
-        <span class="nb-btn sm b" style="padding:4px 10px;font-size:11.5px;"><?= htmlspecialchars((string)($PB['cta'] ?: 'Mulai')) ?></span>
-      </div>
-    </button>
-    <?php endif; ?>
-
-  </div>
-  <?php endif; ?>
-
-  <!-- 7. LANJUTKAN MENONTON (CMS) -->
-  <?php if (!empty($cms['continue_watching']['enabled']) && $continue_watching_home): ?>
-  <div class="game-panel">
-    <div class="parch-card" style="gap:8px;">
-      <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-game);font-size:14.5px;font-weight:700;">
-        <i class="ph-fill ph-clock-counter-clockwise" style="color:var(--b2);"></i>
-        <span><?= htmlspecialchars((string)$cms['continue_watching']['title']) ?></span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <?php foreach ($continue_watching_home as $cw):
-          $cwDur = max(1, (int)($cw['watch_duration'] ?: $cw['duration'] ?: 1));
-          $cwPct = min(100, (int)round(((float)$cw['seconds_watched'] / $cwDur) * 100));
-        ?>
-        <a href="/watch/<?= (int)$cw['id'] ?>" class="cw-item-row">
-          <div class="cw-thumb">
-            <img src="<?= htmlspecialchars(yt_thumb($cw['youtube_id'])) ?>" alt="" loading="lazy">
-            <i class="ph-fill ph-play-circle"></i>
-          </div>
-          <div class="cw-info">
-            <b><?= htmlspecialchars((string)$cw['title']) ?></b>
-            <div class="prog" style="height:12px;">
-              <div class="prog-fill" style="width:<?= $cwPct ?>%"></div>
-            </div>
-            <small style="font-size:10px;color:var(--muted);font-weight:700;"><?= $cwPct ?>% • +<?= format_rp((float)$cw['reward_amount']) ?></small>
-          </div>
-        </a>
-        <?php endforeach; ?>
-      </div>
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <!-- 8. REKOMENDASI VIDEO PILIHAN BERHADIAH -->
+  <!-- 7. VIDEO PILIHAN -->
   <?php if (!empty($cms['featured_videos']['enabled']) && !empty($featured_videos)): ?>
-  <div class="game-panel">
-    <div class="parch-card">
-
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <div style="display:flex;align-items:center;gap:7px;font-family:var(--font-game);font-size:15px;font-weight:700;">
-          <img src="/assets/img/icons3d/star.png" alt="" style="width:20px;height:20px;">
-          <span><?= htmlspecialchars((string)($cms['featured_videos']['title'] ?: 'Video Pilihan Berhadiah')) ?></span>
-        </div>
-        <a href="/videos" style="font-family:var(--font-game);font-size:12px;font-weight:700;color:var(--b2);text-decoration:none;">Lihat Semua &rarr;</a>
-      </div>
-
-      <?php if (trim((string)$cms['featured_videos']['desc']) !== ''): ?>
-      <p style="margin:-4px 0 2px;font-size:11.5px;color:var(--muted);font-weight:700;"><?= htmlspecialchars((string)$cms['featured_videos']['desc']) ?></p>
-      <?php endif; ?>
-
-      <div class="video-grid-2col">
-        <?php foreach ($featured_videos as $fv): ?>
-        <a href="/watch/<?= (int)$fv['id'] ?>" class="video-card-item">
-          <div class="video-thumb-slot">
-            <img src="<?= htmlspecialchars(yt_thumb($fv['youtube_id'])) ?>"
-                 alt="<?= htmlspecialchars($fv['title']) ?>"
-                 loading="lazy"
-                 onerror="this.onerror=null;this.src='https://img.youtube.com/vi/<?= htmlspecialchars($fv['youtube_id']) ?>/hqdefault.jpg'">
-            <span class="video-reward-pill">+<?= format_rp((float)$fv['reward_amount']) ?></span>
-            <span class="video-dur-pill"><?= (int)($fv['watch_duration'] ?? 0) ?>s</span>
-          </div>
-          <div class="video-card-body">
-            <div class="video-card-title"><?= htmlspecialchars($fv['title']) ?></div>
-            <span class="nb-btn sm b full" style="margin-top:auto;padding:5px 8px;font-size:11.5px;">
-              <i class="ph-fill ph-play"></i> Tonton
-            </span>
-          </div>
-        </a>
-        <?php endforeach; ?>
-      </div>
-
-    </div>
+  <div class="h-sec" data-rv><b><?= htmlspecialchars((string)($cms['featured_videos']['title'] ?: 'Video pilihan')) ?></b><a href="/videos">Lihat semua</a></div>
+  <div class="h-hscroll" data-rv>
+    <?php foreach ($featured_videos as $fv): ?>
+    <a href="/watch/<?= (int)$fv['id'] ?>" class="h-card h-vid">
+      <span class="h-thumb">
+        <img src="<?= htmlspecialchars(yt_thumb($fv['youtube_id'])) ?>" alt="" loading="lazy" width="148" height="93" onerror="this.onerror=null;this.src='https://img.youtube.com/vi/<?= htmlspecialchars($fv['youtube_id']) ?>/hqdefault.jpg'">
+        <span class="h-rew">+<?= format_rp((float)$fv['reward_amount']) ?></span>
+        <span class="h-dur"><?= (int)($fv['watch_duration'] ?? 0) ?> dtk</span>
+        <?php if (!empty($fv['watched_today'])): ?><span class="h-done" aria-label="sudah ditonton"><i class="ph-bold ph-check"></i></span><?php endif; ?>
+      </span>
+      <span class="h-vid-b"><b><?= htmlspecialchars((string)$fv['title']) ?></b></span>
+    </a>
+    <?php endforeach; ?>
   </div>
   <?php endif; ?>
 
-  <!-- 9. TIPS CUAN HARIAN -->
+  <!-- 8. TIPS -->
   <?php if (!empty($cms['tips']['enabled']) && trim((string)$cms['tips']['text']) !== ''): ?>
-  <div class="slot-row" style="background:var(--parch);align-items:flex-start;">
-    <div class="ic sm" style="background:#fff;margin-top:2px;">
-      <i class="ph-fill ph-lightbulb" style="font-size:20px;color:var(--y2)"></i>
-    </div>
-    <div style="flex:1;min-width:0;font-size:11.5px;line-height:1.4;color:var(--ink);font-weight:700;">
-      <b style="font-family:var(--font-game);font-size:13px;display:block;margin-bottom:2px;color:var(--wood-d);"><?= htmlspecialchars((string)$cms['tips']['title']) ?></b>
-      <?= htmlspecialchars($cms_txt((string)$cms['tips']['text'])) ?>
-    </div>
-  </div>
+  <p class="h-tip" data-rv><i class="ph-fill ph-lightbulb" aria-hidden="true"></i><span><b><?= htmlspecialchars((string)$cms['tips']['title']) ?>.</b> <?= htmlspecialchars($cms_txt((string)$cms['tips']['text'])) ?></span></p>
   <?php endif; ?>
 
 </div>
 
-<!-- 10. FLOATING PROMO BUTTON -->
-<?php if (!empty($cms['floating_promo']['enabled'])): $FP = $cms['floating_promo']; ?>
-<button type="button" class="cms-float" onclick="openPromoHubModal()" aria-label="<?= htmlspecialchars((string)$FP['title']) ?>">
-  <?php if ($FP['badge']): ?><em><?= htmlspecialchars((string)$FP['badge']) ?></em><?php endif; ?>
-  <div class="cms-float-ic">
-    <i class="ph-fill ph-gift"></i>
-  </div>
-  <div>
-    <b><?= htmlspecialchars((string)$FP['title']) ?></b>
-    <small><?= htmlspecialchars((string)$FP['sub']) ?></small>
-  </div>
-</button>
-<?php endif; ?>
+<div id="cuan-toast" class="cuan-toast" role="status" aria-live="polite"></div>
 
-<!-- TOAST CONTAINER -->
-<div id="cuan-toast" class="cuan-toast"></div>
-
-<!-- ============================================================
-     MODAL POPUP 1: PENGUMUMAN / PROMO CONSOLE (JIKA AKTIF)
-     Menggunakan gaya game UI (.modal + .ribbon + .close)
-     ============================================================ -->
+<!-- MODAL 1: PENGUMUMAN -->
 <?php if ($popup_enabled): ?>
-<div id="custom-announcement-popup" class="backdrop">
-  <div class="modal">
-    <button type="button" class="close" onclick="closeCustomPopup()" aria-label="Tutup">
-      <i class="ph-bold ph-x"></i>
-    </button>
-    <div class="modal-head">
-      <div class="hic">
-        <img src="/assets/img/icons3d/star.png" alt="">
-      </div>
-      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
-        <span>PENGUMUMAN</span>
-      </div>
-      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);"><?= htmlspecialchars($popup_title) ?></h3>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.5;margin:0 0 10px;text-align:center;">
-        <?= nl2br(htmlspecialchars($popup_body)) ?>
-      </p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="<?= htmlspecialchars($popup_cta_url) ?>" class="nb-btn g full">
-          <i class="ph-bold ph-arrow-up-right"></i>
-          <span><?= htmlspecialchars($popup_cta_text) ?></span>
-        </a>
-        <button type="button" onclick="closeCustomPopup()" class="nb-btn ghost sm full">Nanti Saja</button>
-      </div>
+<div id="custom-announcement-popup" class="h-backdrop" onclick="if(event.target===this)closeCustomPopup()">
+  <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-ann">
+    <button type="button" class="h-modal-x" onclick="closeCustomPopup()" aria-label="Tutup"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+    <div class="h-modal-head"><span class="h-modal-ic"><i class="ph-fill ph-megaphone-simple" aria-hidden="true"></i></span><h3 id="mdl-ann"><?= htmlspecialchars($popup_title) ?></h3></div>
+    <p><?= nl2br(htmlspecialchars($popup_body)) ?></p>
+    <div class="h-modal-acts">
+      <a href="<?= htmlspecialchars($popup_cta_url) ?>" class="h-btn full"><?= htmlspecialchars($popup_cta_text) ?></a>
+      <button type="button" onclick="closeCustomPopup()" class="h-btn soft full">Nanti saja</button>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ============================================================
-     MODAL POPUP 2: AJAKAN CHECK-IN HARIAN (KOTAK REWARD)
-     ============================================================ -->
+<!-- MODAL 2: CHECK-IN -->
 <?php if (!$has_checked_in_today && !$is_guest): ?>
-<div id="checkin-prompt-modal" class="backdrop">
-  <div class="modal">
-    <button type="button" class="close" onclick="closeCheckinModal()" aria-label="Tutup">
-      <i class="ph-bold ph-x"></i>
-    </button>
-    <div class="modal-head">
-      <div class="hic">
-        <img src="/assets/img/icons3d/basket.png" alt="">
-      </div>
-      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
-        <span>CHECK-IN HARIAN</span>
-      </div>
-      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Hadiah Panen Menantimu!</h3>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.45;margin:0 0 10px;text-align:center;">
-        Bonus login harian sudah siap dipetik! Buka check-in sekarang untuk mendapatkan <strong>saldo tarik tunai & bibit</strong> langsung hari ini!
-      </p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="/checkin" class="nb-btn g full">
-          <i class="ph-fill ph-sparkle"></i>
-          <span>Klaim Hadiah Check-in Sekarang</span>
-        </a>
-        <button type="button" onclick="closeCheckinModal()" class="nb-btn ghost sm full">Nanti Saja</button>
-      </div>
+<div id="checkin-prompt-modal" class="h-backdrop" onclick="if(event.target===this)closeCheckinModal()">
+  <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-ci">
+    <button type="button" class="h-modal-x" onclick="closeCheckinModal()" aria-label="Tutup"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+    <div class="h-modal-head"><span class="h-modal-ic"><img src="<?= $ic3d('basket') ?>" alt="" width="42" height="42"></span><h3 id="mdl-ci">Hadiah check-in hari ini belum diambil</h3></div>
+    <p>Check-in tiap hari untuk tambahan saldo tarik. Makin panjang streak-nya, makin besar hadiahnya.</p>
+    <div class="h-modal-acts">
+      <a href="/checkin" class="h-btn gold full">Ambil hadiah</a>
+      <button type="button" onclick="closeCheckinModal()" class="h-btn soft full">Nanti saja</button>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ============================================================
-     MODAL POPUP 3: PILIH PANDUAN TOUR INTERAKTIF
-     ============================================================ -->
-<div id="tour-select-modal" class="backdrop">
-  <div class="modal">
-    <button type="button" class="close" onclick="closeTourSelectModal()" aria-label="Tutup">
-      <i class="ph-bold ph-x"></i>
-    </button>
-    <div class="modal-head">
-      <div class="hic">
-        <img src="/assets/img/icons3d/star.png" alt="">
-      </div>
-      <div class="ribbon b" style="margin-top:-32px;margin-bottom:4px;">
-        <span>PANDUAN CUAN</span>
-      </div>
-      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Panduan Interaktif 1 Menit</h3>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--muted);font-weight:700;text-align:center;margin:0 0 8px;">
-        Pelajari cara kerja menu dan fitur cuan dengan panduan singkat:
-      </p>
-
-      <button type="button" class="slot-row" style="cursor:pointer;border:0;width:100%;text-align:left;background:#fff;" onclick="startInteractiveTour('watch')">
-        <div class="ic sm" style="background:linear-gradient(180deg,#7dd3fc,var(--b1));color:#fff;">
-          <i class="ph-fill ph-film-strip"></i>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <b style="font-family:var(--font-game);font-size:13px;color:var(--ink);display:block;">Panduan Nonton Video</b>
-          <small style="font-size:10.5px;color:var(--muted);font-weight:700;">Pelajari kuota harian, tugas video cuan, & penarikan saldo tunai.</small>
-        </div>
-      </button>
-
-      <button type="button" onclick="closeTourSelectModal()" class="nb-btn ghost sm full" style="margin-top:4px;">Tutup</button>
+<!-- MODAL 3: PILIH PANDUAN -->
+<div id="tour-select-modal" class="h-backdrop" onclick="if(event.target===this)closeTourSelectModal()">
+  <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-tour">
+    <button type="button" class="h-modal-x" onclick="closeTourSelectModal()" aria-label="Tutup"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+    <div class="h-modal-head"><span class="h-modal-ic"><i class="ph-fill ph-compass" aria-hidden="true"></i></span><h3 id="mdl-tour">Panduan singkat</h3></div>
+    <p>Kami tunjukkan langkahnya satu per satu: kuota video, cara nonton, sampai tarik saldo. Sekitar 1 menit.</p>
+    <div class="h-modal-acts">
+      <button type="button" class="h-btn full" onclick="startInteractiveTour('watch')">Mulai panduan nonton video</button>
+      <button type="button" onclick="closeTourSelectModal()" class="h-btn soft full">Tutup</button>
     </div>
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL POPUP 4: AJAKAN PROMOSI THREADS
-     ============================================================ -->
+<!-- MODAL 4: EVENT THREADS -->
 <?php if ($threads_campaign_enabled): ?>
-<div id="threads-promo-modal" class="backdrop">
-  <div class="modal">
-    <button type="button" class="close" onclick="closeThreadsPromoModal()" aria-label="Tutup">
-      <i class="ph-bold ph-x"></i>
-    </button>
-    <div class="modal-head">
-      <div class="hic" style="background:#18181b;color:#fde68a;">
-        <i class="ph-bold ph-threads-logo" style="font-size:28px;"></i>
-      </div>
-      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
-        <span>EVENT RESMI THREADS</span>
-      </div>
-      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Raih s/d Rp 75.000 di Threads!</h3>
-    </div>
-    <div class="modal-body">
-      <div style="font-size:12px;color:var(--muted);font-weight:700;line-height:1.45;">
-        Bagikan ceritamu di Threads dan dapatkan saldo tarik tunai langsung:
-        <div style="background:var(--slot);box-shadow:0 0 0 2px var(--slot-bd);border-radius:12px;padding:8px 10px;margin:8px 0;">
-          <div style="margin-bottom:5px;color:var(--wood-d);font-weight:800;">
-            • <strong>Langkah 1:</strong> Buat postingan di Threads &rarr; Bonus <strong><?= format_rp($threads_step1_reward) ?></strong>.
-          </div>
-          <div style="color:var(--ink);font-weight:800;">
-            • <strong>Langkah 2:</strong> Postingan tembus <strong>minimal 5K views</strong> &rarr; Bonus <strong><?= format_rp($threads_step2_reward) ?></strong> + <strong>Gaji Pasti & Chat Admin WA</strong>!
-          </div>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="/threads" class="nb-btn y full">
-          <i class="ph-bold ph-threads-logo"></i>
-          <span>Mulai Promosi Threads Sekarang</span>
-        </a>
-        <button type="button" onclick="closeThreadsPromoModal()" class="nb-btn ghost sm full">Nanti Saja</button>
-      </div>
+<div id="threads-promo-modal" class="h-backdrop" onclick="if(event.target===this)closeThreadsPromoModal()">
+  <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-th">
+    <button type="button" class="h-modal-x" onclick="closeThreadsPromoModal()" aria-label="Tutup"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+    <div class="h-modal-head"><span class="h-modal-ic dark"><i class="ph-bold ph-threads-logo" aria-hidden="true"></i></span><h3 id="mdl-th">Promosi di Threads, dibayar 2 tahap</h3></div>
+    <div class="h-step"><span class="h-step-n">1</span><span>Posting tentang PanenCuan di Threads, dapat <em><?= format_rp($threads_step1_reward) ?></em>.</span></div>
+    <div class="h-step"><span class="h-step-n">2</span><span>Postinganmu tembus 5.000 views, tambah <em><?= format_rp($threads_step2_reward) ?></em> plus gaji tetap &amp; kontak admin.</span></div>
+    <div class="h-modal-acts" style="margin-top:8px">
+      <a href="/threads" class="h-btn gold full">Lihat syarat &amp; mulai</a>
+      <button type="button" onclick="closeThreadsPromoModal()" class="h-btn soft full">Nanti saja</button>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ============================================================
-     MODAL POPUP 5: PROMO HUB & REFERRAL SHARE
-     ============================================================ -->
-<div id="promo-hub-modal" class="backdrop">
-  <div class="modal">
-    <button type="button" class="close" onclick="closePromoHubModal()" aria-label="Tutup">
-      <i class="ph-bold ph-x"></i>
+<!-- MODAL 5: AJAK TEMAN -->
+<div id="promo-hub-modal" class="h-backdrop" onclick="if(event.target===this)closePromoHubModal()">
+  <div class="h-modal" role="dialog" aria-modal="true" aria-labelledby="mdl-ref">
+    <button type="button" class="h-modal-x" onclick="closePromoHubModal()" aria-label="Tutup"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+    <div class="h-modal-head"><span class="h-modal-ic"><img src="<?= $ic3d('coins') ?>" alt="" width="42" height="42"></span><h3 id="mdl-ref">Ajak teman, dapat komisi</h3></div>
+    <p>Bagikan link undanganmu. Komisi masuk tiap kali teman yang kamu undang isi saldo.<?php if ($ref_code !== '-'): ?> Kode kamu: <b class="h-code"><?= htmlspecialchars($ref_code) ?></b><?php endif; ?></p>
+    <div class="h-row3">
+      <button type="button" class="h-btn soft" onclick="copyPromoFullCaption('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')"><i class="ph-bold ph-copy" aria-hidden="true"></i>Teks</button>
+      <button type="button" class="h-btn" onclick="shareRefLink('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')"><i class="ph-bold ph-share-network" aria-hidden="true"></i>Bagikan</button>
+      <a href="/referral" class="h-btn soft">Detail</a>
+    </div>
+    <?php if ($threads_campaign_enabled): ?>
+    <button type="button" class="h-row" style="padding:8px 0" onclick="closePromoHubModal();setTimeout(openThreadsPromoModal,250)">
+      <span class="h-row-ic dark"><i class="ph-bold ph-threads-logo" aria-hidden="true"></i></span>
+      <span class="h-row-tx"><b>Event promosi Threads</b><small>Dibayar sampai <?= format_rp($threads_step1_reward + $threads_step2_reward) ?></small></span>
+      <span class="h-row-end"><i class="ph-bold ph-caret-right" aria-hidden="true"></i></span>
     </button>
-    <div class="modal-head">
-      <div class="hic">
-        <img src="/assets/img/icons3d/coins.png" alt="">
-      </div>
-      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
-        <span>PELUANG CUAN</span>
-      </div>
-      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Ajak Teman & Promosi Cuan</h3>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:11.5px;color:var(--muted);font-weight:700;margin:0 0 6px;text-align:center;">
-        Pilih jalur promosi dan panen komisi saldo tarik tunai instan ke dompetmu:
-      </p>
-
-      <!-- Kartu 1: Threads -->
-      <div style="display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:14px;background:var(--slot);box-shadow:0 0 0 2px var(--slot-bd);">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-family:var(--font-game);font-size:11px;font-weight:700;color:var(--wood-d);"><i class="ph-bold ph-threads-logo"></i> EVENT THREADS</span>
-          <span class="today-chip" style="font-size:10px;padding:2px 6px;">+Rp 75.000</span>
-        </div>
-        <b style="font-family:var(--font-game);font-size:13px;color:var(--ink);">Posting Cerita di Threads</b>
-        <small style="font-size:10.5px;color:var(--muted);font-weight:700;">Raih bonus di Langkah 1 & bonus gaji pasti jika tembus 5K views!</small>
-        <a href="/threads" class="nb-btn sm y" style="margin-top:4px;">Ikuti Event Threads &rarr;</a>
-      </div>
-
-      <!-- Kartu 2: Bagikan Link Referral -->
-      <div style="display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:14px;background:var(--slot);box-shadow:0 0 0 2px var(--slot-bd);">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-family:var(--font-game);font-size:11px;font-weight:700;color:var(--g2);"><i class="ph-fill ph-users-three"></i> UNDANG TEMAN</span>
-          <span class="today-chip" style="font-size:10px;padding:2px 6px;">Komisi Pasif</span>
-        </div>
-        <b style="font-family:var(--font-game);font-size:13px;color:var(--ink);">Sebar Link & Kode Referral</b>
-        <div style="background:#fff;border-radius:10px;padding:6px 8px;font-size:10.5px;color:var(--muted);font-weight:700;line-height:1.35;margin:3px 0;">
-          Mau saldo gratis tiap hari? Yuk gabung di PanenCuan! Tonton video dibayar uang tunai & selesaikan misi seru.
-          <div style="margin-top:2px;font-weight:800;color:var(--wood-d);">
-            Kode: <span style="font-family:monospace;letter-spacing:0.5px;"><?= htmlspecialchars($ref_code) ?></span>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">
-          <button type="button" class="nb-btn sm ghost" onclick="copyPromoFullCaption('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')">
-            <i class="ph-bold ph-copy"></i> Teks
-          </button>
-          <button type="button" class="nb-btn sm g" onclick="shareRefLink('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')">
-            <i class="ph-bold ph-share-network"></i> WA
-          </button>
-          <a href="/referral" class="nb-btn sm b">
-            <span>Detail</span>
-          </a>
-        </div>
-      </div>
-
-      <button type="button" onclick="closePromoHubModal()" class="nb-btn ghost sm full" style="margin-top:2px;">Tutup</button>
-    </div>
+    <?php endif; ?>
+    <button type="button" onclick="closePromoHubModal()" class="h-btn soft full" style="margin-top:4px">Tutup</button>
   </div>
 </div>
 
@@ -1867,7 +877,7 @@ function startInteractiveTour(track) {
 /* ── LOGIKA POP-UP BERANTAI (CHAINED MODALS) ── */
 function openCustomPopup() {
   try {
-    const at = localStorage.getItem('panen_tour_active') || localStorage.getItem('mancing_tour_active');
+    const at = localStorage.getItem('panen_tour_active') || localStorage.getItem('panen_tour_active');
     if (at && JSON.parse(at).isRunning) return;
   } catch(e) {}
 
@@ -1943,7 +953,7 @@ function triggerCheckinPopupIfEligible() {
   if (sessionStorage.getItem('checkin_prompt_closed') === '1') return;
 
   try {
-    const at = localStorage.getItem('panen_tour_active') || localStorage.getItem('mancing_tour_active');
+    const at = localStorage.getItem('panen_tour_active') || localStorage.getItem('panen_tour_active');
     if (at && JSON.parse(at).isRunning) return;
   } catch(e) {}
 
@@ -1975,12 +985,12 @@ function closeCheckinModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const allTourDone = localStorage.getItem('panen_tour_done') === '1' || localStorage.getItem('mancing_tour_done') === '1';
+  const allTourDone = localStorage.getItem('panen_tour_done') === '1' || localStorage.getItem('panen_tour_done') === '1';
 
   try {
     const b = document.getElementById('tour-invite-card');
     if (b) {
-      if (allTourDone || localStorage.getItem('panen_tour_banner_dismissed') === '1' || localStorage.getItem('mancing_tour_banner_dismissed') === '1') {
+      if (allTourDone || localStorage.getItem('panen_tour_banner_dismissed') === '1' || localStorage.getItem('panen_tour_banner_dismissed') === '1') {
         b.style.display = 'none';
       } else {
         b.style.display = 'block';
@@ -1990,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isTourRunningNow = false;
   try {
-    const rawTour = localStorage.getItem('panen_tour_active') || localStorage.getItem('mancing_tour_active');
+    const rawTour = localStorage.getItem('panen_tour_active') || localStorage.getItem('panen_tour_active');
     if (rawTour && JSON.parse(rawTour).isRunning) {
       isTourRunningNow = true;
     }
@@ -2025,6 +1035,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+</script>
+
+<script>
+/* ── ANIMASI BERANDA: muncul bertahap, hitung saldo, cincin progres, carousel promo ── */
+(function () {
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 1. Elemen [data-rv] muncul saat masuk layar
+  const items = document.querySelectorAll('[data-rv]');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach((el) => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+    items.forEach((el) => io.observe(el));
+  }
+
+  // 2. Angka saldo menghitung naik
+  document.querySelectorAll('[data-count]').forEach((el) => {
+    const target = +el.dataset.count || 0;
+    if (reduce || target <= 0) return;
+    const t0 = performance.now(), dur = 1100;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(target * e).toLocaleString('id-ID');
+      if (k < 1) requestAnimationFrame(step);
+    };
+    el.textContent = '0';
+    requestAnimationFrame(step);
+  });
+
+  // 3. Cincin progres misi nonton
+  document.querySelectorAll('.h-ring[data-ring]').forEach((ring) => {
+    const fg = ring.querySelector('.fg');
+    if (!fg) return;
+    const pct = Math.max(0, Math.min(100, +ring.dataset.ring || 0));
+    requestAnimationFrame(() => requestAnimationFrame(() => { fg.style.strokeDashoffset = String(151 - 151 * pct / 100); }));
+  });
+
+})();
 </script>
 
 <?php require dirname(__DIR__) . '/partials/footer.php'; ?>

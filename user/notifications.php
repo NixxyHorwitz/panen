@@ -660,7 +660,7 @@ $type_cfg = [
       </div>
       <div class="ntf-empty-title">Semua Pesan Sudah Dibaca!</div>
       <div class="ntf-empty-sub">
-        Tidak ada pesan baru yang tertunda. Kamu selalu ter-update dengan kabar terbaru MancingCuan.
+        Tidak ada pesan baru yang tertunda. Kamu selalu ter-update dengan kabar terbaru PanenCuan.
       </div>
       <button type="button" onclick="filterNotifs('all')" class="btn-marine-home" style="cursor:pointer;border:none;">
         <i class="ph-bold ph-tray"></i>

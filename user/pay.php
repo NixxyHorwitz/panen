@@ -38,7 +38,7 @@ if (($_GET['action'] ?? '') === 'dl_qr') {
     $img    = @file_get_contents($remote);
     if (!$img) { http_response_code(502); exit('Failed to generate QR'); }
     header('Content-Type: image/png');
-    header('Content-Disposition: attachment; filename="QRIS-MancingCuan-dep' . $dep_id . '.png"');
+    header('Content-Disposition: attachment; filename="QRIS-PanenCuan-dep' . $dep_id . '.png"');
     header('Content-Length: ' . strlen($img));
     header('Cache-Control: no-store');
     echo $img;

@@ -421,12 +421,12 @@ if ($_selected_type === 'bank') {
     $_ph_acc_name  = 'Nama Terdaftar di ' . (!empty($_post_bank) ? htmlspecialchars($_post_bank) : 'Akun E-Wallet');
 }
 
-$_seo_title  = setting($pdo, 'seo_title', 'MancingCuan — Nonton Video & Minigame Penghasil Saldo Cuan');
+$_seo_title  = setting($pdo, 'seo_title', 'PanenCuan — Nonton Video & Minigame Penghasil Saldo Cuan');
 $_seo_desc   = setting($pdo, 'seo_description', 'Platform nonton video dan minigame penghasil saldo cuan resmi.');
 $_favicon    = setting($pdo, 'favicon_path', '/assets/favicon.png');
-$_site_name  = setting($pdo, 'site_name', 'MancingCuan');
-$_seo_kw     = setting($pdo, 'seo_keywords', 'mancingcuan, mancing cuan, nonton video dapat uang, aplikasi penghasil saldo dana, game cuan terpercaya, withdraw instan');
-$_seo_author = setting($pdo, 'seo_author', 'MancingCuan Official');
+$_site_name  = setting($pdo, 'site_name', 'PanenCuan');
+$_seo_kw     = setting($pdo, 'seo_keywords', 'panencuan, panen cuan, nonton video dapat uang, aplikasi penghasil saldo dana, game cuan terpercaya, withdraw instan');
+$_seo_author = setting($pdo, 'seo_author', 'PanenCuan Official');
 $_seo_twcard = setting($pdo, 'seo_twitter_card', 'summary_large_image');
 $_seo_og_img = setting($pdo, 'seo_og_image', '/assets/seobanner.jpg');
 
@@ -455,7 +455,7 @@ if (!empty($ref_inviter_name)) {
     $_final_og_desc  = "Kamu diundang oleh @{$ref_inviter_name} untuk bergabung di {$_site_name}! Nonton video harian dapat saldo tunai, main minigame, dan cairkan saldo instan ke DANA, OVO, GoPay, atau Bank!";
 } else {
     $_page_title     = 'Daftar Akun Baru — ' . $_seo_title;
-    $_final_og_title = setting($pdo, 'seo_og_title', 'MancingCuan — Nonton Video & Main Game Panen Saldo Nyata Tiap Hari!');
+    $_final_og_title = setting($pdo, 'seo_og_title', 'PanenCuan — Nonton Video & Main Game Panen Saldo Nyata Tiap Hari!');
     $_final_og_desc  = setting($pdo, 'seo_og_description', $_seo_desc);
 }
 
@@ -490,8 +490,8 @@ $current_url = base_url('register' . (!empty($ref_from_url) ? '/' . urlencode($r
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="<?= htmlspecialchars($_seo_twcard) ?>">
-<meta name="twitter:site" content="@MancingCuan">
-<meta name="twitter:creator" content="@MancingCuan">
+<meta name="twitter:site" content="@PanenCuan">
+<meta name="twitter:creator" content="@PanenCuan">
 <meta name="twitter:url" content="<?= htmlspecialchars($current_url) ?>">
 <meta name="twitter:title" content="<?= htmlspecialchars($_final_og_title) ?>">
 <meta name="twitter:description" content="<?= htmlspecialchars($_final_og_desc) ?>">

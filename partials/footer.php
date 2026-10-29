@@ -2,152 +2,121 @@
 
   <style>
   /* ══════════════════════════════════════════════════════
-     REEF TAB BAR — menempel di bawah (tidak floating),
-     tombol besar "Nonton" di pojok kiri + 4 menu di kanan
+     DOCK NAVIGASI: satu-satunya elemen kaca, melayang, tombol tengah "Sawah"
+     menonjol, penanda aktif meluncur dari tab sebelumnya.
      ══════════════════════════════════════════════════════ */
-  .bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 100% !important;
-    max-width: 440px !important;
-    height: auto !important;
-    border: none !important;
-    border-radius: 22px 22px 0 0 !important;
-    background: var(--wood, #b8763a) !important;
-    box-shadow:
-      0 -4px 0 var(--wood-d, #7c4a1f),
-      0 -8px 25px rgba(45, 25, 10, 0.35),
-      inset 0 2px 0 rgba(255, 255, 255, 0.35) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
-    z-index: 9999 !important;
+  .pc-dock {
+    position: fixed; z-index: 9999; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom));
+    transform: translateX(-50%); width: calc(100% - 20px); max-width: 420px; height: 64px;
+    display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+    padding: 0 6px; border-radius: 24px;
+    background: rgba(255, 255, 255, .86); backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .95) inset, 0 12px 32px rgba(28, 60, 24, .18), 0 2px 6px rgba(28, 60, 24, .08);
+    animation: pcDockIn .55s cubic-bezier(.34, 1.56, .64, 1) both;
+  }
+  @keyframes pcDockIn { from { transform: translate(-50%, 30px); opacity: 0; } }
+  body { padding-bottom: 104px !important; }
+
+  /* Penanda aktif yang meluncur */
+  .pc-dock-ind {
+    position: absolute; top: 8px; left: 6px; width: calc((100% - 12px) / 5); height: 48px; pointer-events: none;
+    display: flex; justify-content: center;
+    transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), opacity .2s;
+  }
+  .pc-dock-ind::before { content: ''; width: 54px; height: 100%; border-radius: 16px; background: linear-gradient(180deg, #ecfdf3, #dcfce7); box-shadow: inset 0 0 0 1.5px rgba(34, 163, 90, .18); }
+  .pc-dock-ind.hide { opacity: 0; }
+
+  .pc-tab {
+    position: relative; z-index: 1; height: 52px; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    text-decoration: none; color: #5f6f62; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 10.5px; font-weight: 600;
+    -webkit-tap-highlight-color: transparent; transition: color .2s;
+  }
+  .pc-tab i { font-size: 22px; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
+  .pc-tab:active i { transform: scale(.82); }
+  .pc-tab.active { color: #15803d; }
+  .pc-tab.active i { transform: translateY(-1px) scale(1.08); animation: pcTabPop .5s cubic-bezier(.34, 1.56, .64, 1); }
+  @keyframes pcTabPop { 0% { transform: scale(.7); } 60% { transform: scale(1.18); } 100% { transform: translateY(-1px) scale(1.08); } }
+
+  /* Tombol tengah: Sawah */
+  .pc-fab { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-decoration: none; margin-top: -30px; -webkit-tap-highlight-color: transparent; }
+  .pc-fab-ring {
+    position: relative; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
+    background: linear-gradient(170deg, #22a35a, #15803d);
+    box-shadow: 0 0 0 5px #fff, 0 8px 18px rgba(21, 128, 61, .35);
+    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .pc-fab-ring img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .25)); animation: pcFabSway 1.6s ease-in-out .6s 3; transform-origin: 50% 90%; }
+  @keyframes pcFabSway { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-8deg); } 70% { transform: rotate(8deg) translateY(-2px); } }
+  .pc-fab:active .pc-fab-ring { transform: scale(.9); }
+  .pc-fab span { margin-top: 3px; font-family: 'Fredoka', 'Nunito', sans-serif; font-size: 10.5px; font-weight: 700; color: #15803d; }
+  .pc-fab-badge {
+    position: absolute; top: -2px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center;
+    background: #f5b301; color: #3d2a00; font-size: 10px; font-weight: 900; box-shadow: 0 0 0 2px #fff;
   }
 
-  body { padding-bottom: 86px !important; }
+  @media (max-width: 350px) { .pc-tab { font-size: 9.5px; } .pc-tab i { font-size: 20px; } }
+  @media (prefers-reduced-motion: reduce) { .pc-dock, .pc-fab-ring img, .pc-tab.active i { animation: none !important; } .pc-dock-ind { transition: none; } }
 
-  /* Tombol besar kiri: Nonton */
-  .nav-play-main {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 52px;
-    padding: 0 12px 0 6px;
-    border-radius: 16px;
-    text-decoration: none;
-    background: linear-gradient(180deg, #8ee86a 0%, var(--g1, #6dd047) 50%, #52b52e 100%);
-    box-shadow: 0 3px 0 var(--g2, #3f9a24), inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .nav-play-main:active { transform: translateY(2px) scale(0.96); box-shadow: 0 1px 0 var(--g2, #3f9a24); }
-  .nav-play-btn {
-    width: 40px; height: 40px;
-    border-radius: 12px;
-    background: radial-gradient(circle at 35% 35%, #fff, var(--parch-2, #fdebc4));
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-    box-shadow: 0 2px 0 rgba(60, 30, 5, 0.2), inset 0 1px 2px #fff;
-  }
-  .nav-play-btn i {
-    font-size: 20px !important;
-    color: var(--g2, #3f9a24) !important;
-    margin-left: 2px;
-  }
-  .nav-play-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.1;
-    font-family: var(--font-game, 'Fredoka', 'Nunito', sans-serif);
-  }
-  .nav-play-text strong { font-size: 13.5px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 0 var(--g2, #3f9a24); letter-spacing: 0.2px; }
-  .nav-play-text small { font-size: 9.5px; font-weight: 700; color: #e8f9df; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); }
-  .nav-play-main.active { filter: brightness(1.08); }
-
-  /* 4 menu kanan */
-  .nav-tabs {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    min-width: 0;
-  }
-  .nav-item {
-    flex: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 2px !important;
-    height: 48px !important;
-    border-radius: 14px !important;
-    text-decoration: none !important;
-    color: var(--parch-2, #fdebc4) !important;
-    font-size: 10px !important;
-    font-weight: 700 !important;
-    font-family: var(--font-game, 'Fredoka', 'Nunito', sans-serif) !important;
-    background: transparent !important;
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3) !important;
-    transition: color 0.15s, background 0.15s, transform 0.12s !important;
-  }
-  .nav-item:active { transform: translateY(2px) scale(0.94) !important; }
-  .nav-item i {
-    font-size: 19px !important;
-    color: var(--parch-2, #fdebc4) !important;
-    transition: color 0.15s !important;
-  }
-  .nav-item.active {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    background: rgba(255, 246, 224, 0.24) !important;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 2px 4px rgba(0, 0, 0, 0.15) !important;
-  }
-  .nav-item.active i { color: #ffd43b !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
-
-  @media (max-width: 360px) {
-    .bottom-nav { gap: 6px !important; padding-left: 8px !important; padding-right: 8px !important; }
-    .nav-play-main { padding-right: 9px; }
-    .nav-play-text small { display: none; }
-    .nav-item { font-size: 8.5px !important; }
-  }
-
-  .float-contact-wrap {
-    bottom: 84px !important;
-  }
+  .float-contact-wrap { bottom: 96px !important; }
   </style>
 
-  <nav class="bottom-nav">
-    <!-- Kiri: tombol besar NONTON -->
-    <a href="/videos" class="nav-play-main <?= ($activePage??'')==='videos'?'active':'' ?>">
-      <span class="nav-play-btn"><i class="ph-fill ph-play"></i></span>
-      <span class="nav-play-text">
-        <strong>Nonton</strong>
-        <small>Panen cuan</small>
-      </span>
-    </a>
-
-    <div class="nav-tabs">
-      <a href="/home" class="nav-item nav-item--home <?= ($activePage??'')==='home'?'active':'' ?>">
-        <i class="<?= ($activePage??'')==='home'?'ph-fill':'ph-bold' ?> ph-house-simple"></i>
-        Beranda
+  <?php
+    $_ap = $activePage ?? '';
+    $_tabs = [
+      ['home', '/home', 'ph-house-simple', 'Beranda'],
+      ['videos', '/videos', 'ph-play-circle', 'Nonton'],
+      ['farm', '/farm', '', 'Sawah'],
+      ['referral', '/referral', 'ph-users-three', 'Undang'],
+      ['profile', '/profile', 'ph-user-circle', 'Profil'],
+    ];
+    $_tab_idx = -1;
+    foreach ($_tabs as $_i => $_t) if ($_t[0] === $_ap) $_tab_idx = $_i;
+    // Jumlah petak siap panen (badge di tombol Sawah)
+    $_ready_badge = 0;
+    if (!empty($user['id'])) {
+      try {
+        $_rb = $pdo->prepare("SELECT COUNT(*) FROM farm_plots WHERE user_id = ? AND status <> 'empty' AND matures_at > 0 AND matures_at <= UNIX_TIMESTAMP()");
+        $_rb->execute([(int)$user['id']]);
+        $_ready_badge = (int)$_rb->fetchColumn();
+      } catch (\Throwable) {}
+    }
+  ?>
+  <nav class="pc-dock" id="pc-dock" data-active="<?= $_tab_idx ?>" aria-label="Navigasi utama">
+    <span class="pc-dock-ind<?= $_tab_idx < 0 || $_tab_idx === 2 ? ' hide' : '' ?>" id="pc-dock-ind"></span>
+    <?php foreach ($_tabs as $_i => [$_key, $_url, $_ic, $_lbl]): $_on = $_key === $_ap; ?>
+      <?php if ($_key === 'farm'): ?>
+      <a href="/farm" class="pc-fab" aria-label="Sawah PanenCuan<?= $_ready_badge > 0 ? ', ' . $_ready_badge . ' petak siap panen' : '' ?>">
+        <span class="pc-fab-ring">
+          <img src="/assets/img/icons3d/padi.png" alt="" width="44" height="44">
+          <?php if ($_ready_badge > 0): ?><em class="pc-fab-badge"><?= $_ready_badge > 9 ? '9+' : $_ready_badge ?></em><?php endif; ?>
+        </span>
+        <span>Sawah</span>
       </a>
-      <a href="/upgrade" class="nav-item nav-item--upgrade <?= ($activePage??'')==='upgrade'?'active':'' ?>">
-        <i class="<?= ($activePage??'')==='upgrade'?'ph-fill':'ph-bold' ?> ph-crown-simple"></i>
-        Pangkat
+      <?php else: ?>
+      <a href="<?= $_url ?>" class="pc-tab<?= $_on ? ' active' : '' ?>" data-i="<?= $_i ?>">
+        <i class="<?= $_on ? 'ph-fill' : 'ph-bold' ?> <?= $_ic ?>"></i><?= $_lbl ?>
       </a>
-      <a href="/referral" class="nav-item nav-item--crew <?= ($activePage??'')==='referral'?'active':'' ?>">
-        <i class="<?= ($activePage??'')==='referral'?'ph-fill':'ph-bold' ?> ph-users-three"></i>
-        Undang
-      </a>
-      <a href="/profile" class="nav-item nav-item--cabin <?= ($activePage??'')==='profile'?'active':'' ?>">
-        <i class="<?= ($activePage??'')==='profile'?'ph-fill':'ph-bold' ?> ph-user-circle"></i>
-        Profil
-      </a>
-    </div>
+      <?php endif; ?>
+    <?php endforeach; ?>
   </nav>
+  <script>
+  // Penanda aktif meluncur dari tab terakhir yang dibuka ke tab sekarang
+  (function () {
+    const dock = document.getElementById('pc-dock'), ind = document.getElementById('pc-dock-ind');
+    if (!dock || !ind) return;
+    const cur = +dock.dataset.active;
+    const place = (i, anim) => { ind.style.transition = anim ? '' : 'none'; ind.style.transform = 'translateX(' + (i * 100) + '%)'; };
+    let prev = cur;
+    try { prev = +(sessionStorage.getItem('pc_dock_prev') ?? cur); } catch (e) {}
+    if (cur >= 0 && cur !== 2) {
+      place(prev >= 0 && prev !== 2 ? prev : cur, false);
+      requestAnimationFrame(() => requestAnimationFrame(() => place(cur, true)));
+    }
+    dock.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => {
+      try { sessionStorage.setItem('pc_dock_prev', String(cur)); } catch (e) {}
+    }));
+  })();
+  </script>
 </div>
 
 <?php
@@ -240,8 +209,8 @@ $_fsvg = [
   position: fixed;
   z-index: 99992;
   border-radius: 18px;
-  border: 3px solid #fbbf24;
-  box-shadow: 0 0 0 9999px rgba(10, 15, 29, 0.82), 0 0 25px rgba(251, 191, 36, 0.75);
+  border: 3px solid #f5b301;
+  box-shadow: 0 0 0 9999px rgba(15, 30, 18, 0.78), 0 0 25px rgba(245, 179, 1, 0.7);
   pointer-events: none;
   box-sizing: border-box;
   opacity: 0;
@@ -427,7 +396,7 @@ $_fsvg = [
   transform: scale(0.95);
 }
 .btn-tour-nav-next {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #4ade80, #16a34a);
   border: 1.5px solid rgba(255, 255, 255, 0.8);
   color: #ffffff;
   font-size: 11.5px;
@@ -457,7 +426,7 @@ $_fsvg = [
   <div id="app-tour-popover">
     <div class="tour-pop-header">
       <div class="tour-pop-track-tag">
-        <span id="tour-pop-track-text">🎬 Panduan MancingCuan</span>
+        <span id="tour-pop-track-text">Panduan PanenCuan</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="tour-pop-step-count" id="tour-pop-step-text">1/7</span>
@@ -518,7 +487,7 @@ if ($show_wd_notif) {
       const amtStr = 'Rp ' + parseFloat(wd.amount).toLocaleString('id-ID');
       let uname = wd.username;
       uname = uname.length > 3 ? uname.substring(0,3)+'***' : uname+'***';
-      if (typeof window.nToast === 'function') window.nToast(`💸 <b>${uname}</b> baru saja menarik <b>${amtStr}</b>`, 'success', 4000);
+      if (typeof window.nToast === 'function') window.nToast(`<b>${uname}</b> baru saja menarik <b>${amtStr}</b>`, 'success', 4000);
       if (wdNotifs.length > 0) setTimeout(showRandomWD, Math.floor(Math.random()*(40000-15000+1))+15000);
     }
   }
@@ -535,71 +504,71 @@ if ($show_wd_notif) {
       {
         url: '/home',
         selector: '#tour-video-mission, .cuan-video-mission',
-        trackName: '🎬 Tour Cuan Nonton',
+        trackName: 'Tour Cuan Nonton',
         title: '<i class="ph-fill ph-film-strip" style="color:#f97316;"></i> Kuota Misi Video Harian',
         desc: 'Setiap hari kamu mendapatkan kuota video berbayar. Progress bar ini menampilkan berapa video yang sudah kamu selesaikan dan sisa kuota hari ini.',
-        tip: '💡 Kuota direset secara otomatis setiap malam pukul 00:00 WIB.',
-        btnNext: 'Lihat Tombol Nonton ➔',
+        tip: 'Kuota direset secara otomatis setiap malam pukul 00:00 WIB.',
+        btnNext: 'Lihat Tombol Nonton',
         pad: 8
       },
       {
         url: '/home',
         selector: '#tour-btn-watch, [href="/videos"].btn-cuan-watch-now',
-        trackName: '🎬 Tour Cuan Nonton',
+        trackName: 'Tour Cuan Nonton',
         title: '<i class="ph-fill ph-play-circle" style="color:#f59e0b;"></i> Tombol Cepat Mulai Nonton',
         desc: 'Klik tombol cepat ini untuk langsung memutar video cuan dan menghasilkan saldo rupiah dari video berdurasi singkat!',
-        tip: '💡 Cukup tonton video sampai hitungan mundur selesai dan saldo rupiah otomatis bertambah ke akunmu.',
-        btnNext: 'Buka Galeri Video ➔',
+        tip: 'Cukup tonton video sampai hitungan mundur selesai dan saldo rupiah otomatis bertambah ke akunmu.',
+        btnNext: 'Buka Galeri Video',
         pad: 6
       },
       {
         url: '/videos',
         selector: '.vcard, .vhub-hero, .video-hub-page',
-        trackName: '🎬 Tour Cuan Nonton',
+        trackName: 'Tour Cuan Nonton',
         title: '<i class="ph-fill ph-film-reel" style="color:#ea580c;"></i> Galeri Video Pilihan',
         desc: 'Pilih aneka video menarik yang ingin kamu tonton. Setiap video dilengkapi keterangan nominal reward uang rupiah yang transparan!',
-        tip: '💡 Tonton seluruh kuota video setiap hari untuk mengumpulkan saldo maksimal.',
-        btnNext: 'Lanjut ke Sarang Harian ➔',
+        tip: 'Tonton seluruh kuota video setiap hari untuk mengumpulkan saldo maksimal.',
+        btnNext: 'Lanjut ke Sarang Harian',
         pad: 6
       },
       {
         url: '/checkin',
         selector: '.honeycomb-hive-stage, .hex-row, .ci-streak-strip, .ci-wrap',
-        trackName: '🎬 Panduan MancingCuan',
+        trackName: 'Panduan PanenCuan',
         title: '<i class="ph-fill ph-gift" style="color:#f59e0b;"></i> Hadiah Check-in Harian',
         desc: 'Klaim hadiah gratis setiap hari! Cukup 1 klik check-in untuk mendapatkan kejutan uang tunai gratis tanpa syarat.',
-        tip: '💡 Check-in rutin setiap hari untuk menjaga streak bonus uang yang semakin melimpah!',
-        btnNext: 'Lanjut ke Misi Cuan ➔',
+        tip: 'Check-in rutin setiap hari untuk menjaga streak bonus uang yang semakin melimpah!',
+        btnNext: 'Lanjut ke Misi Cuan',
         pad: 8
       },
       {
         url: '/missions',
         selector: '.ms-tabs, .ms-card',
-        trackName: '🎬 Panduan MancingCuan',
+        trackName: 'Panduan PanenCuan',
         title: '<i class="ph-fill ph-target" style="color:#8b5cf6;"></i> Misi & Tantangan Harian',
         desc: 'Dapatkan saldo tambahan berlipat dengan menyelesaikan berbagai misi harian, mingguan, dan pencapaian spesial!',
-        tip: '💡 Tekan tombol Klaim begitu progress misi sudah tercapai 100%.',
-        btnNext: 'Lanjut ke Tarik Saldo ➔',
+        tip: 'Tekan tombol Klaim begitu progress misi sudah tercapai 100%.',
+        btnNext: 'Lanjut ke Tarik Saldo',
         pad: 6
       },
       {
         url: '/withdraw',
         selector: '.wd-top-banner, .wd-balance-card, .wd-form',
-        trackName: '🎬 Panduan MancingCuan',
+        trackName: 'Panduan PanenCuan',
         title: '<i class="ph-fill ph-arrow-up-right" style="color:#059669;"></i> Tarik Saldo ke Rekening',
         desc: 'Klaim uang tunaimu! Tarik saldo langsung ke rekening DANA, GoPay, OVO, ShopeePay, atau Bank transfer dalam hitungan menit.',
-        tip: '💡 Penarikan diproses setiap hari dengan proses pencairan cepat dan aman.',
-        btnNext: 'Kembali ke Beranda ➔',
+        tip: 'Penarikan diproses setiap hari dengan proses pencairan cepat dan aman.',
+        btnNext: 'Kembali ke Beranda',
         pad: 6
       },
       {
         url: '/home',
         selector: '#tour-balance-box, .cuan-card-balance-box',
-        trackName: '🎬 Panduan MancingCuan',
+        trackName: 'Panduan PanenCuan',
         title: '<i class="ph-fill ph-sparkle" style="color:#fbbf24;"></i> Siap Mendulang Rupiah!',
         desc: 'Luar biasa! Kamu sudah menyelesaikan seluruh panduan cuan nonton video. Mulai tonton video pertamamu sekarang dan nikmati cuan yang mengalir!',
-        tip: '💡 Tonton video secara rutin setiap hari untuk hasil yang maksimal! 🚀💰',
-        btnNext: 'Selesai 🎉',
+        tip: 'Tonton video secara rutin setiap hari untuk hasil yang maksimal!',
+        btnNext: 'Selesai',
         pad: 6
       }
     ]
@@ -621,14 +590,14 @@ if ($show_wd_notif) {
 
   function getSavedTourState() {
     try {
-      const raw = localStorage.getItem('mancing_tour_active');
+      const raw = localStorage.getItem('panen_tour_active');
       return raw ? JSON.parse(raw) : null;
     } catch(e) { return null; }
   }
 
   function setSavedTourState(track, step) {
     try {
-      localStorage.setItem('mancing_tour_active', JSON.stringify({
+      localStorage.setItem('panen_tour_active', JSON.stringify({
         track: track,
         step: step,
         isRunning: true,
@@ -639,7 +608,7 @@ if ($show_wd_notif) {
 
   function clearSavedTourState() {
     try {
-      localStorage.removeItem('mancing_tour_active');
+      localStorage.removeItem('panen_tour_active');
     } catch(e) {}
   }
 
@@ -831,10 +800,10 @@ if ($show_wd_notif) {
     const nextBtn = document.getElementById('btn-tour-next');
     if (currentStepIndex === steps.length - 1) {
       nextBtn.className = 'btn-tour-nav-next finish';
-      nextBtn.innerHTML = 'Selesai 🎉';
+      nextBtn.innerHTML = 'Selesai';
     } else {
       nextBtn.className = 'btn-tour-nav-next';
-      nextBtn.innerHTML = (step.btnNext || 'Maju ➔');
+      nextBtn.innerHTML = (step.btnNext || 'Maju');
     }
 
     popover.style.display = 'block';
@@ -921,13 +890,13 @@ if ($show_wd_notif) {
   window.finishGlobalTour = function() {
     window.closeGlobalTour();
     try {
-      localStorage.setItem('mancing_tour_done', '1');
+      localStorage.setItem('panen_tour_done', '1');
       const b = document.getElementById('tour-invite-card');
       if (b) b.style.display = 'none';
     } catch(e) {}
 
     if (typeof window.nToast === 'function') {
-      window.nToast('🎉 Selamat! Kamu telah menguasai panduan MancingCuan dan siap mendulang rupiah!', 'success', 5000);
+      window.nToast('Panduan selesai. Mulai nonton video pertamamu untuk dapat saldo.', 'success', 5000);
     }
   };
 

@@ -1,5 +1,5 @@
 /**
- * MancingCuan — Toast bertema Coral Reef Claymorphism
+ * PanenCuan — Toast bertema Coral Reef Claymorphism
  * Pemakaian:  nToast('Pesan', 'success'|'error'|'warn'|'info'|'copy', durasiMs)
  *             nToast.copy('teks', 'Label') — salin ke clipboard + toast
  * Pesan boleh berisi HTML sederhana (<b>, <strong>). Emoji di awal pesan

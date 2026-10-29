@@ -239,7 +239,7 @@ function home_cms_config(PDO $pdo): array {
         // 2. TOUR PANDUAN PENGGUNA BARU
         'tour' => [
             'show_banner' => true,
-            'title'       => 'Baru di MancingCuan? Yuk Ikuti Panduan Singkat! 🌾',
+            'title'       => 'Baru di PanenCuan? Yuk Ikuti Panduan Singkat! 🌾',
             'desc'        => 'Pelajari langkah mudah menghasilkan saldo rupiah dari nonton video dan bertani di Sawah Panen Cuan:',
         ],
         // 3. BENTO QUICK TILES

@@ -11,8 +11,8 @@ if (!$campaign_enabled) {
 $reward_amount  = (float)setting($pdo, 'threads_campaign_reward', '25000');
 $reward_amount2 = (float)setting($pdo, 'threads_campaign_reward_step2', '50000');
 
-$instructions = setting($pdo, 'threads_campaign_instructions', "Promosikan MancingCuan di Threads dan dapatkan cuan tambahan Rp 25.000! \n\nKriteria Postingan Langkah 1:\n1. Postingan harus menyertakan gambar (screenshot/bukti bayar/foto aplikasi).\n2. Di dalam gambar screenshot, HARUS tertera jelas Nama/Username Threads kalian.\n3. Teks postingan berupa kalimat ajakan atau cerita pengalaman positif kamu mendapatkan cuan di MancingCuan.\n4. Berikan komentar atau caption positif tentang MancingCuan.\n\nCara Klaim:\n1. Buat postingan sesuai kriteria di atas pada akun Threads kamu.\n2. Ambil screenshot postingan tersebut (harus terlihat username kalian).\n3. Upload screenshot di form bawah ini.");
-$instructions2 = setting($pdo, 'threads_campaign_instructions_step2', "Promosikan MancingCuan di Threads - Langkah 2 (Dapatkan Rp 50.000, Gaji Pasti & Chat Langsung WhatsApp Admin!)\n\nKriteria Postingan Langkah 2:\n1. Kamu telah mengundang minimal 10 referral bergabung di MancingCuan.\n2. Postingan Threads kamu viral / ramai dengan minimal 5.000 (5K) views / tayangan.\n3. Berikan screenshot (bukti SS) bahwa postingan Threads kamu tembus minimal 5.000 views (bisa kirim hingga 3 screenshot bukti statistik & interaksi).");
+$instructions = setting($pdo, 'threads_campaign_instructions', "Promosikan PanenCuan di Threads dan dapatkan cuan tambahan Rp 25.000! \n\nKriteria Postingan Langkah 1:\n1. Postingan harus menyertakan gambar (screenshot/bukti bayar/foto aplikasi).\n2. Di dalam gambar screenshot, HARUS tertera jelas Nama/Username Threads kalian.\n3. Teks postingan berupa kalimat ajakan atau cerita pengalaman positif kamu mendapatkan cuan di PanenCuan.\n4. Berikan komentar atau caption positif tentang PanenCuan.\n\nCara Klaim:\n1. Buat postingan sesuai kriteria di atas pada akun Threads kamu.\n2. Ambil screenshot postingan tersebut (harus terlihat username kalian).\n3. Upload screenshot di form bawah ini.");
+$instructions2 = setting($pdo, 'threads_campaign_instructions_step2', "Promosikan PanenCuan di Threads - Langkah 2 (Dapatkan Rp 50.000, Gaji Pasti & Chat Langsung WhatsApp Admin!)\n\nKriteria Postingan Langkah 2:\n1. Kamu telah mengundang minimal 10 referral bergabung di PanenCuan.\n2. Postingan Threads kamu viral / ramai dengan minimal 5.000 (5K) views / tayangan.\n3. Berikan screenshot (bukti SS) bahwa postingan Threads kamu tembus minimal 5.000 views (bisa kirim hingga 3 screenshot bukti statistik & interaksi).");
 
 $admin_contact = trim((string)setting($pdo, 'threads_admin_contact', ''));
 if (empty($admin_contact)) {
@@ -830,7 +830,7 @@ require dirname(__DIR__) . '/partials/header.php';
         <i class="ph-fill ph-broadcast"></i> Misi Viral Samudra
       </div>
       <div class="th-hero-title">Sebar Cerita Cuan, Panen Saldo & Gaji Pasti! 🧵💎</div>
-      <div class="th-hero-desc">Bagikan pengalaman seru MancingCuan di Threads, ambil reward hingga Rp 75.000 & Chat Langsung WhatsApp Admin.</div>
+      <div class="th-hero-desc">Bagikan pengalaman seru PanenCuan di Threads, ambil reward hingga Rp 75.000 & Chat Langsung WhatsApp Admin.</div>
     </div>
   </div>
 

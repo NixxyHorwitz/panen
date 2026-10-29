@@ -399,7 +399,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
       <img src="<?= htmlspecialchars(site_logo($pdo)) ?>" alt="Logo" style="width:28px;height:28px;object-fit:contain;border-radius:6px">
     </div>
     <div style="flex:1;min-width:0">
-      <div class="c-sidebar__brand"><?= htmlspecialchars(setting($pdo, 'site_name', 'MancingCuan')) ?></div>
+      <div class="c-sidebar__brand"><?= htmlspecialchars(setting($pdo, 'site_name', 'PanenCuan')) ?></div>
       <div class="c-sidebar__sub">Farm Console</div>
     </div>
     <button type="button" class="btn-close btn-close-white d-lg-none" onclick="closeSidebar()" aria-label="Close" style="font-size:11px"></button>

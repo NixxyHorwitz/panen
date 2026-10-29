@@ -870,7 +870,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
         <div class="survey-outcome-title" style="color:#065f46;">Misi Survei Selesai! 🎉</div>
         <div class="survey-outcome-desc">
-          Terima kasih atas kontribusi berhargamu untuk ekosistem MancingCuan. Hadiah <strong>Rp <?= number_format((float)$existingSurvey['reward_amount'], 0, ',', '.') ?></strong> Saldo Tarik telah aman berada di dompet akunmu.
+          Terima kasih atas kontribusi berhargamu untuk ekosistem PanenCuan. Hadiah <strong>Rp <?= number_format((float)$existingSurvey['reward_amount'], 0, ',', '.') ?></strong> Saldo Tarik telah aman berada di dompet akunmu.
         </div>
 
         <div class="survey-vault-pill">
@@ -953,7 +953,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <span>🌊💎</span>
       </h1>
       <p class="survey-hero-desc">
-        Jawab 4 pertanyaan singkat mengenai penjelajahanmu di MancingCuan. Hadiah <strong>Rp 15.000 Saldo Tarik</strong> langsung dikreditkan instan ke dompetmu!
+        Jawab 4 pertanyaan singkat mengenai penjelajahanmu di PanenCuan. Hadiah <strong>Rp 15.000 Saldo Tarik</strong> langsung dikreditkan instan ke dompetmu!
       </p>
     </div>
 
@@ -974,7 +974,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="survey-clay survey-station" style="margin-bottom:12px;">
         <div class="station-header">
           <div class="station-badge">1</div>
-          <div class="station-title">Darimana kamu tahu MancingCuan?</div>
+          <div class="station-title">Darimana kamu tahu PanenCuan?</div>
         </div>
         <div class="station-desc">Pilih media pertama kali kamu menemukan kami:</div>
 

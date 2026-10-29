@@ -20,7 +20,7 @@ $wd_free_1day = setting($pdo, 'wd_free_require_1day', '1') === '1';
 $wd_lock_s    = setting($pdo, 'wd_lock_start', '');
 $wd_lock_e    = setting($pdo, 'wd_lock_end', '');
 
-$panduan_intro    = setting($pdo, 'panduan_intro', 'Semua cara panen cuan di MancingCuan: nonton video, mancing, misi, sampai tarik saldo.');
+$panduan_intro    = setting($pdo, 'panduan_intro', 'Semua cara panen cuan di PanenCuan: nonton video, mancing, misi, sampai tarik saldo.');
 $panduan_faq      = setting($pdo, 'panduan_faq_custom', '');
 $panduan_cta_text = setting($pdo, 'panduan_cta_text', 'Mulai Nonton Video');
 $panduan_cta_url  = setting($pdo, 'panduan_cta_url', '/videos');
@@ -194,7 +194,7 @@ require dirname(__DIR__) . '/partials/header.php';
   <section class="pd-hero">
     <div class="pd-hero-in">
       <small>Peta Harta Samudra</small>
-      <h2>Cara panen cuan di MancingCuan</h2>
+      <h2>Cara panen cuan di PanenCuan</h2>
       <p><?= htmlspecialchars($panduan_intro) ?></p>
       <button type="button" class="pd-tour" onclick="startPanduanTour('watch')">
         <span class="ico i-violet"><i class="ph-fill ph-compass"></i></span>Tur interaktif <em id="badge-tour-watch">Mulai</em>
@@ -244,7 +244,7 @@ require dirname(__DIR__) . '/partials/header.php';
         <span class="ico i-violet"><i class="ph-fill ph-users-three"></i></span><b>Ajak Kawan</b><p>+<?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari isi kas mereka.</p></a>
       <a href="/redeem" class="pd-tile"><span class="ico i-sand"><i class="ph-fill ph-ticket"></i></span><b>Kode Redeem</b><p>Tukar kode dari event &amp; pengumuman.</p></a>
       <a href="/threads" class="pd-tile wide"><span class="ico i-violet"><i class="ph-fill ph-megaphone"></i></span>
-        <div class="tx"><b>Event Threads</b><p>Promosikan MancingCuan di Threads, kirim bukti, tunggu verifikasi.</p></div>
+        <div class="tx"><b>Event Threads</b><p>Promosikan PanenCuan di Threads, kirim bukti, tunggu verifikasi.</p></div>
         <span class="amt"><?= $rp_short($thr_reward) ?>–<?= $rp_short($thr_reward2) ?></span></a>
     </div>
   </section>
@@ -358,7 +358,7 @@ require dirname(__DIR__) . '/partials/header.php';
 (function () {
   const b = document.getElementById('badge-tour-watch');
   let done = false;
-  try { done = localStorage.getItem('mancing_tour_done_watch') === '1'; } catch (e) {}
+  try { done = localStorage.getItem('panen_tour_done_watch') === '1'; } catch (e) {}
   if (b && done) { b.textContent = '✓ Selesai'; b.classList.add('done'); }
 })();
 
@@ -367,7 +367,7 @@ function startPanduanTour(track) {
     window.startGlobalTour('watch', 0);
   } else {
     try {
-      localStorage.setItem('mancing_tour_active', JSON.stringify({ track: 'watch', step: 0, isRunning: true, updatedAt: Date.now() }));
+      localStorage.setItem('panen_tour_active', JSON.stringify({ track: 'watch', step: 0, isRunning: true, updatedAt: Date.now() }));
     } catch (e) {}
     window.location.href = '/home';
   }

@@ -99,7 +99,7 @@ track_pageview($pdo, '/global-chat');
 $perm   = gc_permissions($pdo, $user, $cfg);
 $_logo  = site_logo($pdo);
 $_fav   = setting($pdo, 'favicon_path', '/assets/favicon.png');
-$_title = setting($pdo, 'site_name', 'MancingCuan');
+$_title = setting($pdo, 'site_name', 'PanenCuan');
 ?>
 <!DOCTYPE html>
 <html lang="id">

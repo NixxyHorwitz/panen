@@ -74,7 +74,7 @@ $absolute_fav = $_favicon ? (preg_match('~^https?://~', $_favicon) ? $_favicon :
 <html lang="id">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MancingCuan — Admin Console Login</title>
+<title>PanenCuan — Admin Console Login</title>
 <?php if ($absolute_fav): ?>
 <link rel="icon" href="<?= htmlspecialchars($absolute_fav) ?>?v=<?= @filemtime(dirname(__DIR__) . $_favicon) ?: time() ?>">
 <link rel="apple-touch-icon" href="<?= htmlspecialchars($absolute_fav) ?>?v=<?= @filemtime(dirname(__DIR__) . $_favicon) ?: time() ?>">
@@ -95,7 +95,7 @@ body{background:#080a12;min-height:100vh;display:flex;align-items:center;justify
 <body>
 <div class="login-card text-center">
   <div class="brand-icon">🎣</div>
-  <h4 class="text-white fw-bold mb-1">MancingCuan</h4>
+  <h4 class="text-white fw-bold mb-1">PanenCuan</h4>
   <p class="text-secondary mb-4" style="font-size:13px">Console &amp; Backoffice Management</p>
   <?php if ($error): ?>
   <div class="alert alert-danger py-2" style="font-size:13px;border-radius:10px"><?= htmlspecialchars($error) ?></div>

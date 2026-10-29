@@ -218,7 +218,7 @@ foreach ($surveys as $sv) {
     $unified[] = [
         'type'        => 'bonus',
         'sub_type'    => 'Survei Pengguna',
-        'title'       => 'Hadiah Survei MancingCuan',
+        'title'       => 'Hadiah Survei PanenCuan',
         'sub'         => 'Rating: ' . $sv['satisfaction_rating'] . '/5 · Sumber: ' . $sv['source_info'],
         'amount'      => (float)$sv['reward_amount'],
         'is_income'   => $sv['status'] !== 'revoked',

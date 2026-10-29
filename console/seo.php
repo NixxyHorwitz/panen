@@ -282,8 +282,8 @@ require __DIR__ . '/partials/header.php';
         <div class="c-form-group">
           <label class="c-label">Site Title (Title Tag)</label>
           <input type="text" name="seo_title" class="c-form-control"
-                 value="<?= htmlspecialchars($s('seo_title','MancingCuan')) ?>"
-                 placeholder="MancingCuan — Nonton Video & Minigame Penghasil Saldo Cuan">
+                 value="<?= htmlspecialchars($s('seo_title','PanenCuan')) ?>"
+                 placeholder="PanenCuan — Nonton Video & Minigame Penghasil Saldo Cuan">
           <div style="font-size:11px;color:#666;margin-top:3px">Rekomendasi: 50–60 karakter</div>
         </div>
         <div class="c-form-group">
@@ -301,7 +301,7 @@ require __DIR__ . '/partials/header.php';
         <div class="c-form-group">
           <label class="c-label">Meta Author</label>
            <input type="text" name="seo_author" class="c-form-control"
-                  value="<?= htmlspecialchars($s('seo_author','MancingCuan Official')) ?>">
+                  value="<?= htmlspecialchars($s('seo_author','PanenCuan Official')) ?>">
         </div>
         <div class="c-form-group">
           <label class="c-label">Robots</label>
@@ -366,7 +366,7 @@ require __DIR__ . '/partials/header.php';
       <div class="c-card-body">
         <div style="font-family:Arial,sans-serif;max-width:400px">
           <div style="font-size:12px;color:#666;margin-bottom:2px"><?= htmlspecialchars(rtrim(base_url(), '/')) ?></div>
-          <div style="font-size:17px;color:#1a73e8;font-weight:500;margin-bottom:4px" id="preview-title"><?= htmlspecialchars($s('seo_title','MancingCuan')) ?></div>
+          <div style="font-size:17px;color:#1a73e8;font-weight:500;margin-bottom:4px" id="preview-title"><?= htmlspecialchars($s('seo_title','PanenCuan')) ?></div>
           <div style="font-size:13px;color:#555;line-height:1.4" id="preview-desc"><?= htmlspecialchars($s('seo_description','')) ?></div>
         </div>
         <script>

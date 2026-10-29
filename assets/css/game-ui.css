@@ -567,3 +567,4 @@
 @media (prefers-reduced-motion: reduce) {
   .nb-btn, .close, .wal-add { transition: none !important; }
 }
+

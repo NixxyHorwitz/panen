@@ -224,7 +224,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_url') {
       <div class="mv-emoji-box">🌐</div>
       <div class="mv-title">Pindah ke Server Baru</div>
       <div class="mv-desc">
-        Untuk kenyamanan dan akses yang lebih ngebut, MancingCuan kini sudah berpindah ke rumah baru yang jauh lebih stabil dan kencang. Yuk gabung ke server baru sekarang!
+        Untuk kenyamanan dan akses yang lebih ngebut, PanenCuan kini sudah berpindah ke rumah baru yang jauh lebih stabil dan kencang. Yuk gabung ke server baru sekarang!
       </div>
 
       <div class="mv-actions">

@@ -48,13 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 end_login:
 
 // Load SEO settings
-$_seo_title  = setting($pdo, 'seo_title', 'MancingCuan — Nonton Video & Minigame Penghasil Saldo Cuan');
+$_seo_title  = setting($pdo, 'seo_title', 'PanenCuan — Nonton Video & Minigame Penghasil Saldo Cuan');
 $_seo_desc   = setting($pdo, 'seo_description', 'Platform nonton video dan minigame penghasil saldo cuan resmi.');
 $_favicon    = setting($pdo, 'favicon_path', '/assets/favicon.png');
-$_site_name  = setting($pdo, 'site_name', 'MancingCuan');
+$_site_name  = setting($pdo, 'site_name', 'PanenCuan');
 $_site_logo  = site_logo($pdo);
-$_seo_kw     = setting($pdo, 'seo_keywords', 'mancingcuan, mancing cuan, nonton video dapat uang, aplikasi penghasil saldo dana');
-$_seo_author = setting($pdo, 'seo_author', 'MancingCuan Official');
+$_seo_kw     = setting($pdo, 'seo_keywords', 'panencuan, panen cuan, nonton video dapat uang, aplikasi penghasil saldo dana');
+$_seo_author = setting($pdo, 'seo_author', 'PanenCuan Official');
 $_seo_twcard = setting($pdo, 'seo_twitter_card', 'summary_large_image');
 $_seo_og_img = setting($pdo, 'seo_og_image', '/assets/seobanner.jpg');
 
@@ -67,7 +67,7 @@ $fav_url     = $_favicon ? (preg_match('~^https?://~', $_favicon) ? $_favicon : 
 $og_mime     = str_ends_with(strtolower($absolute_og), '.png') ? 'image/png' : 'image/jpeg';
 $current_url = base_url('login');
 $_page_title = 'Masuk Akun — ' . $_seo_title;
-$_final_og_title = setting($pdo, 'seo_og_title', 'MancingCuan — Nonton Video & Main Game Panen Saldo Nyata Tiap Hari!');
+$_final_og_title = setting($pdo, 'seo_og_title', 'PanenCuan — Nonton Video & Main Game Panen Saldo Nyata Tiap Hari!');
 $_final_og_desc  = setting($pdo, 'seo_og_description', $_seo_desc);
 ?>
 <!DOCTYPE html>
@@ -99,8 +99,8 @@ $_final_og_desc  = setting($pdo, 'seo_og_description', $_seo_desc);
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="<?= htmlspecialchars($_seo_twcard) ?>">
-<meta name="twitter:site" content="@MancingCuan">
-<meta name="twitter:creator" content="@MancingCuan">
+<meta name="twitter:site" content="@PanenCuan">
+<meta name="twitter:creator" content="@PanenCuan">
 <meta name="twitter:url" content="<?= htmlspecialchars($current_url) ?>">
 <meta name="twitter:title" content="<?= htmlspecialchars($_final_og_title) ?>">
 <meta name="twitter:description" content="<?= htmlspecialchars($_final_og_desc) ?>">
