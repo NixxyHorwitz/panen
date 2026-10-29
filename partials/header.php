@@ -105,8 +105,9 @@ $final_og_desc = $_seo_og_desc ?: $_seo_desc;
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/app.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/app.css') ?>">
+<link rel="stylesheet" href="/assets/css/game-ui.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/game-ui.css') ?>">
 <style>
 /* ══════════════════════════════════════════════════════════
    VIBRANT LIVING CORAL REEF — GLOBAL TOKENS & BACKGROUND

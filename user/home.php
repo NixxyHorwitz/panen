@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/bootstrap.php';
+require_once dirname(__DIR__) . '/lib/farm.php';
 
 $user = auth_user($pdo);
 $is_guest = false;
@@ -31,7 +32,7 @@ if (!$is_guest) {
 // ── KONFIGURASI HOME CMS (console/home_cms.php) ──
 $cms     = home_cms_config($pdo);
 $H       = $cms['hero'];
-$cms_txt = static fn(string $t): string => str_replace('{username}', (string)($GLOBALS['user']['username'] ?? 'Kapten'), $t);
+$cms_txt = static fn(string $t): string => str_replace('{username}', (string)($GLOBALS['user']['username'] ?? 'Petani Cuan'), $t);
 
 // ── TUGAS UTAMA: DATA NONTON VIDEO ──
 $watch_limit = user_watch_limit($pdo, $user);
@@ -52,6 +53,38 @@ if (!$is_guest) {
 // Data Referral Pengguna untuk Flex / Promosi
 $ref_code = $user['referral_code'] ?? '-';
 $ref_url = function_exists('base_url') ? base_url('register/' . ($ref_code !== '-' ? $ref_code : '')) : '/register?ref=' . urlencode($ref_code);
+
+// 🌾 RINGKASAN SAWAH USER (untuk Portal Sawah Panen Cuan)
+$farm_summary = null;
+if (!$is_guest) {
+    try {
+        farm_ensure_schema($pdo);
+        $now = time();
+        $plotStmt = $pdo->prepare("
+            SELECT 
+                COUNT(*) as total_planted,
+                COALESCE(SUM(CASE WHEN matures_at <= ? THEN 1 ELSE 0 END), 0) as ready_count,
+                COALESCE(SUM(CASE WHEN matures_at > ? THEN 1 ELSE 0 END), 0) as growing_count
+            FROM farm_plots
+            WHERE user_id = ?
+        ");
+        $plotStmt->execute([$now, $now, $user['id']]);
+        $plotsData = $plotStmt->fetch(PDO::FETCH_ASSOC);
+
+        $invStmt = $pdo->prepare("
+            SELECT COALESCE(SUM(amount), 0) FROM farm_inventory WHERE user_id = ? AND kind = 'harvest'
+        ");
+        $invStmt->execute([$user['id']]);
+        $harvestCount = (int)$invStmt->fetchColumn();
+
+        $farm_summary = [
+            'total_planted' => (int)($plotsData['total_planted'] ?? 0),
+            'ready_count'   => (int)($plotsData['ready_count'] ?? 0),
+            'growing_count' => (int)($plotsData['growing_count'] ?? 0),
+            'harvest_count' => $harvestCount,
+        ];
+    } catch (\Throwable) {}
+}
 
 // Video Populer & Cuan Hari Ini
 $featured_videos = [];
@@ -120,7 +153,7 @@ if ($user['membership_id'] && $user['membership_expires_at'] && strtotime((strin
 }
 if (!$membership_name) {
     $membership_name = $pdo->query("SELECT name FROM memberships WHERE price=0 AND is_active=1 ORDER BY sort_order ASC LIMIT 1")->fetchColumn();
-    if (!$membership_name) $membership_name = 'Member Gratis';
+    if (!$membership_name) $membership_name = 'Petani Pemula';
 }
 
 // ── STATUS CHECK-IN HARIAN ──
@@ -130,8 +163,6 @@ if (!$is_guest) {
 }
 
 // ── KELAYAKAN FITUR UPGRADE ──
-// User berpenghasilan lumayan: total_earned >= 1500, balance_wd >= 1500, cuan hari ini >= 1000,
-// tonton >= 2 video hari ini, atau sudah berstatus VIP
 $user_has_good_income = !$is_guest && (
     (float)($user['total_earned'] ?? 0) >= 1500 || 
     (float)($user['balance_wd'] ?? 0) >= 1500 ||
@@ -141,25 +172,21 @@ $user_has_good_income = !$is_guest && (
     (!empty($user['membership_id']) && (int)$user['membership_id'] > 1)
 );
 
-// Menu upgrade ditampilkan jika sudah berpenghasilan lumayan atau sudah mulai aktif
 $show_upgrade_feature = $user_has_good_income || (!$is_guest && (float)($user['total_earned'] ?? 0) > 0);
 
 // ── PENGATURAN POPUP ──
 $popup_enabled     = setting($pdo, 'popup_enabled', '1') === '1';
-$popup_title       = setting($pdo, 'popup_title', 'Informasi Spesial MancingCuan');
-$popup_body        = setting($pdo, 'popup_body', 'Biar makin lancar dapat reward, yuk tonton video pilihan dan dapatkan bonus harian!');
+$popup_title       = setting($pdo, 'popup_title', 'Informasi Spesial PanenCuan');
+$popup_body        = setting($pdo, 'popup_body', 'Biar makin lancar dapat reward, yuk tonton video pilihan dan panen hasil sawahmu hari ini!');
 $popup_cta_text    = setting($pdo, 'popup_cta_text', 'Buka Sekarang');
 $popup_cta_url     = setting($pdo, 'popup_cta_url', '/panduan');
 $popup_delay       = max(200, (int) setting($pdo, 'popup_delay', '500'));
 $popup_reset_hours = max(0, (int) setting($pdo, 'popup_reset_hours', '0'));
 
-// Sanitize tanda tanya (??) dari database yang timbul akibat karakter emoji rusak
 $popup_title    = trim(preg_replace('/^\?+\s*/', '', (string)$popup_title));
 $popup_cta_text = trim(preg_replace('/^\?+\s*/', '', (string)$popup_cta_text));
 $popup_body     = trim(str_replace('??', '', (string)$popup_body));
 
-// Jika popup promosi mengarah ke /upgrade tetapi user belum menghasilkan cuan lumayan,
-// sembunyikan popup upgrade ini agar user baru tidak kabur/kaget, biarkan mereka fokus tonton/absen
 if ($popup_enabled && str_contains($popup_cta_url, 'upgrade') && !$show_upgrade_feature) {
     $popup_enabled = false;
 }
@@ -179,1615 +206,1519 @@ if (!$is_guest && !empty($user['id'])) {
     } catch (\Throwable) {}
 }
 
-$pageTitle = 'Nonton Video & Cuan Harian';
+$pageTitle = 'Nonton Video & Panen Cuan';
 $activePage = 'home';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══════════════════════════════════════════════════════════
-   MANCINGCUAN — VIBRANT LIVING CORAL REEF & FANTASY MARINE BIOTA
-   3D Claymorphism compact: border putih polos, glossy top sheen,
-   warm inner shadow. Token warna ada di partials/header.php (:root).
-   ══════════════════════════════════════════════════════════ */
+/* ============================================================
+   BERANDA SAWAH PANEN CUAN — LEMBAH PERKAMEN & KAYU GAME UI
+   Tidak ada neo-brutalism: tanpa border hitam tebal, tanpa shadow hitam offset.
+   ============================================================ */
 
-.fantasy-ocean-stage {
+body {
+  background: linear-gradient(180deg, #8fd3ff 0%, #c9ecff 35%, #dcefff 100%) !important;
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+.valley-home-stage {
   position: relative;
   width: 100%;
   max-width: 440px;
   margin: 0 auto;
-  padding: 6px 12px 22px;
+  padding: 10px 12px 28px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
-.fantasy-ocean-stage > :not(.ambient-bubble-layer) {
+.valley-home-stage > * {
   position: relative;
   z-index: 1;
 }
 
-/* ── AMBIENT: gelembung ── */
-.ambient-bubble-layer {
+/* 1. Latar Pegunungan Low-Poly Inline SVG di Bagian Atas */
+.valley-sky-deco {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 210px;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
 }
-.sea-bubble {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9) 0%, rgba(103, 232, 249, 0.35) 60%, rgba(192, 132, 252, 0.15) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: inset 1px 1px 2px #fff, 0 2px 6px rgba(8, 145, 178, 0.18);
-  animation: bubbleAscend 9s infinite ease-in;
-}
-.b-1 { width: 14px; height: 14px; left: 8%;  bottom: -20px; animation-duration: 8s; }
-.b-2 { width: 22px; height: 22px; left: 85%; bottom: -30px; animation-duration: 11s; animation-delay: 2.5s; }
-.b-3 { width: 10px; height: 10px; left: 45%; bottom: -15px; animation-duration: 7s;  animation-delay: 4s; }
-.b-4 { width: 18px; height: 18px; left: 22%; bottom: -25px; animation-duration: 10s; animation-delay: 1.2s; }
-.b-5 { width: 12px; height: 12px; left: 68%; bottom: -20px; animation-duration: 9s;  animation-delay: 5s; }
-@keyframes bubbleAscend {
-  0% { transform: translateY(0) translateX(0) scale(0.85); opacity: 0; }
-  15% { opacity: 0.85; }
-  50% { transform: translateY(-350px) translateX(12px) scale(1.05); }
-  85% { opacity: 0.75; }
-  100% { transform: translateY(-750px) translateX(-10px) scale(1.2); opacity: 0; }
-}
-.kelp-blade {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: kelpSway 5.5s ease-in-out infinite;
-}
-.kelp-blade:nth-child(2) { animation-duration: 6.8s; animation-delay: -1.5s; }
-.kelp-blade:nth-child(3) { animation-duration: 4.9s; animation-delay: -3s; }
-@keyframes kelpSway {
-  0%, 100% { transform: rotate(-3.5deg); }
-  50% { transform: rotate(4deg); }
+.valley-sky-deco svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-/* ── 1. VAULT SALDO — PANEL SUNSET REEF + TILE AKSI CLAY ── */
-.clay-vault-card {
-  border: 2px solid #ffffff;
-  border-radius: 24px;
-  padding: 6px;
-  background: var(--reef-card);
-  box-shadow:
-    0 16px 34px rgba(244, 63, 94, 0.14),
-    0 6px 14px rgba(124, 58, 237, 0.10),
-    inset 3px 3px 7px rgba(255, 255, 255, 0.95),
-    inset -4px -4px 10px rgba(251, 146, 60, 0.16);
-}
-
-/* Panel atas: gradasi senja karang (violet → magenta → coral → jingga) */
-.vault-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 19px;
-  padding: 12px 12px 12px 14px;
-  min-height: 148px;
-  color: #ffffff;
-  background:
-    radial-gradient(circle at 88% 110%, rgba(254, 240, 138, 0.50) 0, transparent 46%),
-    radial-gradient(circle at 0% 0%, rgba(192, 132, 252, 0.55) 0, transparent 50%),
-    linear-gradient(135deg, #7c3aed 0%, #c026d3 36%, #f43f5e 70%, #fb923c 100%);
-  box-shadow:
-    inset 2px 2px 6px rgba(255, 255, 255, 0.35),
-    inset -3px -4px 10px rgba(76, 5, 25, 0.25);
-}
-.vault-hero::before {
-  content: '';
-  position: absolute;
-  top: 5px; left: 14px;
-  width: 40%; height: 10px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
-.vault-hero-top {
+/* 2. User Hero & Saldo Showcase */
+.user-hero-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  position: relative;
-  z-index: 2;
+  gap: 10px;
+  margin-bottom: 4px;
 }
-.vault-greet {
+.user-greet-group {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
   min-width: 0;
 }
-.vault-clay-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.user-avatar-slot {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: radial-gradient(circle at 35% 35%, #fff, var(--parch-2));
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .18);
+  display: grid;
+  place-items: center;
+  padding: 5px;
   flex-shrink: 0;
-  box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 3px rgba(76, 5, 25, 0.2);
 }
-.vault-user-info { display: flex; flex-direction: column; min-width: 0; }
-.vault-username-txt {
-  font-size: 12px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: -0.2px;
+.user-avatar-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.user-name-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.user-name-meta b {
+  font-family: var(--font-game);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.vault-rank-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  padding: 1px 7px;
-  font-size: 9px;
-  font-weight: 900;
-  color: #fef08a;
-  margin-top: 2px;
-}
-.vault-today-chip {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  background: #ffffff;
-  color: #e11d48;
-  font-size: 10px;
-  font-weight: 900;
-  border-radius: 999px;
-  padding: 3px 9px;
-  box-shadow: 0 3px 8px rgba(76, 5, 25, 0.22), inset -1px -1px 2px rgba(244, 63, 94, 0.15);
+.user-name-meta .lvl {
+  margin-top: 3px;
+  align-self: flex-start;
 }
 
-.vault-balance-showcase {
-  position: relative;
-  z-index: 2;
-  margin-top: 12px;
-  max-width: 64%;
-}
-.vault-balance-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.88);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-.vault-live-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #34d399;
-  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.35);
-  animation: vaultLive 2s ease-in-out infinite;
-}
-@keyframes vaultLive {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.35); }
-  50% { box-shadow: 0 0 0 5px rgba(52, 211, 153, 0.1); }
-}
-.vault-balance-main-num {
-  font-size: 28px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: -0.8px;
-  line-height: 1.15;
-  font-family: 'Nunito', sans-serif;
-  text-shadow: 0 2px 8px rgba(76, 5, 25, 0.30);
-  white-space: nowrap;
-}
-.vault-balance-main-num .rp-prefix {
-  font-size: 14px;
-  opacity: 0.85;
-  margin-right: 3px;
-  vertical-align: 4px;
-}
-.vault-stats-ribbon {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 8px;
-}
-.vault-stat-capsule {
+.today-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: 8px;
-  padding: 2px 7px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff3b0, var(--y1));
+  box-shadow: 0 2px 0 var(--y2), 0 2px 5px rgba(60, 30, 5, .15);
+  font-family: var(--font-game);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #5b3405;
+  white-space: nowrap;
+}
+
+/* Showcase Dua Dompet (Saldo Siap Tarik & Saldo Beli/Kas) */
+.wallets-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.wallet-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 18px;
+  background: rgba(59, 36, 20, .82);
+  color: #fff;
+  box-shadow: 0 3px 0 rgba(59, 36, 20, .45), 0 5px 12px rgba(0, 0, 0, .22), inset 0 1px 1px rgba(255, 255, 255, .25);
+}
+.wallet-box.wallet-box--primary {
+  background: linear-gradient(180deg, rgba(65, 40, 22, .92), rgba(45, 26, 12, .94));
+  padding: 10px 14px 10px 10px;
+}
+.wallet-lead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.wallet-lead .wal-3d-ic {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.wallet-box.wallet-box--primary .wallet-lead .wal-3d-ic {
+  width: 44px;
+  height: 44px;
+}
+.wallet-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.wallet-meta small {
   font-size: 9.5px;
   font-weight: 800;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+  color: #fde68a;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 2px;
 }
-.vault-stat-capsule strong { font-weight: 900; color: #fef08a; }
-
-/* Ilustrasi biota di kanan panel */
-.vault-hero-art {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 140px;
-  height: 108px;
-  pointer-events: none;
-  z-index: 1;
+.wallet-meta b {
+  font-family: var(--font-game);
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
 }
-.fish-swim {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: fishSwim 4.5s ease-in-out infinite;
-}
-@keyframes fishSwim {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(-6px, -4px) rotate(-4deg); }
-}
-.pearl-glow { animation: pearlPulse 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes pearlPulse {
-  0%, 100% { opacity: 0.45; transform: scale(0.9); }
-  50% { opacity: 0.95; transform: scale(1.15); }
-}
-.starfish-wiggle { animation: starWiggle 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes starWiggle {
-  0%, 100% { transform: rotate(-8deg); }
-  50% { transform: rotate(10deg); }
+.wallet-box.wallet-box--primary .wallet-meta b {
+  font-size: 23px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .5);
 }
 
-/* Baris aksi: tile putih clay + ikon berwarna */
-.vault-actions-cluster {
+.hero-actions-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  padding: 6px 0 0;
+  grid-template-columns: 1.2fr 1.2fr 0.9fr;
+  gap: 8px;
+  margin-top: 6px;
 }
-.clay-btn {
+
+/* 3. Strip Ringan (Mascot, Notice, Tour, Referral) */
+.farm-mascot-strip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  height: 42px;
-  border-radius: 14px;
-  background: #ffffff;
-  font-size: 11.5px;
-  font-weight: 900;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .08);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+}
+.farm-mascot-strip img {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.farm-strip-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 2px 5px rgba(60, 30, 5, .08);
+  color: var(--ink);
   text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  user-select: none;
-  box-shadow:
-    0 3px 8px rgba(30, 27, 46, 0.05),
-    inset 2px 2px 4px #ffffff,
-    inset -2px -2px 5px rgba(251, 146, 60, 0.14);
-  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  transition: transform .08s;
 }
-.clay-btn:active {
-  transform: translateY(1px) scale(0.97);
-  box-shadow: inset 2px 2px 5px rgba(251, 146, 60, 0.22);
-}
-.clay-btn-ico {
-  width: 26px;
-  height: 26px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: #ffffff;
-  box-shadow:
-    0 3px 6px var(--ico-sh, rgba(0, 0, 0, 0.12)),
-    inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.6),
-    inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.15);
-}
-.clay-btn--primary { color: #e11d48 !important; }
-.clay-btn--primary .clay-btn-ico { background: linear-gradient(145deg, #fda4af, #f43f5e); --ico-sh: rgba(244, 63, 94, 0.35); }
-.clay-btn--secondary { color: #059669 !important; }
-.clay-btn--secondary .clay-btn-ico { background: linear-gradient(145deg, #6ee7b7, #059669); --ico-sh: rgba(5, 150, 105, 0.32); }
-.clay-btn--ghost { color: #9a3412 !important; }
-.clay-btn--ghost .clay-btn-ico { background: linear-gradient(145deg, #fef3c7, #fdba74); color: #9a3412; --ico-sh: rgba(251, 146, 60, 0.32); }
-
-/* ── 2. DUA PORTAL BIOTA (MANCING & VIDEO) ── */
-.fantasy-portals-grid {
+.farm-strip-btn:active { transform: translateY(2px); }
+.farm-strip-ic {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--wood-l), var(--wood));
+  box-shadow: 0 2px 0 var(--wood-d);
+  color: #fff;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  place-items: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.farm-strip-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.farm-strip-tx b {
+  font-family: var(--font-game);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.farm-strip-tx small {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* 4. Portal Cards Grid */
+.portals-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Portal Utama: Sawah Panen Cuan (#tour-sidejob-card) */
+.portal-farm-panel {
+  position: relative;
+  background: var(--wood);
+  padding: 7px;
+  border-radius: 26px;
+  box-shadow: 0 6px 0 var(--wood-d), 0 14px 30px rgba(45, 25, 10, .28), inset 0 2px 0 rgba(255, 255, 255, .35);
+}
+.portal-farm-card {
+  position: relative;
+  background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .85), transparent 45%), var(--parch);
+  border-radius: 20px;
+  padding: 16px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.portal-farm-banner {
+  position: relative;
+  width: 100%;
+  height: 100px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--slot-bd), inset 0 2px 4px rgba(0, 0, 0, .15);
+  background: linear-gradient(180deg, #7dd3fc 0%, #bae6fd 45%, #86efac 75%, #22c55e 100%);
+}
+.portal-farm-banner svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.portal-farm-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 10px;
 }
-.fantasy-portal-card {
-  position: relative;
-  border: 2px solid transparent;
-  border-radius: 20px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-decoration: none;
-  color: inherit;
-  overflow: hidden;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
+.portal-farm-title h2 {
+  font-family: var(--font-game);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  margin: 0;
 }
-.fantasy-portal-card:active { transform: translateY(2px) scale(0.97); }
-.portal-card--farm {
-  background:
-    linear-gradient(160deg, #ffffff 0%, #fff7ed 60%, #ffe4e6 100%) padding-box,
-    var(--reef-border) border-box;
-  box-shadow:
-    0 12px 26px rgba(244, 63, 94, 0.14),
-    inset 2.5px 2.5px 5px #ffffff,
-    inset -3px -3px 7px rgba(251, 146, 60, 0.16);
-}
-.portal-card--watch {
-  background:
-    linear-gradient(160deg, #ffffff 0%, #faf5ff 60%, #ecfeff 100%) padding-box,
-    var(--reef-border) border-box;
-  box-shadow:
-    0 12px 26px rgba(139, 92, 246, 0.16),
-    inset 2.5px 2.5px 5px #ffffff,
-    inset -3px -3px 7px rgba(139, 92, 246, 0.12);
+.portal-farm-title p {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 3px;
+  line-height: 1.35;
 }
 
-.portal-top-bar {
+/* Farm Summary Chip (Status Sawah User) */
+.farm-chips-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 7px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.portal-clay-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 10px;
-  border: 2px solid #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: #fff;
-  box-shadow:
-    0 5px 12px rgba(0, 0, 0, 0.12),
-    inset 2px 2px 3px rgba(255, 255, 255, 0.7),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.12);
-}
-.portal-clay-icon--farm  { background: linear-gradient(145deg, #86efac, #059669); }
-.portal-clay-icon--watch { background: linear-gradient(145deg, #c084fc, #8b5cf6 55%, #0891b2); }
-
-.portal-sparkle-tag {
-  font-size: 8.5px;
-  font-weight: 900;
-  text-transform: uppercase;
-  padding: 2.5px 8px;
-  border-radius: 999px;
-  letter-spacing: 0.3px;
+.farm-chip {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-}
-.portal-card--farm .portal-sparkle-tag  { background: #ffe4e6; color: #be123c; }
-.portal-card--watch .portal-sparkle-tag { background: #f3e8ff; color: #7e22ce; }
-
-/* Jendela ilustrasi biota di dalam portal */
-.portal-scene {
-  position: relative;
-  height: 56px;
-  border-radius: 13px;
-  overflow: hidden;
-  margin-bottom: 8px;
-  border: 2px solid #ffffff;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.10), 0 3px 8px rgba(0, 0, 0, 0.05);
-}
-.portal-scene svg { display: block; width: 100%; height: 100%; }
-.portal-scene--field { background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 60%, #dcfce7 100%); }
-.farm-sway { transform-box: fill-box; transform-origin: bottom center; animation: farmSway 3.2s ease-in-out infinite; }
-.farm-sun  { transform-box: fill-box; transform-origin: center; animation: farmSun 6s ease-in-out infinite; }
-@keyframes farmSway { 50% { transform: rotate(-4deg); } }
-@keyframes farmSun  { 50% { transform: scale(1.08); } }
-.portal-scene--jelly { background: radial-gradient(circle at 50% 40%, #6d28d9 0%, #3b0764 55%, #164e63 100%); }
-
-.jelly-bob {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: jellyBob 4s ease-in-out infinite;
-}
-.jelly-bob--small { animation-duration: 3.2s; animation-delay: -1.2s; }
-@keyframes jellyBob {
-  0%, 100% { transform: translateY(3px) scaleY(0.96); }
-  50%      { transform: translateY(-4px) scaleY(1.04); }
-}
-.sparkle-bubble { animation: sparkleTwinkle 2.4s ease-in-out infinite; }
-.sparkle-bubble:nth-of-type(2n) { animation-delay: -0.8s; }
-.sparkle-bubble:nth-of-type(3n) { animation-delay: -1.6s; }
-@keyframes sparkleTwinkle {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 1; }
-}
-
-.portal-heading {
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  margin-bottom: 0;
-  letter-spacing: -0.2px;
-}
-.portal-subtext {
-  font-size: 10px;
+  gap: 5px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 999px;
+  font-family: var(--font-game);
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--reef-muted);
-  margin-bottom: 7px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
+}
+.farm-chip img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.farm-chip.ready {
+  background: linear-gradient(180deg, #fff3b0, var(--y1));
+  color: #5b3405;
+  box-shadow: 0 2px 0 var(--y2);
+  animation: farmPulse 2s infinite ease-in-out;
+}
+.farm-chip.barn {
+  background: linear-gradient(180deg, #dcfce7, var(--g1));
+  color: #064e3b;
+  box-shadow: 0 2px 0 var(--g2);
+}
+.farm-chip.growing {
+  background: linear-gradient(180deg, #e0f2fe, var(--b1));
+  color: #0c4a6e;
+  box-shadow: 0 2px 0 var(--b2);
+}
+.farm-chip.empty {
+  background: var(--slot);
+  color: var(--muted);
+  box-shadow: 0 0 0 1.5px var(--slot-bd);
+}
+@keyframes farmPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
 }
 
-.portal-wave-progress {
-  width: 100%;
-  height: 6px;
-  background: #ede9fe;
-  border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 9px;
-  box-shadow: inset 1px 1px 2px rgba(76, 29, 149, 0.15);
+/* Portal 2: Nonton Video (#tour-video-mission) */
+.portal-watch-card {
+  position: relative;
+  background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .8), transparent 45%), var(--parch);
+  border-radius: 20px;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
 }
-.portal-wave-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #34d399, #22d3ee 50%, #a855f7);
-  border-radius: 999px;
-  transition: width 0.3s;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.55);
-}
-
-.portal-cta-badge {
+.watch-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 9px;
-  border-radius: 11px;
-  font-size: 10.5px;
-  font-weight: 900;
-  color: #ffffff;
-  border: none;
-  transition: filter 0.15s;
+  gap: 10px;
 }
-.portal-card--farm .portal-cta-badge {
-  background: linear-gradient(145deg, #fb7185, #f43f5e);
-  box-shadow: 0 5px 12px rgba(244, 63, 94, 0.30), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.55), inset -2px -2px 4px rgba(190, 18, 60, 0.3);
+.watch-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.portal-card--watch .portal-cta-badge {
-  background: linear-gradient(145deg, #c084fc, #8b5cf6);
-  box-shadow: 0 5px 12px rgba(139, 92, 246, 0.32), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.55), inset -2px -2px 4px rgba(91, 33, 182, 0.3);
-}
-.fantasy-portal-card:hover .portal-cta-badge { filter: brightness(1.06); }
-
-/* ── 3. TOKEN LAYANAN KARANG (5 CLAY TOKENS) ── */
-.reef-services-deck {
-  border: 2px solid transparent;
-  border-radius: 20px;
-  padding: 10px 6px 9px;
-  background: var(--reef-card) padding-box, var(--reef-border) border-box;
-  box-shadow: var(--reef-clay-shadow);
-  overflow: hidden;
-}
-.reef-tokens-grid {
+.watch-icon-slot {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #7dd3fc, var(--b1));
+  box-shadow: 0 3px 0 var(--b2);
+  color: #fff;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
-  position: relative;
-  z-index: 1;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
 }
-.reef-token-btn {
+.watch-title-group b {
+  font-family: var(--font-game);
+  font-size: 16px;
+  font-weight: 700;
+  display: block;
+  line-height: 1.15;
+}
+.watch-title-group small {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* 5. Menu Cepat / Bento Grid (#tour-bento-grid) */
+.bento-tiles-grid {
+  display: grid;
+  gap: 8px;
+}
+.bento-item-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  text-align: center;
   gap: 5px;
-  text-decoration: none;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px 2px;
+  padding: 8px 4px 6px;
   border-radius: 16px;
-  font-family: inherit;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  width: 100%;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 2px 5px rgba(60, 30, 5, .08);
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+  border: 0;
+  transition: transform .08s;
 }
-.reef-token-btn:active { transform: translateY(2px) scale(0.92); }
-.clay-token-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 13px;
-  border: 2px solid #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
+.bento-item-slot:active {
+  transform: translateY(2px);
+}
+.bento-slot-ic {
   position: relative;
-  box-shadow:
-    0 7px 14px var(--tk-shadow, rgba(0, 0, 0, 0.1)),
-    inset 2.5px 2.5px 4px rgba(255, 255, 255, 0.75),
-    inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.14);
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  padding: 5px;
 }
-.reef-token-btn:hover .clay-token-icon { transform: translateY(-3px) scale(1.05); }
-.clay-token-icon.t-checkin { background: linear-gradient(145deg, #fef08a, #fbbf24 45%, #f59e0b); color: #78350f; --tk-shadow: rgba(245, 158, 11, 0.35); }
-.clay-token-icon.t-threads { background: linear-gradient(145deg, #3f3f46, #18181b); color: #fde68a; --tk-shadow: rgba(24, 24, 27, 0.30); }
-.clay-token-icon.t-survey  { background: linear-gradient(145deg, #6ee7b7, #10b981 55%, #059669); color: #ffffff; --tk-shadow: rgba(16, 185, 129, 0.35); }
-.clay-token-icon.t-invite  { background: linear-gradient(145deg, #fda4af, #fb7185 45%, #f43f5e); color: #ffffff; --tk-shadow: rgba(244, 63, 94, 0.35); }
-.clay-token-icon.t-vip     { background: linear-gradient(145deg, #e9d5ff, #c084fc 40%, #8b5cf6); color: #ffffff; --tk-shadow: rgba(139, 92, 246, 0.45); }
-.clay-token-icon.t-redeem  { background: linear-gradient(145deg, #f472b6, #ec4899 45%, #be185d); color: #ffffff; --tk-shadow: rgba(236, 72, 153, 0.35); }
-.clay-token-icon.t-vip::after {
-  content: '';
+.bento-slot-ic img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.bento-slot-ic i {
+  font-size: 22px;
+}
+.bento-ping-dot {
   position: absolute;
-  inset: -3px;
-  border-radius: 15px;
-  box-shadow: 0 0 12px 2px rgba(192, 132, 252, 0.55);
-  animation: vipGlow 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes vipGlow {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 1; }
-}
-.token-ping {
-  position: absolute;
-  top: -4px; right: -4px;
-  width: 11px; height: 11px;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #f43f5e;
-  border: 2px solid #fff;
+  background: var(--r1);
+  box-shadow: 0 0 0 2px #fff;
 }
-.reef-token-label {
-  font-size: 9.5px;
-  font-weight: 900;
-  color: #44403c;
+.bento-label-tx {
+  font-family: var(--font-game);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
   white-space: nowrap;
 }
 
-/* ── 4. VIDEO REKOMENDASI ── */
-.fantasy-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-.fsh-title {
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  letter-spacing: -0.3px;
-}
-.fsh-title-icon {
-  width: 22px; height: 22px;
-  border-radius: 8px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: linear-gradient(145deg, #fef08a, #f59e0b);
-  color: #ffffff;
-  font-size: 13px;
-  border: none;
-  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35), inset 1px 1px 2px rgba(255, 255, 255, 0.7);
-}
-.fsh-link {
-  font-size: 11px;
-  font-weight: 900;
-  color: #e11d48;
-  text-decoration: none;
-  background: #fff1f2;
-  padding: 3px 10px;
-  border-radius: 999px;
-}
-.fsh-link:hover { background: #ffe4e6; }
-
-.fantasy-video-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.clay-video-card {
-  border: 2px solid transparent;
-  border-radius: 18px;
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  background: linear-gradient(170deg, #ffffff 0%, #fff7ed 100%) padding-box, var(--reef-border) border-box;
-  box-shadow:
-    0 10px 22px rgba(244, 63, 94, 0.10),
-    0 4px 10px rgba(8, 145, 178, 0.08),
-    inset 2px 2px 4px #ffffff;
+/* 6. Banner Promosi (Survei, Threads, Promo Hub) */
+.promo-banners-list {
   display: flex;
   flex-direction: column;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
+  gap: 8px;
 }
-.clay-video-card:active { transform: translateY(2px) scale(0.97); }
-.clay-video-thumb-wrap {
+.promo-banner-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .08);
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+  border: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  background: linear-gradient(135deg, #3b0764, #164e63);
+  text-align: left;
+  transition: transform .08s;
+}
+.promo-banner-card:active { transform: translateY(2px); }
+.promo-banner-ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 20px;
+  color: #fff;
+}
+.promo-banner-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.promo-banner-tx b {
+  font-family: var(--font-game);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.promo-banner-tx small {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.promo-banner-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.promo-banner-badge {
+  font-family: var(--font-game);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff3b0, var(--y1));
+  box-shadow: 0 2px 0 var(--y2);
+  color: #5b3405;
+  white-space: nowrap;
+}
+
+/* 7. Video Pilihan & Riwayat Tontonan */
+.video-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+.video-card-item {
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .08);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform .08s;
+}
+.video-card-item:active { transform: translateY(2px); }
+.video-thumb-slot {
   position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
   overflow: hidden;
 }
-.clay-video-thumb-img {
+.video-thumb-slot img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-.clay-reward-pill {
+.video-reward-pill {
   position: absolute;
-  top: 7px;
-  left: 7px;
-  background: linear-gradient(135deg, #fef08a, #fbbf24);
-  color: #78350f;
-  font-size: 9.5px;
-  font-weight: 900;
-  border-radius: 8px;
+  top: 6px;
+  left: 6px;
   padding: 2px 7px;
-  border: none;
-  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.45), inset 1px 1px 2px rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #a6f08a, var(--g1));
+  box-shadow: 0 2px 0 var(--g2);
+  color: #fff;
+  font-family: var(--font-game);
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow: 0 1px 0 var(--g2);
 }
-.clay-duration-pill {
+.video-dur-pill {
   position: absolute;
-  bottom: 7px;
-  right: 7px;
-  background: rgba(59, 7, 100, 0.78);
-  color: #ffffff;
-  font-size: 8.5px;
-  font-weight: 800;
+  bottom: 6px;
+  right: 6px;
+  padding: 1px 6px;
   border-radius: 6px;
-  padding: 1.5px 6px;
+  background: rgba(0, 0, 0, .75);
+  color: #fff;
+  font-family: var(--font-game);
+  font-size: 10px;
+  font-weight: 700;
 }
-.clay-video-body {
-  padding: 8px 9px 10px;
+.video-card-body {
+  padding: 8px 10px 10px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
   flex: 1;
-  justify-content: space-between;
 }
-.clay-video-title-txt {
-  font-size: 11.5px;
-  font-weight: 800;
-  color: var(--reef-ink);
-  line-height: 1.35;
+.video-card-title {
+  font-family: var(--font-game);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 8px;
-}
-.clay-video-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 10px;
-  font-weight: 900;
-  color: #e11d48;
-}
-.clay-video-footer i {
-  width: 20px; height: 20px;
-  border-radius: 7px;
-  background: linear-gradient(145deg, #fb7185, #f43f5e);
-  color: #fff;
-  font-size: 10px;
-  box-shadow: 0 2px 5px rgba(244, 63, 94, 0.3);
 }
 
-/* Toast Notification */
-.cuan-toast {
+/* Lanjutkan Menonton Compact Rows */
+.cw-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 16px;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd);
+  text-decoration: none;
+  color: var(--ink);
+}
+.cw-thumb {
+  width: 58px;
+  height: 38px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  background: #000;
+}
+.cw-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cw-thumb i { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.cw-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cw-info b { font-family: var(--font-game); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 8. Floating Promo Button */
+.cms-float {
   position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%) translateY(30px);
-  background: linear-gradient(135deg, #3b0764, #1e1b2e);
-  color: #fff;
-  padding: 10px 18px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 800;
-  border: none;
-  box-shadow: 0 10px 24px rgba(59, 7, 100, 0.35);
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 10001;
+  right: 14px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  z-index: 900;
   display: flex;
   align-items: center;
   gap: 7px;
-  white-space: nowrap;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #fff;
+  border: 0;
+  background: linear-gradient(180deg, #ff8080, var(--r1) 50%, var(--r2));
+  box-shadow: 0 4px 0 var(--r2), 0 8px 18px rgba(225, 29, 72, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.5);
+  animation: floatBob 3s ease-in-out infinite;
+  text-decoration: none;
+}
+.cms-float:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--r2); }
+.cms-float-ic {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 18px;
+}
+.cms-float b { font-family: var(--font-game); font-size: 12px; font-weight: 700; line-height: 1.1; display: block; }
+.cms-float small { font-size: 9.5px; opacity: 0.95; display: block; }
+.cms-float em {
+  position: absolute;
+  top: -6px;
+  right: -3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-style: normal;
+  font-family: var(--font-game);
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--y1);
+  color: #5b3405;
+  box-shadow: 0 2px 0 var(--y2);
+}
+@keyframes floatBob { 50% { transform: translateY(-5px); } }
+
+/* Toast */
+.cuan-toast {
+  position: fixed;
+  z-index: 9999;
+  top: calc(var(--safe-t) + 75px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  background: rgba(59, 36, 20, .94);
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-family: var(--font-game);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .3), 0 0 0 2px var(--wood);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
 }
 .cuan-toast.show {
   opacity: 1;
+  pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
+.cuan-toast i { font-size: 18px; color: #ffd43b; }
 
-/* ══════════════════════════════════════════════════════════
-   MODAL DIALOGS — CORAL REEF CLAY
-   ══════════════════════════════════════════════════════════ */
-.amber-modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(30, 27, 46, 0.45);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 99999;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.amber-modal-backdrop.open { display: flex !important; }
-.amber-modal-box {
-  border: 2px solid transparent;
-  background: var(--reef-card) padding-box, var(--reef-border) border-box;
-  border-radius: 24px;
-  padding: 20px 18px 16px;
-  width: 100%;
-  max-width: 380px;
-  position: relative;
-  box-shadow:
-    0 22px 50px rgba(244, 63, 94, 0.20),
-    0 8px 20px rgba(8, 145, 178, 0.12),
-    inset 3px 3px 6px #ffffff,
-    inset -4px -4px 9px rgba(251, 146, 60, 0.16);
-  text-align: center;
-}
-.amber-modal-close {
-  position: absolute;
-  top: 14px; right: 14px;
-  background: #ffffff;
-  border: none;
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; color: #9a3412;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(251, 146, 60, 0.15), inset 1px 1px 2px #fff;
-}
-.amber-modal-badge {
-  width: 54px; height: 54px;
-  border-radius: 19px;
-  background: linear-gradient(145deg, #fda4af, #fb7185 40%, #f43f5e);
-  color: #fff;
-  border: 2.5px solid #ffffff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px; margin: 0 auto 14px;
-  box-shadow: 0 8px 18px rgba(244, 63, 94, 0.32), inset 2.5px 2.5px 4px rgba(255, 255, 255, 0.65), inset -2.5px -2.5px 5px rgba(190, 18, 60, 0.3);
-}
-.amber-modal-title {
-  font-size: 16px; font-weight: 900; color: var(--reef-ink); margin-bottom: 6px; letter-spacing: -0.3px; line-height: 1.3;
-}
-.amber-modal-body {
-  font-size: 12px; font-weight: 700; color: var(--reef-muted); line-height: 1.55; margin-bottom: 18px;
-}
-.btn-modal-primary {
-  background: linear-gradient(145deg, #fda4af 0%, #fb7185 38%, #f43f5e 100%);
-  color: #ffffff !important;
-  padding: 12px 18px;
-  border-radius: 17px;
-  text-align: center;
-  font-size: 12.5px;
-  font-weight: 900;
-  text-decoration: none;
-  text-shadow: 0 1px 2px rgba(159, 18, 57, 0.4);
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 18px rgba(244, 63, 94, 0.35), inset 2.5px 2.5px 4px rgba(255, 255, 255, 0.6), inset -3px -3px 6px rgba(190, 18, 60, 0.35);
-  cursor: pointer; width: 100%;
-}
-.btn-modal-dismiss {
-  background: transparent; border: none; color: #a8a29e; font-size: 11.5px; font-weight: 800; cursor: pointer; padding: 8px; width: 100%; text-align: center;
-}
-
-/* Tour Select Modal */
-.tour-select-option {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: 18px;
-  border: 2px solid transparent;
-  background: linear-gradient(160deg, #ffffff, #fff7ed) padding-box, var(--reef-border) border-box;
-  cursor: pointer; text-align: left; width: 100%; margin-bottom: 10px;
-  font-family: inherit;
-  box-shadow: 0 5px 12px rgba(244, 63, 94, 0.08), inset 2px 2px 4px #ffffff;
-}
-.tour-select-icon {
-  width: 40px; height: 40px; border-radius: 13px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; color: #ffffff; flex-shrink: 0;
-  border: 2px solid #fff;
-}
-.tour-select-icon--watch { background: linear-gradient(145deg, #c084fc, #8b5cf6); box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3); }
-.tour-select-title { font-size: 12.5px; font-weight: 900; color: var(--reef-ink); margin-bottom: 2px; }
-.tour-select-desc { font-size: 10px; font-weight: 700; color: var(--reef-muted); line-height: 1.35; }
-
-/* Promo Hub Modal */
-.promo-hub-card-item {
-  background: #ffffff; border: 2px solid #ffffff; border-radius: 16px;
-  padding: 12px 14px; margin-bottom: 10px; text-align: left;
-  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.10), inset 2px 2px 4px #ffffff, inset -2px -2px 4px rgba(251, 146, 60, 0.08);
-}
-.phc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.phc-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 8.5px; font-weight: 900; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; }
-.phc-tag--threads { background: #18181b; color: #fde68a; }
-.phc-tag--referral { background: #ffe4e6; color: #be123c; }
-.phc-reward { font-size: 10.5px; font-weight: 900; color: #059669; }
-.phc-title { font-size: 12.5px; font-weight: 900; color: var(--reef-ink); margin-bottom: 2px; }
-.phc-desc { font-size: 10px; font-weight: 700; color: var(--reef-muted); line-height: 1.35; margin-bottom: 8px; }
-.phc-caption-box { background: #fff7ed; border: none; border-radius: 12px; padding: 8px 10px; font-size: 9.5px; font-weight: 700; color: #9a3412; line-height: 1.4; margin-bottom: 8px; }
-.phc-actions { display: flex; align-items: center; gap: 6px; }
-.btn-phc-action { flex: 1; padding: 8px 10px; border-radius: 12px; font-size: 10.5px; font-weight: 900; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: none; cursor: pointer; font-family: inherit; }
-.btn-phc-action--primary { background: linear-gradient(145deg, #fb7185, #f43f5e); color: #ffffff !important; border: none; box-shadow: 0 3px 8px rgba(244, 63, 94, 0.28), inset 1px 1px 2px rgba(255, 255, 255, 0.5); }
-.btn-phc-action--share { background: linear-gradient(145deg, #34d399, #059669); color: #ffffff !important; border: none; box-shadow: 0 3px 8px rgba(5, 150, 105, 0.28), inset 1px 1px 2px rgba(255, 255, 255, 0.5); }
-.btn-phc-action--copy { background: #fff7ed; color: #9a3412 !important; }
-
-/* Mobile kecil */
-@media (max-width: 360px) {
-  .vault-balance-main-num { font-size: 25px; }
-  .vault-hero-art { width: 112px; height: 88px; }
-  .reef-token-label { font-size: 9px; }
-  .clay-token-icon { width: 34px; height: 34px; }
-}
-/* ══ Komponen yang dikendalikan CMS (console/home_cms.php) ══ */
-.fantasy-portals-grid.is-single { grid-template-columns: 1fr; }
-.portal-subtext { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.portal-heading { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.portal-cta-badge span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.portal-sparkle-tag { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-deck-title { margin: 0 4px 6px; font-size: 11px; font-weight: 900; color: var(--reef-muted); text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 1; }
-.reef-tokens-grid { row-gap: 8px; }
-.cms-mascot { display: flex; align-items: flex-start; gap: 8px; padding: 0 2px; }
-.cms-mascot-ava { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 40% 35%, #fff, #cffafe); border: 2px solid #fff; box-shadow: 0 5px 12px rgba(8, 145, 178, 0.2); }
-.cms-mascot-ava img { width: 34px; height: 34px; object-fit: contain; }
-.cms-mascot-bubble { position: relative; flex: 1; padding: 8px 11px; border: 2px solid #fff; border-radius: 4px 16px 16px 16px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); font-size: 11.5px; font-weight: 800; line-height: 1.45; color: var(--reef-ink); }
-.cms-strip { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); text-align: left; cursor: pointer; font-family: inherit; color: var(--reef-ink); }
-.cms-strip > i { flex-shrink: 0; color: var(--reef-muted); font-size: 14px; }
-.cms-strip-ic { width: 34px; height: 34px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: #fff; box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), inset -2px -2px 4px rgba(0, 0, 0, 0.14); }
-.cms-strip--tour .cms-strip-ic { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.cms-strip--ref .cms-strip-ic { background: linear-gradient(145deg, #fda4af, #e11d48); }
-.cms-strip-tx { flex: 1; min-width: 0; }
-.cms-strip-tx b { display: block; font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-strip-tx small { display: block; font-size: 10px; font-weight: 700; color: var(--reef-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-ref-code { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: 1.5px; color: #be123c; }
-.cms-ref-copy { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; border: 2px solid #fff; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 10.5px; font-weight: 900; color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 4px 10px rgba(225, 29, 72, 0.28); }
-.cms-inbox { display: flex; flex-direction: column; border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); overflow: hidden; }
-.cms-inbox-row { display: flex; align-items: center; gap: 9px; padding: 7px 10px; text-decoration: none; color: var(--reef-ink); }
-.cms-inbox-row + .cms-inbox-row { border-top: 1.5px dashed rgba(251, 146, 60, 0.22); }
-.cms-inbox-ic { width: 30px; height: 30px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; background: linear-gradient(145deg, #fcd34d, #f59e0b); }
-.cms-inbox-tx { flex: 1; min-width: 0; }
-.cms-inbox-tx b { display: block; font-size: 11.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-inbox-tx small { display: block; font-size: 10px; font-weight: 700; color: var(--reef-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-inbox-go { color: var(--reef-muted); }
-.cms-banners { display: flex; flex-direction: column; gap: 7px; }
-.cms-bnr { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border: 2px solid #fff; border-radius: 18px; text-align: left; text-decoration: none; cursor: pointer; font-family: inherit; color: #fff; box-shadow: 0 8px 18px rgba(30, 27, 46, 0.14), inset 2px 2px 4px rgba(255, 255, 255, 0.3); }
-.cms-bnr--survey { background: linear-gradient(135deg, #059669, #34d399); }
-.cms-bnr--threads { background: linear-gradient(135deg, #18181b, #3f3f46); }
-.cms-bnr--promo { background: linear-gradient(135deg, #7c3aed, #c084fc); }
-.cms-bnr-ic { width: 36px; height: 36px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; background: rgba(255, 255, 255, 0.2); border: 1.5px solid rgba(255, 255, 255, 0.5); }
-.cms-bnr-tx { flex: 1; min-width: 0; }
-.cms-bnr-kicker { display: block; font-style: normal; font-size: 8.5px; font-weight: 900; letter-spacing: 0.6px; color: #fde68a; }
-.cms-bnr-tx b { display: block; font-size: 12px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-bnr-tx small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 1px; font-size: 9.5px; font-weight: 700; opacity: 0.92; line-height: 1.3; }
-.cms-bnr-side { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.cms-bnr-side em { font-style: normal; padding: 1px 7px; border-radius: 999px; font-size: 9px; font-weight: 900; background: #fde68a; color: #78350f; white-space: nowrap; }
-.cms-bnr-cta { padding: 4px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 900; background: #fff; color: var(--reef-ink); white-space: nowrap; }
-.cms-cw-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.cms-cw { display: flex; align-items: center; gap: 9px; padding: 6px; border: 2px solid #fff; border-radius: 16px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); text-decoration: none; color: var(--reef-ink); }
-.cms-cw-thumb { position: relative; width: 76px; height: 44px; flex-shrink: 0; border-radius: 11px; overflow: hidden; }
-.cms-cw-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.cms-cw-thumb i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; background: rgba(8, 51, 68, 0.25); }
-.cms-cw-tx { flex: 1; min-width: 0; }
-.cms-cw-tx b { display: block; font-size: 11.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cms-cw-bar { display: block; height: 5px; margin: 4px 0 2px; border-radius: 999px; background: rgba(8, 145, 178, 0.15); overflow: hidden; }
-.cms-cw-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22d3ee, #34d399); }
-.cms-cw-tx small { font-size: 9.5px; font-weight: 800; color: var(--reef-muted); }
-.cms-sec-desc { margin: 2px 4px 0; font-size: 10.5px; font-weight: 700; color: var(--reef-muted); }
-.cms-tips { display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px; border: 2px solid #fff; border-radius: 18px; background: linear-gradient(145deg, #fffbeb, #fef3c7); box-shadow: var(--reef-clay-shadow); font-size: 11px; font-weight: 700; color: #78350f; line-height: 1.45; }
-.cms-tips b { display: block; font-size: 11.5px; font-weight: 900; }
-.cms-tips-ic { width: 30px; height: 30px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; background: linear-gradient(145deg, #fcd34d, #f59e0b); }
-.cms-float { position: fixed; right: 14px; bottom: calc(164px + env(safe-area-inset-bottom)); z-index: 900; display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px; max-width: 150px; border: 2px solid #fff; border-radius: 999px; cursor: pointer; font-family: inherit; color: #fff; text-align: left; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 10px 22px rgba(225, 29, 72, 0.35), inset 2px 2px 4px rgba(255, 255, 255, 0.35); animation: cmsFloat 3s ease-in-out infinite; }
-.cms-float > i { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: rgba(255, 255, 255, 0.22); }
-.cms-float b { display: block; font-size: 11px; font-weight: 900; line-height: 1.1; }
-.cms-float small { display: block; font-size: 9.5px; font-weight: 800; opacity: 0.92; }
-.cms-float em { position: absolute; top: -7px; right: -4px; padding: 0 6px; border-radius: 999px; font-style: normal; font-size: 8.5px; font-weight: 900; background: #fde68a; color: #78350f; border: 1.5px solid #fff; }
-@keyframes cmsFloat { 50% { transform: translateY(-4px); } }
-@media (prefers-reduced-motion: reduce) {
-  .cms-float { animation: none !important; }
+@media (max-width: 380px) {
+  .hero-actions-row { grid-template-columns: 1fr 1fr; }
+  .hero-actions-row a:nth-child(3) { grid-column: span 2; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sea-bubble, .kelp-blade, .fish-swim, .pearl-glow, .starfish-wiggle,
-  .farm-sway, .farm-sun, .jelly-bob, .sparkle-bubble, .vault-live-dot, .clay-token-icon.t-vip::after {
-    animation: none !important;
-  }
+  .cms-float, .farm-chip.ready { animation: none !important; }
 }
 </style>
 
+<div class="valley-home-stage">
 
-<div class="fantasy-ocean-stage">
+  <!-- 1. Siluet Pegunungan & Lembah Sawah Hijau Low-Poly (Inline SVG) -->
+  <div class="valley-sky-deco" aria-hidden="true">
+    <svg viewBox="0 0 440 210" preserveAspectRatio="xMidYMin slice" fill="none">
+      <defs>
+        <linearGradient id="vSkySun" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#fef08a" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="vMtnFar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#bae6fd"/>
+          <stop offset="100%" stop-color="#7dd3fc"/>
+        </linearGradient>
+        <linearGradient id="vMtnMid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#86efac"/>
+          <stop offset="100%" stop-color="#4ade80"/>
+        </linearGradient>
+        <linearGradient id="vHillNear" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4ade80"/>
+          <stop offset="100%" stop-color="#22c55e"/>
+        </linearGradient>
+      </defs>
 
-  <!-- Gelembung naik -->
-  <div class="ambient-bubble-layer" aria-hidden="true">
-    <div class="sea-bubble b-1"></div>
-    <div class="sea-bubble b-2"></div>
-    <div class="sea-bubble b-3"></div>
-    <div class="sea-bubble b-4"></div>
-    <div class="sea-bubble b-5"></div>
+      <!-- Matahari Pagi Hangat -->
+      <circle cx="370" cy="40" r="32" fill="url(#vSkySun)"/>
+      <circle cx="370" cy="40" r="18" fill="#fde047"/>
+
+      <!-- Awan Lembut Low-Poly -->
+      <path d="M40 50 Q50 35 65 40 Q80 30 95 42 Q110 38 120 50 Z" fill="#ffffff" opacity="0.65"/>
+      <path d="M220 30 Q230 18 245 22 Q260 14 275 25 Q285 22 295 32 Z" fill="#ffffff" opacity="0.55"/>
+
+      <!-- Lapisan Pegunungan Jauh (Biru Muda Pastel) -->
+      <polygon points="0,140 45,95 90,130 150,75 210,125 275,68 340,120 395,85 440,118 440,210 0,210" fill="url(#vMtnFar)" opacity="0.75"/>
+      <!-- Salju / Sorot Puncak Gunung -->
+      <polygon points="150,75 142,88 150,92 158,86" fill="#ffffff" opacity="0.8"/>
+      <polygon points="275,68 266,82 276,86 284,80" fill="#ffffff" opacity="0.8"/>
+
+      <!-- Lapisan Bukit Sedang (Hijau Muda Segar) -->
+      <path d="M0 135 C60 110, 140 140, 220 120 C300 100, 380 135, 440 125 V210 H0 Z" fill="url(#vMtnMid)" opacity="0.85"/>
+
+      <!-- Petak Terasering Sawah Berundak -->
+      <path d="M0 162 C70 145, 170 170, 270 155 C360 142, 410 160, 440 155 V210 H0 Z" fill="url(#vHillNear)"/>
+      <path d="M0 182 C90 170, 200 190, 310 175 C390 165, 420 178, 440 174 V210 H0 Z" fill="#16a34a"/>
+
+      <!-- Pematang Sawah Cokelat Subur -->
+      <path d="M0 172 C80 158, 180 180, 280 166 C360 155, 420 170, 440 166" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
+      <path d="M0 192 C95 182, 210 200, 320 186 C400 176, 430 188, 440 185" stroke="#78350f" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+    </svg>
   </div>
 
-  <!-- ── 1. VAULT SALDO (PANEL SUNSET REEF + TILE AKSI) ── -->
+  <!-- 2. USER HERO & SALDO SHOWCASE (#tour-balance-box) -->
   <?php if ($H['show_user_bar'] || $H['show_balance_card'] || $H['show_quick_actions']): ?>
-  <div class="clay-vault-card" id="tour-balance-box">
-    <div id="cuan-ss-target">
-      <div class="vault-hero">
+  <div class="game-panel" id="tour-balance-box">
+    <div class="parch-card">
 
-        <!-- Ilustrasi: ikan badut, karang, kerang mutiara, bintang laut -->
-        <svg class="vault-hero-art" viewBox="0 0 140 108" fill="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="vaultClamGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#fef3c7"/>
-              <stop offset="100%" stop-color="#fdba74"/>
-            </linearGradient>
-            <radialGradient id="vaultPearlGrad" cx="35%" cy="35%" r="70%">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="55%" stop-color="#fef08a"/>
-              <stop offset="100%" stop-color="#f59e0b"/>
-            </radialGradient>
-            <radialGradient id="vaultPearlHalo" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#fef08a" stop-opacity="0.95"/>
-              <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <!-- gelembung -->
-          <g fill="#ffffff">
-            <circle class="sparkle-bubble" cx="104" cy="14" r="2.4" opacity="0.8"/>
-            <circle class="sparkle-bubble" cx="112" cy="6" r="1.5" opacity="0.7"/>
-            <circle class="sparkle-bubble" cx="40" cy="56" r="1.6" opacity="0.6"/>
-          </g>
-          <!-- ikan badut -->
-          <g class="fish-swim">
-            <g transform="translate(84 32)">
-              <path d="M-16 0 L-24 -7 L-23 7 Z" fill="#ea580c"/>
-              <path d="M-4 -9 C0 -15, 8 -14, 10 -8 Z" fill="#f97316"/>
-              <ellipse cx="0" cy="0" rx="16" ry="10" fill="#fb923c"/>
-              <path d="M-6 -9.6 C-4 -3, -4 3, -6 9.6 L-1.5 9.9 C-0.5 3, -0.5 -3, -1.5 -9.9 Z" fill="#ffffff" stroke="#1e1b2e" stroke-opacity="0.35" stroke-width="0.7"/>
-              <path d="M6 -8.4 C7.6 -3, 7.6 3, 6 8.4 L9.4 7.2 C10.6 3, 10.6 -3, 9.4 -7.2 Z" fill="#ffffff" stroke="#1e1b2e" stroke-opacity="0.35" stroke-width="0.7"/>
-              <ellipse cx="-1" cy="-4.5" rx="7" ry="2.2" fill="#ffffff" opacity="0.45"/>
-              <circle cx="12" cy="-2" r="2.3" fill="#ffffff"/><circle cx="12.6" cy="-2.2" r="1.2" fill="#1e1b2e"/>
-            </g>
-          </g>
-          <!-- gundukan pasir -->
-          <path d="M14 108 C34 94, 70 90, 140 92 V108 Z" fill="#fed7aa"/>
-          <path d="M40 108 C60 100, 96 98, 140 100 V108 Z" fill="#fdba74" opacity="0.6"/>
-          <!-- karang bercabang -->
-          <g stroke="#fecdd3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M114 98 V78 L104 64 L101 52 M104 64 L111 54 M114 82 L124 68 L122 56 M124 68 L132 62" stroke-width="4.5"/>
-            <path d="M134 98 V86 L139 78" stroke-width="3.5"/>
-          </g>
-          <g fill="#fff1f2">
-            <circle cx="101" cy="52" r="2.6"/><circle cx="111" cy="54" r="2.6"/>
-            <circle cx="122" cy="56" r="2.6"/><circle cx="132" cy="62" r="2.4"/><circle cx="139" cy="78" r="2.2"/>
-          </g>
-          <!-- kerang mutiara emas -->
-          <g transform="translate(66 98)">
-            <circle class="pearl-glow" cx="0" cy="-6" r="13" fill="url(#vaultPearlHalo)"/>
-            <path d="M-15 0 A15 10 0 0 0 15 0 Z" fill="url(#vaultClamGrad)" stroke="#f59e0b" stroke-width="1.2"/>
-            <g transform="rotate(-24 -15 0)">
-              <path d="M-15 0 A15 11 0 0 1 15 0 Z" fill="url(#vaultClamGrad)" stroke="#f59e0b" stroke-width="1.2"/>
-              <path d="M0 -9 L-10 -1 M0 -9 L-3.5 0 M0 -9 L3.5 0 M0 -9 L10 -1" stroke="#f59e0b" stroke-width="1" opacity="0.6"/>
-            </g>
-            <circle cx="1" cy="-4" r="5" fill="url(#vaultPearlGrad)"/>
-            <circle cx="-0.6" cy="-5.6" r="1.4" fill="#ffffff"/>
-          </g>
-          <!-- bintang laut -->
-          <g transform="translate(90 100)">
-            <g class="starfish-wiggle">
-              <path d="M0,-9 L2.4,-3.2 L8.6,-2.8 L3.9,1.3 L5.3,7.3 L0,4 L-5.3,7.3 L-3.9,1.3 L-8.6,-2.8 L-2.4,-3.2 Z"
-                    fill="#fb923c" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
-              <circle cx="0" cy="0" r="1.1" fill="#fde68a"/>
-            </g>
-          </g>
-        </svg>
-
-        <?php if ($H['show_user_bar']): ?>
-        <div class="vault-hero-top">
-          <div class="vault-greet">
-            <div class="vault-clay-avatar">
-              <i class="ph-fill ph-fish"></i>
-            </div>
-            <div class="vault-user-info">
-              <div class="vault-username-txt">
-                Halo, <?= htmlspecialchars($user['username'] ?? 'Kapten Cuan') ?>
-              </div>
-              <div>
-                <span class="vault-rank-pill">
-                  <i class="ph-fill ph-crown-simple"></i> <?= htmlspecialchars($membership_name ?? 'Kru Nelayan') ?>
-                </span>
-              </div>
+      <?php if ($H['show_user_bar']): ?>
+      <div class="user-hero-top">
+        <div class="user-greet-group">
+          <div class="user-avatar-slot">
+            <img src="/assets/img/icons3d/star.png" alt="Petani">
+          </div>
+          <div class="user-name-meta">
+            <b>Halo, <?= htmlspecialchars($user['username'] ?? 'Petani Cuan') ?></b>
+            <div class="lvl">
+              <span class="lvl-star"><img src="/assets/img/icons3d/star.png" alt=""></span>
+              <b><?= htmlspecialchars($membership_name ?? 'Petani Pemula') ?></b>
             </div>
           </div>
-          <?php if ($H['show_today_stats']): ?>
-          <span class="vault-today-chip">
-            <i class="ph-bold ph-trend-up"></i> +Rp <?= number_format($today_watch_earned, 0, ',', '.') ?>
-          </span>
-          <?php endif; ?>
         </div>
-        <?php endif; ?>
 
-        <?php if ($H['show_balance_card']): ?>
-        <div class="vault-balance-showcase">
-          <div class="vault-balance-tag">
-            <span class="vault-live-dot"></span> Saldo Siap Tarik
-          </div>
-          <div class="vault-balance-main-num">
-            <span class="rp-prefix">Rp</span><?= number_format((float)($user['balance_wd'] ?? 0), 0, ',', '.') ?>
-          </div>
-          <?php if ($H['show_today_stats']): ?>
-          <div class="vault-stats-ribbon">
-            <span class="vault-stat-capsule">
-              <i class="ph-bold ph-wallet"></i> Kas <strong>Rp <?= number_format((float)($user['balance_dep'] ?? 0), 0, ',', '.') ?></strong>
-            </span>
-          </div>
-          <?php endif; ?>
+        <?php if ($H['show_today_stats']): ?>
+        <div class="today-chip">
+          <i class="ph-bold ph-trend-up"></i>
+          <span>+Rp <?= number_format($today_watch_earned, 0, ',', '.') ?></span>
         </div>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
+
+      <?php if ($H['show_balance_card']): ?>
+      <div class="wallets-container">
+        <!-- Saldo Siap Tarik (WD) -->
+        <div class="wallet-box wallet-box--primary">
+          <div class="wallet-lead">
+            <div class="wal-3d-ic">
+              <img src="/assets/img/icons3d/coins.png" alt="Saldo Tarik">
+            </div>
+            <div class="wallet-meta">
+              <small>Saldo Siap Tarik (WD)</small>
+              <b>Rp <?= number_format((float)($user['balance_wd'] ?? 0), 0, ',', '.') ?></b>
+            </div>
+          </div>
+          <span style="font-size:11px;font-weight:800;color:#86efac;display:flex;align-items:center;gap:3px;">
+            <i class="ph-fill ph-check-circle"></i> Cair Tunai
+          </span>
+        </div>
+
+        <!-- Saldo Beli / Kas Petani -->
+        <div class="wallet-box">
+          <div class="wallet-lead">
+            <div class="wal-3d-ic">
+              <img src="/assets/img/icons3d/seed.png" alt="Kas Beli">
+            </div>
+            <div class="wallet-meta">
+              <small>Saldo Beli / Kas</small>
+              <b>Rp <?= number_format((float)($user['balance_dep'] ?? 0), 0, ',', '.') ?></b>
+            </div>
+          </div>
+          <a href="/deposit" class="wal-add" title="Isi Kas"><i class="ph-bold ph-plus"></i></a>
+        </div>
+      </div>
+      <?php endif; ?>
 
       <?php if ($H['show_quick_actions']): ?>
-      <div class="vault-actions-cluster">
-        <a href="/withdraw" class="clay-btn clay-btn--primary" id="tour-btn-withdraw">
-          <span class="clay-btn-ico"><i class="ph-bold ph-arrow-up-right"></i></span> Tarik
+      <div class="hero-actions-row">
+        <a href="/withdraw" class="nb-btn g lg" id="tour-btn-withdraw">
+          <i class="ph-bold ph-arrow-up-right"></i>
+          <span>Tarik</span>
         </a>
-        <a href="/deposit" class="clay-btn clay-btn--secondary">
-          <span class="clay-btn-ico"><i class="ph-bold ph-plus"></i></span> Isi Kas
+        <a href="/deposit" class="nb-btn y lg">
+          <i class="ph-bold ph-plus-circle"></i>
+          <span>Isi Kas</span>
         </a>
-        <a href="/history" class="clay-btn clay-btn--ghost">
-          <span class="clay-btn-ico"><i class="ph-bold ph-clock-counter-clockwise"></i></span> Riwayat
+        <a href="/history" class="nb-btn ghost" style="font-size:13.5px;">
+          <i class="ph-bold ph-clock-counter-clockwise"></i>
+          <span>Riwayat</span>
         </a>
       </div>
       <?php endif; ?>
+
     </div>
   </div>
   <?php endif; ?>
 
-  <!-- ── 1b. MASKOT, INBOX, TOUR & REFERRAL (dari CMS) ── -->
+  <!-- 3. MASKOT, NOTIFIKASI, TOUR & REFERRAL (CMS) -->
   <?php if ($H['show_mascot'] && trim((string)$H['mascot_text']) !== ''): ?>
-  <div class="cms-mascot">
-    <span class="cms-mascot-ava"><img src="/assets/img/fish/bagus.png" alt="" width="34" height="34"></span>
-    <div class="cms-mascot-bubble"><?= htmlspecialchars($cms_txt((string)$H['mascot_text'])) ?></div>
+  <div class="farm-mascot-strip">
+    <img src="/assets/img/icons3d/star.png" alt="Mascot">
+    <div><?= htmlspecialchars($cms_txt((string)$H['mascot_text'])) ?></div>
   </div>
   <?php endif; ?>
 
   <?php if (!empty($cms['notif_inbox']['enabled']) && $notif_preview): ?>
-  <div class="cms-inbox">
+  <div style="display:flex;flex-direction:column;gap:6px;">
     <?php foreach ($notif_preview as $nf): ?>
-    <a href="/notifications" class="cms-inbox-row">
-      <span class="cms-inbox-ic"><i class="ph-fill ph-bell-ringing"></i></span>
-      <span class="cms-inbox-tx"><b><?= htmlspecialchars((string)($nf['title'] ?? 'Pengumuman')) ?></b><small><?= htmlspecialchars(mb_strimwidth(strip_tags((string)($nf['message'] ?? $nf['body'] ?? '')), 0, 70, '…')) ?></small></span>
-      <i class="ph-bold ph-caret-right cms-inbox-go"></i>
+    <a href="/notifications" class="farm-strip-btn">
+      <span class="farm-strip-ic"><i class="ph-fill ph-bell-ringing"></i></span>
+      <span class="farm-strip-tx">
+        <b><?= htmlspecialchars((string)($nf['title'] ?? 'Pengumuman')) ?></b>
+        <small><?= htmlspecialchars(mb_strimwidth(strip_tags((string)($nf['message'] ?? $nf['body'] ?? '')), 0, 70, '...')) ?></small>
+      </span>
+      <i class="ph-bold ph-caret-right" style="color:var(--muted)"></i>
     </a>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
 
   <?php if (!empty($cms['tour']['show_banner'])): ?>
-  <button type="button" class="cms-strip cms-strip--tour" onclick="openTourSelectModal()">
-    <span class="cms-strip-ic"><i class="ph-fill ph-compass"></i></span>
-    <span class="cms-strip-tx"><b><?= htmlspecialchars((string)$cms['tour']['title']) ?></b><small><?= htmlspecialchars((string)$cms['tour']['desc']) ?></small></span>
-    <i class="ph-bold ph-caret-right"></i>
+  <button type="button" class="farm-strip-btn" onclick="openTourSelectModal()">
+    <span class="farm-strip-ic" style="background:linear-gradient(180deg,#fde047,var(--y1));color:#5b3405;">
+      <i class="ph-fill ph-compass"></i>
+    </span>
+    <span class="farm-strip-tx">
+      <b><?= htmlspecialchars((string)$cms['tour']['title']) ?></b>
+      <small><?= htmlspecialchars((string)$cms['tour']['desc']) ?></small>
+    </span>
+    <i class="ph-bold ph-caret-right" style="color:var(--muted)"></i>
   </button>
   <?php endif; ?>
 
   <?php if ($H['show_ref_strip'] && !$is_guest && $ref_code !== '-'): ?>
-  <div class="cms-strip cms-strip--ref">
-    <span class="cms-strip-ic"><i class="ph-fill ph-ticket"></i></span>
-    <span class="cms-strip-tx"><small>Kode undanganmu</small><b class="cms-ref-code"><?= htmlspecialchars($ref_code) ?></b></span>
-    <button type="button" class="cms-ref-copy" onclick="nToast.copy(<?= htmlspecialchars(json_encode($ref_url), ENT_QUOTES) ?>, 'Link undangan')"><i class="ph-bold ph-copy"></i> Salin</button>
+  <div class="slot-row" style="background:var(--parch);">
+    <div class="ic sm" style="background:#fff;">
+      <img src="/assets/img/icons3d/coins.png" alt="Ref">
+    </div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2;">
+      <small style="font-size:10px;color:var(--muted);font-weight:800;">Kode Undangan Petani</small>
+      <b style="font-family:var(--font-game);font-size:15px;color:var(--wood-d);letter-spacing:0.5px;"><?= htmlspecialchars($ref_code) ?></b>
+    </div>
+    <button type="button" class="nb-btn sm y" onclick="copyRefCode('<?= htmlspecialchars($ref_code) ?>')">
+      <i class="ph-bold ph-copy"></i> Salin
+    </button>
   </div>
   <?php endif; ?>
 
-  <!-- ── 2. DUA PORTAL (SAWAH PANEN CUAN & BIOSKOP SAMUDRA) ── -->
+  <!-- 4. DUA PORTAL: SAWAH PANEN CUAN (HERO) & MISI NONTON VIDEO -->
   <?php
-    $FS = $cms['farm_spotlight'];
-    $show_farm_portal  = !empty($FS['enabled']);
+    $FS = $cms['farm_spotlight'] ?? ($cms['fishing_spotlight'] ?? []);
+    $show_farm_portal  = true; // portal sawah selalu aktif sebagai fokus utama
     $show_watch_portal = !empty($H['show_watch_cta']);
   ?>
-  <?php if ($show_farm_portal || $show_watch_portal): ?>
-  <div class="fantasy-portals-grid <?= $show_farm_portal && $show_watch_portal ? '' : 'is-single' ?>">
+  <div class="portals-wrap">
+
+    <!-- PORTAL 1: SAWAH PANEN CUAN (KARTU PALING MENONJOL) -->
     <?php if ($show_farm_portal): ?>
-    <!-- Portal 1: Sawah Panen Cuan — padi emas bergoyang di bawah matahari -->
-    <a href="<?= htmlspecialchars((string)($FS['url'] ?: '/farm')) ?>" class="fantasy-portal-card portal-card--farm" id="tour-sidejob-card">
-      <div>
-        <div class="portal-top-bar">
-          <div class="portal-clay-icon portal-clay-icon--farm">
-            <i class="ph-fill ph-plant"></i>
-          </div>
-          <span class="portal-sparkle-tag"><i class="ph-fill ph-sparkle"></i> <?= htmlspecialchars((string)($FS['badge'] ?: 'Sawah Cuan')) ?></span>
+    <div class="portal-farm-panel" id="tour-sidejob-card">
+      <div class="portal-farm-card">
+
+        <!-- Ribbon Judul Game -->
+        <div class="ribbon y" style="margin-top:-24px;margin-bottom:2px;">
+          <img src="/assets/img/icons3d/padi.png" alt="" style="width:20px;height:20px;">
+          <span>SAWAH PANEN CUAN</span>
         </div>
-        <div class="portal-scene portal-scene--field" aria-hidden="true">
-          <svg viewBox="0 0 180 74" preserveAspectRatio="xMidYMax slice" fill="none">
-            <!-- Matahari -->
-            <g class="farm-sun"><circle cx="150" cy="16" r="10" fill="#fde047"/><circle cx="150" cy="16" r="14" fill="#fde047" opacity="0.25"/></g>
-            <!-- Gunung -->
-            <path d="M0 46 L28 22 L52 42 L80 18 L112 44 L140 26 L180 48 V60 H0 Z" fill="#86efac"/>
-            <path d="M80 18 L88 25 L82 27 L76 23 Z" fill="#ffffff" opacity="0.8"/>
-            <path d="M0 52 C40 44, 90 56, 180 48 V74 H0 Z" fill="#4ade80"/>
-            <!-- Petak sawah -->
-            <path d="M0 60 C50 54, 120 62, 180 56 V74 H0 Z" fill="#a16207"/>
-            <g stroke="#78350f" stroke-width="1.2" opacity="0.55"><path d="M0 65 C60 60, 120 67, 180 62"/><path d="M0 70 C60 66, 120 72, 180 68"/></g>
-            <!-- Padi emas -->
-            <g class="farm-sway">
-              <g stroke="#65a30d" stroke-width="1.6" stroke-linecap="round">
-                <path d="M30 64 V48"/><path d="M36 64 V46"/><path d="M42 64 V49"/>
-                <path d="M120 63 V47"/><path d="M126 63 V45"/><path d="M132 63 V48"/>
-              </g>
-              <g fill="#facc15">
-                <ellipse cx="31" cy="46" rx="2.4" ry="5" transform="rotate(20 31 46)"/><ellipse cx="37" cy="44" rx="2.4" ry="5" transform="rotate(25 37 44)"/><ellipse cx="43" cy="47" rx="2.4" ry="5" transform="rotate(18 43 47)"/>
-                <ellipse cx="121" cy="45" rx="2.4" ry="5" transform="rotate(20 121 45)"/><ellipse cx="127" cy="43" rx="2.4" ry="5" transform="rotate(25 127 43)"/><ellipse cx="133" cy="46" rx="2.4" ry="5" transform="rotate(18 133 46)"/>
-              </g>
+
+        <!-- Banner Ilustrasi Lembah Sawah -->
+        <div class="portal-farm-banner">
+          <svg viewBox="0 0 380 100" preserveAspectRatio="xMidYMid slice" fill="none">
+            <!-- Matahari & Cahaya -->
+            <circle cx="320" cy="24" r="16" fill="#fde047"/>
+            <circle cx="320" cy="24" r="28" fill="#fde047" opacity="0.3"/>
+            <!-- Awan -->
+            <path d="M40 22 Q50 12 65 16 Q80 8 95 18 Z" fill="#ffffff" opacity="0.7"/>
+            <!-- Gunung Hijau -->
+            <polygon points="0,65 50,30 110,60 170,25 240,65 310,28 380,62 380,100 0,100" fill="#86efac"/>
+            <polygon points="170,25 162,35 170,38 176,33" fill="#ffffff" opacity="0.75"/>
+            <!-- Bukit Terasering & Pematang -->
+            <path d="M0 68 C80 55, 180 75, 280 62 C340 54, 380 64, 380 64 V100 H0 Z" fill="#4ade80"/>
+            <path d="M0 80 C90 70, 200 88, 300 76 C350 70, 380 78, 380 78 V100 H0 Z" fill="#22c55e"/>
+            <path d="M0 90 C100 82, 220 96, 320 86 C360 82, 380 88, 380 88 V100 H0 Z" fill="#15803d"/>
+            <!-- Padi Emas Bergoyang -->
+            <g stroke="#ca8a04" stroke-width="2" stroke-linecap="round">
+              <path d="M45 88 V70"/><path d="M52 87 V68"/><path d="M59 89 V72"/>
+              <path d="M190 85 V68"/><path d="M197 84 V66"/><path d="M204 86 V70"/>
+              <path d="M330 84 V68"/><path d="M337 83 V65"/><path d="M344 85 V69"/>
             </g>
-            <!-- Semangka & cabai -->
-            <ellipse cx="78" cy="64" rx="9" ry="6.5" fill="#22c55e"/>
-            <path d="M71 62 C76 60, 80 60, 85 62 M71 66 C76 64, 80 64, 85 66" stroke="#15803d" stroke-width="1.3"/>
-            <path d="M96 58 C98 62, 99 66, 97 70" stroke="#ef4444" stroke-width="3.2" stroke-linecap="round"/>
-            <path d="M103 58 C105 62, 106 66, 104 70" stroke="#dc2626" stroke-width="3.2" stroke-linecap="round"/>
-            <!-- Kilau panen -->
-            <g fill="#ffffff">
-              <circle class="sparkle-bubble" cx="40" cy="36" r="1.6"/>
-              <circle class="sparkle-bubble" cx="124" cy="34" r="1.4"/>
-              <circle class="sparkle-bubble" cx="84" cy="50" r="1.2"/>
+            <g fill="#fde047">
+              <ellipse cx="46" cy="68" rx="2.5" ry="5" transform="rotate(20 46 68)"/>
+              <ellipse cx="53" cy="66" rx="2.5" ry="5" transform="rotate(25 53 66)"/>
+              <ellipse cx="60" cy="70" rx="2.5" ry="5" transform="rotate(18 60 70)"/>
+              <ellipse cx="191" cy="66" rx="2.5" ry="5" transform="rotate(20 191 66)"/>
+              <ellipse cx="198" cy="64" rx="2.5" ry="5" transform="rotate(25 198 64)"/>
+              <ellipse cx="205" cy="68" rx="2.5" ry="5" transform="rotate(18 205 68)"/>
+              <ellipse cx="331" cy="66" rx="2.5" ry="5" transform="rotate(20 331 66)"/>
+              <ellipse cx="338" cy="63" rx="2.5" ry="5" transform="rotate(25 338 63)"/>
+              <ellipse cx="345" cy="67" rx="2.5" ry="5" transform="rotate(18 345 67)"/>
             </g>
+            <!-- Kilau Bintang Emas -->
+            <polygon points="120,40 122,46 128,48 122,50 120,56 118,50 112,48 118,46" fill="#fff" opacity="0.9"/>
+            <polygon points="260,35 262,40 267,42 262,44 260,49 258,44 253,42 258,40" fill="#fff" opacity="0.9"/>
           </svg>
         </div>
-        <div class="portal-heading"><?= htmlspecialchars((string)($FS['title'] ?: 'Sawah Panen Cuan')) ?></div>
-        <div class="portal-subtext"><?= htmlspecialchars((string)($FS['desc'] ?: 'Tanam, panen, jual jadi saldo')) ?></div>
-      </div>
-      <div>
-        <div class="portal-cta-badge">
-          <span><?= htmlspecialchars((string)($FS['cta'] ?: 'Mulai Bertani')) ?></span>
-          <i class="ph-bold ph-arrow-right"></i>
+
+        <div class="portal-farm-meta">
+          <div class="portal-farm-title">
+            <h2>Sawah Panen Cuan</h2>
+            <p>Tanam bibit unggul, rawat petak sawah, & jual hasil panen langsung ke Saldo Tarik!</p>
+          </div>
+          <div class="ic lg" style="margin-top:-2px;">
+            <img src="/assets/img/icons3d/basket.png" alt="Panen">
+          </div>
         </div>
+
+        <!-- Ringkasan Status Sawah User (Realtime dari farm_plots & farm_inventory) -->
+        <div class="farm-chips-row">
+          <?php if (!empty($farm_summary['ready_count']) && $farm_summary['ready_count'] > 0): ?>
+          <span class="farm-chip ready">
+            <img src="/assets/img/icons3d/padi.png" alt="">
+            <b><?= $farm_summary['ready_count'] ?> Petak Siap Panen!</b>
+          </span>
+          <?php endif; ?>
+
+          <?php if (!empty($farm_summary['harvest_count']) && $farm_summary['harvest_count'] > 0): ?>
+          <span class="farm-chip barn">
+            <img src="/assets/img/icons3d/barn.png" alt="">
+            <b><?= $farm_summary['harvest_count'] ?> Hasil di Lumbung</b>
+          </span>
+          <?php endif; ?>
+
+          <?php if (!empty($farm_summary['growing_count']) && $farm_summary['growing_count'] > 0): ?>
+          <span class="farm-chip growing">
+            <img src="/assets/img/icons3d/seed.png" alt="">
+            <b><?= $farm_summary['growing_count'] ?> Sedang Tumbuh</b>
+          </span>
+          <?php endif; ?>
+
+          <?php if (empty($farm_summary['total_planted']) || $farm_summary['total_planted'] === 0): ?>
+          <span class="farm-chip empty">
+            <i class="ph-fill ph-plant" style="color:var(--g2);"></i>
+            <b>Petak Lahan Siap Ditanami</b>
+          </span>
+          <?php endif; ?>
+        </div>
+
+        <!-- Tombol Aksi Utama Sawah -->
+        <a href="/farm" class="nb-btn g lg full" style="font-size:16px;">
+          <img src="/assets/img/icons3d/padi.png" alt="">
+          <span>Masuk ke Sawah Panen</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+
       </div>
-    </a>
+    </div>
     <?php endif; ?>
 
+    <!-- PORTAL 2: NONTON VIDEO (#tour-video-mission) -->
     <?php if ($show_watch_portal): ?>
-    <!-- Portal 2: Tonton Video — ubur-ubur magis bercahaya -->
-    <a href="/videos" class="fantasy-portal-card portal-card--watch" id="tour-video-mission">
-      <div>
-        <div class="portal-top-bar">
-          <div class="portal-clay-icon portal-clay-icon--watch">
-            <i class="ph-fill ph-play-circle"></i>
+    <div class="game-panel" id="tour-video-mission">
+      <div class="portal-watch-card">
+
+        <div class="ribbon b" style="margin-top:-22px;margin-bottom:2px;">
+          <i class="ph-fill ph-play-circle" style="font-size:18px;"></i>
+          <span>MISI NONTON VIDEO</span>
+        </div>
+
+        <div class="watch-top-row">
+          <div class="watch-title-group">
+            <div class="watch-icon-slot">
+              <i class="ph-fill ph-film-strip"></i>
+            </div>
+            <div>
+              <b>Tonton Video Harian</b>
+              <small><?= $H['show_watch_mission'] ? $watch_today . ' / ' . $watch_limit . ' Video Tuntas' : 'Nonton & raih saldo' ?></small>
+            </div>
           </div>
-          <span class="portal-sparkle-tag"><i class="ph-fill ph-film-strip"></i> Misi Harian</span>
+          <span class="today-chip" style="background:linear-gradient(180deg,#cffafe,var(--b1));box-shadow:0 2px 0 var(--b2);color:#083344;">
+            <i class="ph-fill ph-sparkle"></i> Kuota Harian
+          </span>
         </div>
-        <div class="portal-scene portal-scene--jelly" aria-hidden="true">
-          <svg viewBox="0 0 180 74" preserveAspectRatio="xMidYMid slice" fill="none">
-            <defs>
-              <radialGradient id="jellyBellGrad" cx="50%" cy="30%" r="70%">
-                <stop offset="0%" stop-color="#f5d0fe"/>
-                <stop offset="45%" stop-color="#c084fc"/>
-                <stop offset="100%" stop-color="#22d3ee"/>
-              </radialGradient>
-              <radialGradient id="jellyHalo" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#c084fc" stop-opacity="0.65"/>
-                <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.18"/>
-                <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
-              </radialGradient>
-              <radialGradient id="jellyPinkGrad" cx="50%" cy="30%" r="70%">
-                <stop offset="0%" stop-color="#ffe4e6"/>
-                <stop offset="100%" stop-color="#fb7185"/>
-              </radialGradient>
-            </defs>
-            <!-- Plankton -->
-            <g fill="#a5f3fc">
-              <circle class="sparkle-bubble" cx="14" cy="16" r="1.2"/>
-              <circle class="sparkle-bubble" cx="40" cy="58" r="1"/>
-              <circle class="sparkle-bubble" cx="160" cy="14" r="1.3"/>
-              <circle class="sparkle-bubble" cx="168" cy="54" r="1"/>
-              <circle class="sparkle-bubble" cx="120" cy="64" r="1.1"/>
-            </g>
-            <!-- Ubur-ubur utama -->
-            <g class="jelly-bob">
-              <circle cx="88" cy="26" r="30" fill="url(#jellyHalo)"/>
-              <path d="M66 30 C66 10, 110 10, 110 30 C104 33, 100 29, 95 32 C90 29, 86 33, 81 30 C76 33, 72 29, 66 30 Z" fill="url(#jellyBellGrad)"/>
-              <ellipse cx="80" cy="18" rx="7" ry="3" fill="#ffffff" opacity="0.55"/>
-              <circle cx="82" cy="24" r="1.6" fill="#3b0764"/><circle cx="94" cy="24" r="1.6" fill="#3b0764"/>
-              <path d="M85 27 C87 29, 89 29, 91 27" stroke="#3b0764" stroke-width="1.2" stroke-linecap="round"/>
-              <g stroke-width="2" stroke-linecap="round">
-                <path d="M72 31 q4 8 0 16 q-4 8 0 16" stroke="#e9d5ff">
-                  <animate attributeName="d" dur="2.4s" repeatCount="indefinite" values="M72 31 q4 8 0 16 q-4 8 0 16;M72 31 q-4 8 0 16 q4 8 0 16;M72 31 q4 8 0 16 q-4 8 0 16"/>
-                </path>
-                <path d="M81 32 q-4 9 0 18 q4 9 0 18" stroke="#67e8f9">
-                  <animate attributeName="d" dur="2.8s" repeatCount="indefinite" values="M81 32 q-4 9 0 18 q4 9 0 18;M81 32 q4 9 0 18 q-4 9 0 18;M81 32 q-4 9 0 18 q4 9 0 18"/>
-                </path>
-                <path d="M90 32 q4 9 0 18 q-4 9 0 18" stroke="#f0abfc">
-                  <animate attributeName="d" dur="2.2s" repeatCount="indefinite" values="M90 32 q4 9 0 18 q-4 9 0 18;M90 32 q-4 9 0 18 q4 9 0 18;M90 32 q4 9 0 18 q-4 9 0 18"/>
-                </path>
-                <path d="M99 32 q-4 8 0 16 q4 8 0 16" stroke="#67e8f9">
-                  <animate attributeName="d" dur="2.6s" repeatCount="indefinite" values="M99 32 q-4 8 0 16 q4 8 0 16;M99 32 q4 8 0 16 q-4 8 0 16;M99 32 q-4 8 0 16 q4 8 0 16"/>
-                </path>
-                <path d="M106 31 q4 7 0 14 q-4 7 0 14" stroke="#e9d5ff">
-                  <animate attributeName="d" dur="3s" repeatCount="indefinite" values="M106 31 q4 7 0 14 q-4 7 0 14;M106 31 q-4 7 0 14 q4 7 0 14;M106 31 q4 7 0 14 q-4 7 0 14"/>
-                </path>
-              </g>
-            </g>
-            <!-- Ubur-ubur kecil -->
-            <g class="jelly-bob jelly-bob--small">
-              <circle cx="146" cy="40" r="14" fill="url(#jellyHalo)"/>
-              <path d="M136 42 C136 30, 156 30, 156 42 C152 44, 150 41, 146 43 C142 41, 140 44, 136 42 Z" fill="url(#jellyPinkGrad)"/>
-              <ellipse cx="142" cy="35" rx="3.5" ry="1.5" fill="#ffffff" opacity="0.6"/>
-              <g stroke="#fecdd3" stroke-width="1.4" stroke-linecap="round">
-                <path d="M140 43 q2 5 0 10 q-2 5 0 10"/>
-                <path d="M146 44 q-2 5 0 10 q2 5 0 10"/>
-                <path d="M152 43 q2 5 0 10 q-2 5 0 10"/>
-              </g>
-            </g>
-            <!-- Gelembung berkilau -->
-            <g stroke="#a5f3fc" stroke-width="1" fill="#ffffff" fill-opacity="0.15">
-              <circle class="sparkle-bubble" cx="30" cy="34" r="4"/>
-              <circle class="sparkle-bubble" cx="40" cy="22" r="2.5"/>
-              <circle class="sparkle-bubble" cx="34" cy="12" r="1.8"/>
-              <circle class="sparkle-bubble" cx="124" cy="22" r="2.6"/>
-            </g>
-            <!-- Kilau bintang -->
-            <path class="sparkle-bubble" d="M22 50 l1.4 3 l3 1.4 l-3 1.4 l-1.4 3 l-1.4 -3 l-3 -1.4 l3 -1.4 Z" fill="#fef08a"/>
-            <path class="sparkle-bubble" d="M164 26 l1 2.2 l2.2 1 l-2.2 1 l-1 2.2 l-1 -2.2 l-2.2 -1 l2.2 -1 Z" fill="#f0abfc"/>
-          </svg>
-        </div>
-        <div class="portal-heading">Tonton Video</div>
-        <div class="portal-subtext"><?= $H['show_watch_mission'] ? $watch_today . ' / ' . $watch_limit . ' Video Tuntas' : 'Nonton & dapat saldo' ?></div>
-      </div>
-      <div>
+
         <?php if ($H['show_watch_mission']): ?>
-        <div class="portal-wave-progress">
-          <div class="portal-wave-fill" style="width: <?= $watch_pct ?>%;"></div>
+        <div class="prog">
+          <div class="prog-fill" style="width: <?= $watch_pct ?>%;"></div>
+          <span class="prog-text"><?= $watch_today ?> / <?= $watch_limit ?> Video (<?= $watch_pct ?>%)</span>
         </div>
         <?php endif; ?>
-        <div class="portal-cta-badge" id="tour-btn-watch">
-          <span><?= htmlspecialchars((string)($H['watch_cta_text'] ?: 'Panen Cuan')) ?></span>
-          <i class="ph-bold ph-arrow-right"></i>
-        </div>
-      </div>
-    </a>
-    <?php endif; ?>
-  </div>
-  <?php endif; ?>
 
-  <!-- ── 3. MENU CEPAT (Bento tiles dari CMS) ── -->
+        <a href="/videos" class="nb-btn b full" id="tour-btn-watch">
+          <span><?= htmlspecialchars((string)($H['watch_cta_text'] ?: 'Mulai Nonton Sekarang')) ?></span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+
+      </div>
+    </div>
+    <?php endif; ?>
+
+  </div>
+
+  <!-- 5. MENU CEPAT / BENTO TILES (#tour-bento-grid) -->
   <?php
     $tiles = array_values(array_filter((array)($cms['bento']['tiles'] ?? []), function ($t) {
-        return !empty($t['enabled']) && ($t['id'] ?? '') !== 'fishing'; // tile lama Mancing (fitur dihapus)
+        return !empty($t['enabled']) && ($t['id'] ?? '') !== 'fishing'; // tile mancing lama dihapus
     }));
     $bento_cnt = count($tiles);
     $bento_cols = ($bento_cnt >= 9 || $bento_cnt === 5) ? 5 : ($bento_cnt === 6 ? 3 : min(4, max(3, $bento_cnt)));
   ?>
   <?php if (!empty($cms['bento']['show_section']) && $tiles): ?>
-  <div class="reef-services-deck" id="tour-bento-grid">
-    <?php if (trim((string)$cms['bento']['title']) !== ''): ?><div class="cms-deck-title"><?= htmlspecialchars((string)$cms['bento']['title']) ?></div><?php endif; ?>
-    <div class="reef-tokens-grid" style="grid-template-columns: repeat(<?= $bento_cols ?>, 1fr)">
-      <?php foreach ($tiles as $t):
-        $tid = (string)($t['id'] ?? '');
-        $ico = '<div class="clay-token-icon t-' . htmlspecialchars($tid, ENT_QUOTES) . '" style="background:' . htmlspecialchars((string)$t['bg'], ENT_QUOTES) . ';color:#fff"><i class="ph-fill ' . htmlspecialchars((string)$t['icon']) . '"></i>'
-             . ($tid === 'checkin' && !$has_checked_in_today && !$is_guest ? '<span class="token-ping"></span>' : '') . '</div>';
-        $lbl = '<span class="reef-token-label">' . htmlspecialchars($tid === 'checkin' && $has_checked_in_today ? 'Absen ✓' : (string)$t['label']) . '</span>';
-      ?>
-        <?php if ($tid === 'checkin'): ?>
-          <button type="button" class="reef-token-btn" onclick="openCheckinModal()"><?= $ico . $lbl ?></button>
-        <?php elseif ($tid === 'threads'): ?>
-          <button type="button" class="reef-token-btn" id="tour-threads-promo-card" onclick="openThreadsPromoModal()"><?= $ico . $lbl ?></button>
-        <?php else: ?>
-          <a href="<?= htmlspecialchars((string)$t['url']) ?>" class="reef-token-btn"><?= $ico . $lbl ?></a>
-        <?php endif; ?>
-      <?php endforeach; ?>
+  <div class="game-panel" id="tour-bento-grid">
+    <div class="parch-card" style="padding:14px 10px 10px;">
+
+      <div class="ribbon wood" style="margin-top:-22px;margin-bottom:6px;font-size:15px;padding:4px 18px 5px;">
+        <span><?= htmlspecialchars((string)($cms['bento']['title'] ?: 'Menu Cepat & Fitur Cuan')) ?></span>
+      </div>
+
+      <div class="bento-tiles-grid" style="grid-template-columns: repeat(<?= $bento_cols ?>, 1fr)">
+        <?php foreach ($tiles as $t):
+          $tid = (string)($t['id'] ?? '');
+          $lbl = ($tid === 'checkin' && $has_checked_in_today) ? 'Absen ✓' : (string)$t['label'];
+
+          // Ikon 3D jika cocok, atau Phosphor Icon dalam frame slot
+          $iconImg = '';
+          if ($tid === 'farming' || $tid === 'minigame') {
+              $iconImg = '<img src="/assets/img/icons3d/padi.png" alt="">';
+          } elseif ($tid === 'redeem') {
+              $iconImg = '<img src="/assets/img/icons3d/basket.png" alt="">';
+          } elseif ($tid === 'upgrade') {
+              $iconImg = '<img src="/assets/img/icons3d/star.png" alt="">';
+          } elseif ($tid === 'referral') {
+              $iconImg = '<img src="/assets/img/icons3d/coins.png" alt="">';
+          } else {
+              $iconImg = '<i class="ph-fill ' . htmlspecialchars((string)$t['icon']) . '" style="color:' . htmlspecialchars((string)($t['bg'] ?? '#3b2414')) . '"></i>';
+          }
+        ?>
+
+          <?php if ($tid === 'checkin'): ?>
+            <button type="button" class="bento-item-slot" onclick="openCheckinModal()">
+              <div class="bento-slot-ic">
+                <?= $iconImg ?>
+                <?php if (!$has_checked_in_today && !$is_guest): ?><span class="bento-ping-dot"></span><?php endif; ?>
+              </div>
+              <span class="bento-label-tx"><?= htmlspecialchars($lbl) ?></span>
+            </button>
+          <?php elseif ($tid === 'threads'): ?>
+            <button type="button" class="bento-item-slot" id="tour-threads-promo-card" onclick="openThreadsPromoModal()">
+              <div class="bento-slot-ic">
+                <?= $iconImg ?>
+              </div>
+              <span class="bento-label-tx"><?= htmlspecialchars($lbl) ?></span>
+            </button>
+          <?php else: ?>
+            <a href="<?= htmlspecialchars((string)$t['url']) ?>" class="bento-item-slot">
+              <div class="bento-slot-ic">
+                <?= $iconImg ?>
+              </div>
+              <span class="bento-label-tx"><?= htmlspecialchars($lbl) ?></span>
+            </a>
+          <?php endif; ?>
+
+        <?php endforeach; ?>
+      </div>
+
     </div>
   </div>
   <?php endif; ?>
 
-  <!-- ── 3b. BANNER (Survei, Promo Hub, Threads) dari CMS ── -->
-  <?php $SB = $cms['survey_banner']; $PB = $cms['promo_banner']; $TC = $cms['threads_card'];
-        if (setting($pdo, 'survey_enabled', '1') !== '1') $SB['enabled'] = false; // survei ditutup admin ?>
+  <!-- 6. BANNER PROMOSI (Survei, Threads, Promo Hub) -->
+  <?php
+    $SB = $cms['survey_banner']; $PB = $cms['promo_banner']; $TC = $cms['threads_card'];
+    if (setting($pdo, 'survey_enabled', '1') !== '1') $SB['enabled'] = false;
+  ?>
   <?php if (!empty($SB['enabled']) || !empty($PB['enabled']) || !empty($TC['enabled'])): ?>
-  <div class="cms-banners">
+  <div class="promo-banners-list">
+
     <?php if (!empty($SB['enabled'])): ?>
-    <a href="/survey" class="cms-bnr cms-bnr--survey">
-      <span class="cms-bnr-ic"><i class="ph-fill ph-clipboard-text"></i></span>
-      <span class="cms-bnr-tx"><b><?= htmlspecialchars((string)$SB['title']) ?></b><small><?= htmlspecialchars((string)$SB['desc']) ?></small></span>
-      <span class="cms-bnr-side"><?php if ($SB['badge']): ?><em><?= htmlspecialchars((string)$SB['badge']) ?></em><?php endif; ?><span class="cms-bnr-cta"><?= htmlspecialchars((string)($SB['cta'] ?: 'Buka')) ?></span></span>
+    <a href="/survey" class="promo-banner-card">
+      <div class="promo-banner-ic" style="background:linear-gradient(180deg,#34d399,var(--g2));box-shadow:0 2px 0 var(--g2);">
+        <i class="ph-fill ph-clipboard-text"></i>
+      </div>
+      <div class="promo-banner-tx">
+        <b><?= htmlspecialchars((string)$SB['title']) ?></b>
+        <small><?= htmlspecialchars((string)$SB['desc']) ?></small>
+      </div>
+      <div class="promo-banner-side">
+        <?php if ($SB['badge']): ?><span class="promo-banner-badge"><?= htmlspecialchars((string)$SB['badge']) ?></span><?php endif; ?>
+        <span class="nb-btn sm g" style="padding:4px 10px;font-size:11.5px;"><?= htmlspecialchars((string)($SB['cta'] ?: 'Isi')) ?></span>
+      </div>
     </a>
     <?php endif; ?>
+
     <?php if (!empty($TC['enabled'])): ?>
-    <button type="button" class="cms-bnr cms-bnr--threads" onclick="openThreadsPromoModal()">
-      <span class="cms-bnr-ic"><i class="ph-bold ph-threads-logo"></i></span>
-      <span class="cms-bnr-tx"><?php if ($TC['badge_event']): ?><i class="cms-bnr-kicker"><?= htmlspecialchars((string)$TC['badge_event']) ?></i><?php endif; ?><b><?= htmlspecialchars((string)$TC['title']) ?></b><small><?= htmlspecialchars((string)$TC['desc']) ?></small></span>
-      <span class="cms-bnr-side"><?php if ($TC['badge_cuan']): ?><em><?= htmlspecialchars((string)$TC['badge_cuan']) ?></em><?php endif; ?><span class="cms-bnr-cta">Ikut</span></span>
-    </button>
-    <?php endif; ?>
-    <?php if (!empty($PB['enabled'])): ?>
-    <button type="button" class="cms-bnr cms-bnr--promo" onclick="openPromoHubModal()">
-      <span class="cms-bnr-ic"><i class="ph-fill ph-megaphone"></i></span>
-      <span class="cms-bnr-tx"><b><?= htmlspecialchars((string)$PB['title']) ?></b><small><?= htmlspecialchars((string)$PB['desc']) ?></small></span>
-      <span class="cms-bnr-side"><?php if ($PB['badge']): ?><em><?= htmlspecialchars((string)$PB['badge']) ?></em><?php endif; ?><span class="cms-bnr-cta"><?= htmlspecialchars((string)($PB['cta'] ?: 'Mulai')) ?></span></span>
-    </button>
-    <?php endif; ?>
-  </div>
-  <?php endif; ?>
-
-  <!-- ── 3c. LANJUTKAN MENONTON (CMS) ── -->
-  <?php if (!empty($cms['continue_watching']['enabled']) && $continue_watching_home): ?>
-  <div>
-    <div class="fantasy-section-head">
-      <div class="fsh-title"><span class="fsh-title-icon" style="background:linear-gradient(145deg,#67e8f9,#0891b2)"><i class="ph-fill ph-play"></i></span> <?= htmlspecialchars((string)$cms['continue_watching']['title']) ?></div>
-    </div>
-    <div class="cms-cw-list">
-      <?php foreach ($continue_watching_home as $cw):
-        $cwDur = max(1, (int)($cw['watch_duration'] ?: $cw['duration'] ?: 1));
-        $cwPct = min(100, (int)round(((float)$cw['seconds_watched'] / $cwDur) * 100));
-      ?>
-      <a href="/watch/<?= (int)$cw['id'] ?>" class="cms-cw">
-        <span class="cms-cw-thumb"><img src="<?= htmlspecialchars(yt_thumb($cw['youtube_id'])) ?>" alt="" loading="lazy"><i class="ph-fill ph-play-circle"></i></span>
-        <span class="cms-cw-tx"><b><?= htmlspecialchars((string)$cw['title']) ?></b>
-          <span class="cms-cw-bar"><i style="width:<?= $cwPct ?>%"></i></span>
-          <small><?= $cwPct ?>% · +<?= format_rp((float)$cw['reward_amount']) ?></small></span>
-      </a>
-      <?php endforeach; ?>
-    </div>
-  </div>
-  <?php endif; ?>
-
-  <!-- ── 4. REKOMENDASI VIDEO CUAN ── -->
-  <?php if (!empty($cms['featured_videos']['enabled']) && !empty($featured_videos)): ?>
-  <div>
-    <div class="fantasy-section-head">
-      <div class="fsh-title">
-        <span class="fsh-title-icon"><i class="ph-fill ph-sparkle"></i></span> <?= htmlspecialchars((string)($cms['featured_videos']['title'] ?: 'Rekomendasi Video Cuan')) ?>
+    <button type="button" class="promo-banner-card" onclick="openThreadsPromoModal()">
+      <div class="promo-banner-ic" style="background:linear-gradient(180deg,#52525b,#27272a);box-shadow:0 2px 0 #18181b;">
+        <i class="ph-bold ph-threads-logo"></i>
       </div>
-      <a href="/videos" class="fsh-link">Lihat Semua &rarr;</a>
-    </div>
-    <?php if (trim((string)$cms['featured_videos']['desc']) !== ''): ?><div class="cms-sec-desc"><?= htmlspecialchars((string)$cms['featured_videos']['desc']) ?></div><?php endif; ?>
+      <div class="promo-banner-tx">
+        <b><?= htmlspecialchars((string)$TC['title']) ?></b>
+        <small><?= htmlspecialchars((string)$TC['desc']) ?></small>
+      </div>
+      <div class="promo-banner-side">
+        <?php if ($TC['badge_cuan']): ?><span class="promo-banner-badge"><?= htmlspecialchars((string)$TC['badge_cuan']) ?></span><?php endif; ?>
+        <span class="nb-btn sm y" style="padding:4px 10px;font-size:11.5px;">Ikuti</span>
+      </div>
+    </button>
+    <?php endif; ?>
 
-    <div class="fantasy-video-grid" style="margin-top:10px;">
-      <?php foreach ($featured_videos as $fv): ?>
-      <a href="/watch/<?= (int)$fv['id'] ?>" class="clay-video-card">
-        <div class="clay-video-thumb-wrap">
-          <img src="<?= htmlspecialchars(yt_thumb($fv['youtube_id'])) ?>"
-               alt="<?= htmlspecialchars($fv['title']) ?>"
-               class="clay-video-thumb-img"
-               loading="lazy"
-               onerror="this.onerror=null;this.src='https://img.youtube.com/vi/<?= htmlspecialchars($fv['youtube_id']) ?>/hqdefault.jpg'">
-          <div class="clay-reward-pill">+<?= format_rp((float)$fv['reward_amount']) ?></div>
-          <div class="clay-duration-pill"><?= (int)($fv['watch_duration'] ?? 0) ?>s</div>
-        </div>
-        <div class="clay-video-body">
-          <div class="clay-video-title-txt"><?= htmlspecialchars($fv['title']) ?></div>
-          <div class="clay-video-footer">
-            <span>Tonton Video</span>
-            <i class="ph-fill ph-play"></i>
+    <?php if (!empty($PB['enabled'])): ?>
+    <button type="button" class="promo-banner-card" onclick="openPromoHubModal()">
+      <div class="promo-banner-ic" style="background:linear-gradient(180deg,#fde047,var(--y1));box-shadow:0 2px 0 var(--y2);color:#5b3405;">
+        <i class="ph-fill ph-megaphone"></i>
+      </div>
+      <div class="promo-banner-tx">
+        <b><?= htmlspecialchars((string)$PB['title']) ?></b>
+        <small><?= htmlspecialchars((string)$PB['desc']) ?></small>
+      </div>
+      <div class="promo-banner-side">
+        <?php if ($PB['badge']): ?><span class="promo-banner-badge"><?= htmlspecialchars((string)$PB['badge']) ?></span><?php endif; ?>
+        <span class="nb-btn sm b" style="padding:4px 10px;font-size:11.5px;"><?= htmlspecialchars((string)($PB['cta'] ?: 'Mulai')) ?></span>
+      </div>
+    </button>
+    <?php endif; ?>
+
+  </div>
+  <?php endif; ?>
+
+  <!-- 7. LANJUTKAN MENONTON (CMS) -->
+  <?php if (!empty($cms['continue_watching']['enabled']) && $continue_watching_home): ?>
+  <div class="game-panel">
+    <div class="parch-card" style="gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-game);font-size:14.5px;font-weight:700;">
+        <i class="ph-fill ph-clock-counter-clockwise" style="color:var(--b2);"></i>
+        <span><?= htmlspecialchars((string)$cms['continue_watching']['title']) ?></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <?php foreach ($continue_watching_home as $cw):
+          $cwDur = max(1, (int)($cw['watch_duration'] ?: $cw['duration'] ?: 1));
+          $cwPct = min(100, (int)round(((float)$cw['seconds_watched'] / $cwDur) * 100));
+        ?>
+        <a href="/watch/<?= (int)$cw['id'] ?>" class="cw-item-row">
+          <div class="cw-thumb">
+            <img src="<?= htmlspecialchars(yt_thumb($cw['youtube_id'])) ?>" alt="" loading="lazy">
+            <i class="ph-fill ph-play-circle"></i>
           </div>
-        </div>
-      </a>
-      <?php endforeach; ?>
+          <div class="cw-info">
+            <b><?= htmlspecialchars((string)$cw['title']) ?></b>
+            <div class="prog" style="height:12px;">
+              <div class="prog-fill" style="width:<?= $cwPct ?>%"></div>
+            </div>
+            <small style="font-size:10px;color:var(--muted);font-weight:700;"><?= $cwPct ?>% • +<?= format_rp((float)$cw['reward_amount']) ?></small>
+          </div>
+        </a>
+        <?php endforeach; ?>
+      </div>
     </div>
   </div>
   <?php endif; ?>
 
+  <!-- 8. REKOMENDASI VIDEO PILIHAN BERHADIAH -->
+  <?php if (!empty($cms['featured_videos']['enabled']) && !empty($featured_videos)): ?>
+  <div class="game-panel">
+    <div class="parch-card">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:7px;font-family:var(--font-game);font-size:15px;font-weight:700;">
+          <img src="/assets/img/icons3d/star.png" alt="" style="width:20px;height:20px;">
+          <span><?= htmlspecialchars((string)($cms['featured_videos']['title'] ?: 'Video Pilihan Berhadiah')) ?></span>
+        </div>
+        <a href="/videos" style="font-family:var(--font-game);font-size:12px;font-weight:700;color:var(--b2);text-decoration:none;">Lihat Semua &rarr;</a>
+      </div>
+
+      <?php if (trim((string)$cms['featured_videos']['desc']) !== ''): ?>
+      <p style="margin:-4px 0 2px;font-size:11.5px;color:var(--muted);font-weight:700;"><?= htmlspecialchars((string)$cms['featured_videos']['desc']) ?></p>
+      <?php endif; ?>
+
+      <div class="video-grid-2col">
+        <?php foreach ($featured_videos as $fv): ?>
+        <a href="/watch/<?= (int)$fv['id'] ?>" class="video-card-item">
+          <div class="video-thumb-slot">
+            <img src="<?= htmlspecialchars(yt_thumb($fv['youtube_id'])) ?>"
+                 alt="<?= htmlspecialchars($fv['title']) ?>"
+                 loading="lazy"
+                 onerror="this.onerror=null;this.src='https://img.youtube.com/vi/<?= htmlspecialchars($fv['youtube_id']) ?>/hqdefault.jpg'">
+            <span class="video-reward-pill">+<?= format_rp((float)$fv['reward_amount']) ?></span>
+            <span class="video-dur-pill"><?= (int)($fv['watch_duration'] ?? 0) ?>s</span>
+          </div>
+          <div class="video-card-body">
+            <div class="video-card-title"><?= htmlspecialchars($fv['title']) ?></div>
+            <span class="nb-btn sm b full" style="margin-top:auto;padding:5px 8px;font-size:11.5px;">
+              <i class="ph-fill ph-play"></i> Tonton
+            </span>
+          </div>
+        </a>
+        <?php endforeach; ?>
+      </div>
+
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- 9. TIPS CUAN HARIAN -->
   <?php if (!empty($cms['tips']['enabled']) && trim((string)$cms['tips']['text']) !== ''): ?>
-  <div class="cms-tips">
-    <span class="cms-tips-ic"><i class="ph-fill ph-lightbulb"></i></span>
-    <span><b><?= htmlspecialchars((string)$cms['tips']['title']) ?></b><?= htmlspecialchars($cms_txt((string)$cms['tips']['text'])) ?></span>
+  <div class="slot-row" style="background:var(--parch);align-items:flex-start;">
+    <div class="ic sm" style="background:#fff;margin-top:2px;">
+      <i class="ph-fill ph-lightbulb" style="font-size:20px;color:var(--y2)"></i>
+    </div>
+    <div style="flex:1;min-width:0;font-size:11.5px;line-height:1.4;color:var(--ink);font-weight:700;">
+      <b style="font-family:var(--font-game);font-size:13px;display:block;margin-bottom:2px;color:var(--wood-d);"><?= htmlspecialchars((string)$cms['tips']['title']) ?></b>
+      <?= htmlspecialchars($cms_txt((string)$cms['tips']['text'])) ?>
+    </div>
   </div>
   <?php endif; ?>
 
 </div>
 
+<!-- 10. FLOATING PROMO BUTTON -->
 <?php if (!empty($cms['floating_promo']['enabled'])): $FP = $cms['floating_promo']; ?>
 <button type="button" class="cms-float" onclick="openPromoHubModal()" aria-label="<?= htmlspecialchars((string)$FP['title']) ?>">
   <?php if ($FP['badge']): ?><em><?= htmlspecialchars((string)$FP['badge']) ?></em><?php endif; ?>
-  <i class="ph-fill ph-gift"></i>
-  <span><b><?= htmlspecialchars((string)$FP['title']) ?></b><small><?= htmlspecialchars((string)$FP['sub']) ?></small></span>
+  <div class="cms-float-ic">
+    <i class="ph-fill ph-gift"></i>
+  </div>
+  <div>
+    <b><?= htmlspecialchars((string)$FP['title']) ?></b>
+    <small><?= htmlspecialchars((string)$FP['sub']) ?></small>
+  </div>
 </button>
 <?php endif; ?>
 
-<!-- Toast element -->
+<!-- TOAST CONTAINER -->
 <div id="cuan-toast" class="cuan-toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ============================================================
      MODAL POPUP 1: PENGUMUMAN / PROMO CONSOLE (JIKA AKTIF)
-     ══════════════════════════════════════════════════════════ -->
+     Menggunakan gaya game UI (.modal + .ribbon + .close)
+     ============================================================ -->
 <?php if ($popup_enabled): ?>
-<div id="custom-announcement-popup" class="amber-modal-backdrop">
-  <div class="amber-modal-box">
-    <button type="button" class="amber-modal-close" onclick="closeCustomPopup()">
+<div id="custom-announcement-popup" class="backdrop">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeCustomPopup()" aria-label="Tutup">
       <i class="ph-bold ph-x"></i>
     </button>
-    <div class="amber-modal-badge">
-      <i class="ph-fill ph-megaphone-simple"></i>
+    <div class="modal-head">
+      <div class="hic">
+        <img src="/assets/img/icons3d/star.png" alt="">
+      </div>
+      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
+        <span>PENGUMUMAN</span>
+      </div>
+      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);"><?= htmlspecialchars($popup_title) ?></h3>
     </div>
-    <h3 class="amber-modal-title"><?= htmlspecialchars($popup_title) ?></h3>
-    <p class="amber-modal-body"><?= nl2br(htmlspecialchars($popup_body)) ?></p>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <a href="<?= htmlspecialchars($popup_cta_url) ?>" class="btn-modal-primary">
-        <i class="ph-bold ph-arrow-up-right"></i> <?= htmlspecialchars($popup_cta_text) ?>
-      </a>
-      <button type="button" onclick="closeCustomPopup()" class="btn-modal-dismiss">Nanti Saja</button>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.5;margin:0 0 10px;text-align:center;">
+        <?= nl2br(htmlspecialchars($popup_body)) ?>
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="<?= htmlspecialchars($popup_cta_url) ?>" class="nb-btn g full">
+          <i class="ph-bold ph-arrow-up-right"></i>
+          <span><?= htmlspecialchars($popup_cta_text) ?></span>
+        </a>
+        <button type="button" onclick="closeCustomPopup()" class="nb-btn ghost sm full">Nanti Saja</button>
+      </div>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ============================================================
      MODAL POPUP 2: AJAKAN CHECK-IN HARIAN (KOTAK REWARD)
-     Muncul setelah pop-up pertama ditutup, atau otomatis jika belum absen
-     ══════════════════════════════════════════════════════════ -->
+     ============================================================ -->
 <?php if (!$has_checked_in_today && !$is_guest): ?>
-<div id="checkin-prompt-modal" class="amber-modal-backdrop">
-  <div class="amber-modal-box">
-    <button type="button" class="amber-modal-close" onclick="closeCheckinModal()">
+<div id="checkin-prompt-modal" class="backdrop">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeCheckinModal()" aria-label="Tutup">
       <i class="ph-bold ph-x"></i>
     </button>
-    <div class="amber-modal-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">
-      <i class="ph-fill ph-calendar-check"></i>
+    <div class="modal-head">
+      <div class="hic">
+        <img src="/assets/img/icons3d/basket.png" alt="">
+      </div>
+      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
+        <span>CHECK-IN HARIAN</span>
+      </div>
+      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Hadiah Panen Menantimu!</h3>
     </div>
-    <h3 class="amber-modal-title">Hadiah Check-in Harian Menantimu!</h3>
-    <p class="amber-modal-body">
-      Bonus login hari ini sudah siap diklaim! Buka check-in sekarang untuk mendapatkan <strong>saldo tarik tunai</strong> langsung hari ini!
-    </p>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <a href="/checkin" class="btn-modal-primary" style="background:linear-gradient(135deg,#10b981,#059669);border:2px solid rgba(255,255,255,0.4);box-shadow:0 10px 24px rgba(5,150,105,0.35), inset 2px 2px 4px rgba(255,255,255,0.5), inset -2px -2px 4px rgba(6,78,59,0.3);text-shadow:0 1px 2px rgba(6,78,59,0.5);">
-        <i class="ph-fill ph-sparkle"></i> Klaim Hadiah Check-in Sekarang
-      </a>
-      <button type="button" onclick="closeCheckinModal()" class="btn-modal-dismiss">Nanti Saja</button>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.45;margin:0 0 10px;text-align:center;">
+        Bonus login harian sudah siap dipetik! Buka check-in sekarang untuk mendapatkan <strong>saldo tarik tunai & bibit</strong> langsung hari ini!
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="/checkin" class="nb-btn g full">
+          <i class="ph-fill ph-sparkle"></i>
+          <span>Klaim Hadiah Check-in Sekarang</span>
+        </a>
+        <button type="button" onclick="closeCheckinModal()" class="nb-btn ghost sm full">Nanti Saja</button>
+      </div>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ============================================================
      MODAL POPUP 3: PILIH PANDUAN TOUR INTERAKTIF
-     ══════════════════════════════════════════════════════════ -->
-<div id="tour-select-modal" class="amber-modal-backdrop">
-  <div class="amber-modal-box" style="max-width:360px;">
-    <button type="button" class="amber-modal-close" onclick="closeTourSelectModal()">
+     ============================================================ -->
+<div id="tour-select-modal" class="backdrop">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeTourSelectModal()" aria-label="Tutup">
       <i class="ph-bold ph-x"></i>
     </button>
-    <div class="amber-modal-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">
-      <i class="ph-fill ph-compass"></i>
+    <div class="modal-head">
+      <div class="hic">
+        <img src="/assets/img/icons3d/star.png" alt="">
+      </div>
+      <div class="ribbon b" style="margin-top:-32px;margin-bottom:4px;">
+        <span>PANDUAN CUAN</span>
+      </div>
+      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Panduan Interaktif 1 Menit</h3>
     </div>
-    <h3 class="amber-modal-title">Panduan Cuan MancingCuan 🧭</h3>
-    <p class="amber-modal-body">
-      Pelajari cara kerja menu dan fitur cuan dengan panduan interaktif 1 menit:
-    </p>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);font-weight:700;text-align:center;margin:0 0 8px;">
+        Pelajari cara kerja menu dan fitur cuan dengan panduan singkat:
+      </p>
 
-    <!-- Pilihan: Tour Cuan Nonton -->
-    <button type="button" class="tour-select-option tour-select-option--watch" onclick="startInteractiveTour('watch')">
-      <div class="tour-select-icon tour-select-icon--watch">
-        <i class="ph-fill ph-film-strip"></i>
-      </div>
-      <div>
-        <div class="tour-select-title">🎬 Panduan Cuan Nonton Video</div>
-        <div class="tour-select-desc">Pelajari kuota harian, pemutar video cuan, check-in gratis, & tarik saldo tunai.</div>
-      </div>
-    </button>
+      <button type="button" class="slot-row" style="cursor:pointer;border:0;width:100%;text-align:left;background:#fff;" onclick="startInteractiveTour('watch')">
+        <div class="ic sm" style="background:linear-gradient(180deg,#7dd3fc,var(--b1));color:#fff;">
+          <i class="ph-fill ph-film-strip"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <b style="font-family:var(--font-game);font-size:13px;color:var(--ink);display:block;">Panduan Nonton Video</b>
+          <small style="font-size:10.5px;color:var(--muted);font-weight:700;">Pelajari kuota harian, tugas video cuan, & penarikan saldo tunai.</small>
+        </div>
+      </button>
 
-    <button type="button" onclick="closeTourSelectModal()" class="btn-modal-dismiss">Nanti Saja / Tutup</button>
+      <button type="button" onclick="closeTourSelectModal()" class="nb-btn ghost sm full" style="margin-top:4px;">Tutup</button>
+    </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL POPUP 4: AJAKAN PROMOSI THREADS (EVENT CUAN & PROMOTOR)
-     ══════════════════════════════════════════════════════════ -->
+<!-- ============================================================
+     MODAL POPUP 4: AJAKAN PROMOSI THREADS
+     ============================================================ -->
 <?php if ($threads_campaign_enabled): ?>
-<div id="threads-promo-modal" class="amber-modal-backdrop">
-  <div class="amber-modal-box" style="background:linear-gradient(145deg,#27272a,#18181b);border:2.5px solid rgba(245,158,11,0.4);box-shadow:0 20px 40px rgba(0,0,0,0.45), inset 2px 2px 6px rgba(255,255,255,0.15), inset -3px -3px 8px rgba(0,0,0,0.5);">
-    <button type="button" class="amber-modal-close" onclick="closeThreadsPromoModal()">
+<div id="threads-promo-modal" class="backdrop">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeThreadsPromoModal()" aria-label="Tutup">
       <i class="ph-bold ph-x"></i>
     </button>
-    <div class="amber-modal-badge" style="background:linear-gradient(145deg,#27272a,#18181b);border:2.5px solid rgba(245,158,11,0.5);color:#fde68a;box-shadow:0 8px 18px rgba(0,0,0,0.35), inset 2px 2px 4px rgba(255,255,255,0.2), inset -2px -2px 4px rgba(0,0,0,0.4);">
-      <i class="ph-bold ph-threads-logo" style="font-size:36px;"></i>
+    <div class="modal-head">
+      <div class="hic" style="background:#18181b;color:#fde68a;">
+        <i class="ph-bold ph-threads-logo" style="font-size:28px;"></i>
+      </div>
+      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
+        <span>EVENT RESMI THREADS</span>
+      </div>
+      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Raih s/d Rp 75.000 di Threads!</h3>
     </div>
-    <div style="font-size:9.5px;font-weight:900;background:linear-gradient(135deg,#f59e0b,#d97706);color:#78350f;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px;">
-      🔥 EVENT RESMI MANCINGCUAN
-    </div>
-    <h3 class="amber-modal-title" style="color:#fde68a;">Raih Cuan s/d Rp 75.000 &amp; Gaji Pasti di Threads!</h3>
-    <div class="amber-modal-body" style="color:#e2e8f0;font-size:11px;text-align:left;line-height:1.45;margin-bottom:16px;">
-      Bagikan ceritamu di Threads dan dapatkan saldo tarik tunai langsung:
-      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:8px 10px;margin-top:8px;">
-        <div style="margin-bottom:6px;color:#fde68a;font-weight:800;">
-          • <strong>Langkah 1:</strong> Buat postingan cuan di Threads &rarr; Bonus <strong><?= format_rp($threads_step1_reward) ?></strong>.
-        </div>
-        <div style="color:#f8fafc;font-weight:800;">
-          • <strong>Langkah 2:</strong> Postingan tembus <strong>minimal 5K views</strong> &rarr; Bonus <strong><?= format_rp($threads_step2_reward) ?></strong> + <strong>Gaji Pasti &amp; Chat WhatsApp Admin</strong>!
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;line-height:1.45;">
+        Bagikan ceritamu di Threads dan dapatkan saldo tarik tunai langsung:
+        <div style="background:var(--slot);box-shadow:0 0 0 2px var(--slot-bd);border-radius:12px;padding:8px 10px;margin:8px 0;">
+          <div style="margin-bottom:5px;color:var(--wood-d);font-weight:800;">
+            • <strong>Langkah 1:</strong> Buat postingan di Threads &rarr; Bonus <strong><?= format_rp($threads_step1_reward) ?></strong>.
+          </div>
+          <div style="color:var(--ink);font-weight:800;">
+            • <strong>Langkah 2:</strong> Postingan tembus <strong>minimal 5K views</strong> &rarr; Bonus <strong><?= format_rp($threads_step2_reward) ?></strong> + <strong>Gaji Pasti & Chat Admin WA</strong>!
+          </div>
         </div>
       </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <a href="/threads" class="btn-modal-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706);border:2px solid rgba(255,255,255,0.5);color:#78350f;box-shadow:0 10px 22px rgba(217,119,6,0.35), inset 2px 2px 4px rgba(255,255,255,0.6), inset -2px -2px 4px rgba(180,83,9,0.3);">
-        <i class="ph-bold ph-threads-logo"></i> Mulai Promosi Threads Sekarang
-      </a>
-      <button type="button" onclick="closeThreadsPromoModal()" class="btn-modal-dismiss" style="color:#94a3b8;">Nanti Saja</button>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="/threads" class="nb-btn y full">
+          <i class="ph-bold ph-threads-logo"></i>
+          <span>Mulai Promosi Threads Sekarang</span>
+        </a>
+        <button type="button" onclick="closeThreadsPromoModal()" class="nb-btn ghost sm full">Nanti Saja</button>
+      </div>
     </div>
   </div>
 </div>
 <?php endif; ?>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL POPUP: AJAKAN PROMOSI LENGKAP (PROMO HUB MODAL)
-     ══════════════════════════════════════════════════════════ -->
-<div id="promo-hub-modal" class="amber-modal-backdrop">
-  <div class="amber-modal-box" style="max-width:350px;padding:22px 15px 16px;">
-    <button type="button" class="amber-modal-close" onclick="closePromoHubModal()">
+<!-- ============================================================
+     MODAL POPUP 5: PROMO HUB & REFERRAL SHARE
+     ============================================================ -->
+<div id="promo-hub-modal" class="backdrop">
+  <div class="modal">
+    <button type="button" class="close" onclick="closePromoHubModal()" aria-label="Tutup">
       <i class="ph-bold ph-x"></i>
     </button>
-    
-    <div class="amber-modal-badge" style="background:linear-gradient(135deg,#18181b,#27272a);border-color:#f59e0b;color:#fde68a;">
-      <i class="ph-bold ph-megaphone" style="font-size:32px;"></i>
+    <div class="modal-head">
+      <div class="hic">
+        <img src="/assets/img/icons3d/coins.png" alt="">
+      </div>
+      <div class="ribbon y" style="margin-top:-32px;margin-bottom:4px;">
+        <span>PELUANG CUAN</span>
+      </div>
+      <h3 style="font-family:var(--font-game);font-size:18px;margin:8px 0 2px;color:var(--ink);">Ajak Teman & Promosi Cuan</h3>
     </div>
-    
-    <div style="font-size:9.5px;font-weight:900;background:linear-gradient(135deg,#f59e0b,#d97706);color:#78350f;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px;">
-      🔥 PELUANG CUAN VIRAL
-    </div>
-    
-    <h3 class="amber-modal-title" style="margin-bottom:3px;font-size:16px;">Ajak &amp; Promosikan MancingCuan! 🚀</h3>
-    <p class="amber-modal-body" style="margin-bottom:12px;font-size:10.5px;">
-      Pilih cara promosi dan panen saldo tarik tunai instan ke dompetmu:
-    </p>
+    <div class="modal-body">
+      <p style="font-size:11.5px;color:var(--muted);font-weight:700;margin:0 0 6px;text-align:center;">
+        Pilih jalur promosi dan panen komisi saldo tarik tunai instan ke dompetmu:
+      </p>
 
-    <!-- Kartu 1: Event Threads -->
-    <div class="promo-hub-card-item">
-      <div class="phc-header">
-        <span class="phc-tag phc-tag--threads"><i class="ph-bold ph-threads-logo"></i> EVENT THREADS</span>
-        <span class="phc-reward">+Rp 75.000 &amp; Gaji Pasti</span>
+      <!-- Kartu 1: Threads -->
+      <div style="display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:14px;background:var(--slot);box-shadow:0 0 0 2px var(--slot-bd);">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:var(--font-game);font-size:11px;font-weight:700;color:var(--wood-d);"><i class="ph-bold ph-threads-logo"></i> EVENT THREADS</span>
+          <span class="today-chip" style="font-size:10px;padding:2px 6px;">+Rp 75.000</span>
+        </div>
+        <b style="font-family:var(--font-game);font-size:13px;color:var(--ink);">Posting Cerita di Threads</b>
+        <small style="font-size:10.5px;color:var(--muted);font-weight:700;">Raih bonus di Langkah 1 & bonus gaji pasti jika tembus 5K views!</small>
+        <a href="/threads" class="nb-btn sm y" style="margin-top:4px;">Ikuti Event Threads &rarr;</a>
       </div>
-      <div class="phc-title">Posting Cerita Cuan di Threads</div>
-      <div class="phc-desc">
-        Raih <strong>Rp 25.000</strong> di Langkah 1 &amp; raih <strong>Rp 50.000 + Gaji Pasti &amp; Chat Admin WA</strong> jika postinganmu tembus 5K views!
-      </div>
-      <div class="phc-actions">
-        <a href="/threads" class="btn-phc-action btn-phc-action--primary">
-          <i class="ph-bold ph-threads-logo"></i>
-          <span>Ikuti Event Threads</span>
-          <i class="ph-bold ph-arrow-right"></i>
-        </a>
-      </div>
-    </div>
 
-    <!-- Kartu 2: Bagikan Link Referral -->
-    <div class="promo-hub-card-item">
-      <div class="phc-header">
-        <span class="phc-tag phc-tag--referral"><i class="ph-fill ph-users-three"></i> UNDANG TEMAN</span>
-        <span class="phc-reward">Komisi Pasif</span>
-      </div>
-      <div class="phc-title">Sebar Link &amp; Kode Referral</div>
-      <div class="phc-desc">
-        Ajak teman daftar untuk raih bonus komisi saat teman nonton video.
-      </div>
-      
-      <!-- Template Caption Box -->
-      <div class="phc-caption-box">
-        🎯 Mau saldo gratis tiap hari? Cobain MancingCuan! Nonton video dibayar uang tunai &amp; selesaikan misi seru. Cuan siap ditarik tiap hari!
-        <div style="margin-top:4px;font-weight:900;color:#92400e;">
-          Kode Reff: <span style="font-family:monospace;letter-spacing:0.5px;"><?= htmlspecialchars($ref_code) ?></span>
+      <!-- Kartu 2: Bagikan Link Referral -->
+      <div style="display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:14px;background:var(--slot);box-shadow:0 0 0 2px var(--slot-bd);">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:var(--font-game);font-size:11px;font-weight:700;color:var(--g2);"><i class="ph-fill ph-users-three"></i> UNDANG TEMAN</span>
+          <span class="today-chip" style="font-size:10px;padding:2px 6px;">Komisi Pasif</span>
+        </div>
+        <b style="font-family:var(--font-game);font-size:13px;color:var(--ink);">Sebar Link & Kode Referral</b>
+        <div style="background:#fff;border-radius:10px;padding:6px 8px;font-size:10.5px;color:var(--muted);font-weight:700;line-height:1.35;margin:3px 0;">
+          Mau saldo gratis tiap hari? Yuk gabung di PanenCuan! Tonton video dibayar uang tunai & selesaikan misi seru.
+          <div style="margin-top:2px;font-weight:800;color:var(--wood-d);">
+            Kode: <span style="font-family:monospace;letter-spacing:0.5px;"><?= htmlspecialchars($ref_code) ?></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">
+          <button type="button" class="nb-btn sm ghost" onclick="copyPromoFullCaption('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')">
+            <i class="ph-bold ph-copy"></i> Teks
+          </button>
+          <button type="button" class="nb-btn sm g" onclick="shareRefLink('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')">
+            <i class="ph-bold ph-share-network"></i> WA
+          </button>
+          <a href="/referral" class="nb-btn sm b">
+            <span>Detail</span>
+          </a>
         </div>
       </div>
 
-      <div class="phc-actions">
-        <button type="button" class="btn-phc-action btn-phc-action--copy" onclick="copyPromoFullCaption('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')">
-          <i class="ph-bold ph-copy"></i>
-          <span>Salin Teks</span>
-        </button>
-        <button type="button" class="btn-phc-action btn-phc-action--share" onclick="shareRefLink('<?= htmlspecialchars($ref_url) ?>', '<?= htmlspecialchars($ref_code) ?>')">
-          <i class="ph-bold ph-share-network"></i>
-          <span>Share WA</span>
-        </button>
-        <a href="/referral" class="btn-phc-action btn-phc-action--primary" style="flex:0.75;">
-          <i class="ph-bold ph-users-three"></i>
-          <span>Detail</span>
-        </a>
-      </div>
+      <button type="button" onclick="closePromoHubModal()" class="nb-btn ghost sm full" style="margin-top:2px;">Tutup</button>
     </div>
-
-    <button type="button" onclick="closePromoHubModal()" class="btn-modal-dismiss" style="margin-top:4px;">Nanti Saja</button>
   </div>
 </div>
-
-<!-- Toast Container for Copy / Share feedback -->
-<div id="cuan-toast"></div>
 
 <script>
 window.__HAS_CHECKED_IN__ = <?= $has_checked_in_today ? 'true' : 'false' ?>;
@@ -1817,9 +1748,9 @@ function fallbackCopy(text) {
   ta.select();
   try {
     document.execCommand('copy');
-    showCuanToast('<i class="ph-bold ph-check"></i> Kode Referral disalin: ' + text);
+    showCuanToast('<i class="ph-bold ph-check"></i> Kode disalin: ' + text);
   } catch (err) {
-    showCuanToast('<i class="ph-bold ph-warning-circle"></i> Gagal menyalin kode referral.');
+    showCuanToast('<i class="ph-bold ph-warning-circle"></i> Gagal menyalin.');
   }
   document.body.removeChild(ta);
 }
@@ -1831,8 +1762,8 @@ function shareRefLink(url, code) {
   }
   if (navigator.share) {
     navigator.share({
-      title: 'MancingCuan - Nonton Video Dapat Cuan!',
-      text: 'Yuk raih jutaan rupiah dari nonton video dan selesaikan misi! Gunakan kode referralku: ' + code,
+      title: 'PanenCuan - Nonton Video & Panen Saldo Nyata!',
+      text: 'Yuk raih penghasilan uang tunai dari nonton video dan panen hasil sawah! Gunakan kode referralku: ' + code,
       url: url
     }).catch(() => {});
   } else {
@@ -1852,40 +1783,34 @@ function showCuanToast(msg) {
   }, 2600);
 }
 
-/* ══════════════════════════════════════════════════════════
-   PROMO HUB MODAL CONTROLLER & COPY FUNCTIONS
-   ══════════════════════════════════════════════════════════ */
+/* ── PROMO HUB MODAL CONTROLLER & COPY FUNCTIONS ── */
 function openPromoHubModal() {
   const m = document.getElementById('promo-hub-modal');
   if (!m) return;
-  m.style.display = 'flex';
-  setTimeout(() => {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 30);
+  m.classList.add('open');
+  const b = m.querySelector('.modal');
+  if (b) b.classList.add('open');
 }
 
 function closePromoHubModal() {
   const m = document.getElementById('promo-hub-modal');
   if (m) {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(0.85)'; b.style.opacity = '0'; }
-    setTimeout(() => { m.style.display = 'none'; }, 250);
+    const b = m.querySelector('.modal');
+    if (b) b.classList.remove('open');
+    m.classList.remove('open');
   }
   try {
     sessionStorage.setItem('promo_hub_dismissed', '1');
   } catch(e) {}
-
-  // Lanjutkan rantai ke popup check-in jika belum absen
   setTimeout(triggerCheckinPopupIfEligible, 350);
 }
 
 function copyPromoFullCaption(url, code) {
   if (!code || code === '-') {
-    showCuanToast('<i class="ph-bold ph-warning-circle"></i> Silakan masuk akun untuk menyalin teks promosi!');
+    showCuanToast('<i class="ph-bold ph-warning-circle"></i> Silakan masuk akun untuk menyalin teks!');
     return;
   }
-  const caption = "🎣 Mau saldo gratis tiap hari sambil santai? Cobain MancingCuan! Nonton video berhadiah uang tunai & selesaikan misi harian. Cuan siap ditarik ke DANA/Gopay/OVO/Bank setiap hari!\n\nDaftar sekarang lewat link ini:\n" + url + "\n(Gunakan Kode Referralku: " + code + ")";
+  const caption = "🌾 Mau saldo gratis tiap hari sambil santai? Cobain PanenCuan! Nonton video berhadiah uang tunai & panen hasil sawah harian. Cuan siap ditarik ke DANA/Gopay/OVO/Bank setiap hari!\n\nDaftar sekarang lewat link ini:\n" + url + "\n(Gunakan Kode Referralku: " + code + ")";
   
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(caption).then(() => {
@@ -1896,25 +1821,21 @@ function copyPromoFullCaption(url, code) {
   }
 }
 
-/* ══════════════════════════════════════════════════════════
-   INTERACTIVE TOUR INTEGRATION & MODAL CONTROLLERS
-   ══════════════════════════════════════════════════════════ */
+/* ── INTERACTIVE TOUR & MODAL CONTROLLERS ── */
 function openTourSelectModal() {
   const m = document.getElementById('tour-select-modal');
   if (!m) return;
-  m.style.display = 'flex';
-  setTimeout(() => {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 30);
+  m.classList.add('open');
+  const b = m.querySelector('.modal');
+  if (b) b.classList.add('open');
 }
 
 function closeTourSelectModal() {
   const m = document.getElementById('tour-select-modal');
   if (m) {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(0.85)'; b.style.opacity = '0'; }
-    setTimeout(() => { m.style.display = 'none'; }, 250);
+    const b = m.querySelector('.modal');
+    if (b) b.classList.remove('open');
+    m.classList.remove('open');
   }
   try {
     sessionStorage.setItem('tour_modal_dismissed_session', '1');
@@ -1929,7 +1850,7 @@ function dismissTourBanner() {
     setTimeout(() => { b.style.display = 'none'; }, 280);
   }
   try {
-    localStorage.setItem('mancing_tour_banner_dismissed', '1');
+    localStorage.setItem('panen_tour_banner_dismissed', '1');
   } catch (e) {}
 }
 
@@ -1946,7 +1867,7 @@ function startInteractiveTour(track) {
 /* ── LOGIKA POP-UP BERANTAI (CHAINED MODALS) ── */
 function openCustomPopup() {
   try {
-    const at = localStorage.getItem('mancing_tour_active');
+    const at = localStorage.getItem('panen_tour_active') || localStorage.getItem('mancing_tour_active');
     if (at && JSON.parse(at).isRunning) return;
   } catch(e) {}
 
@@ -1955,22 +1876,20 @@ function openCustomPopup() {
     triggerCheckinPopupIfEligible();
     return;
   }
-  p.style.display = 'flex';
-  setTimeout(() => {
-    const b = p.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 40);
+  p.classList.add('open');
+  const b = p.querySelector('.modal');
+  if (b) b.classList.add('open');
 }
 
 function closeCustomPopup() {
   const p = document.getElementById('custom-announcement-popup');
   if (p) {
-    const b = p.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(0.85)'; b.style.opacity = '0'; }
-    setTimeout(() => { p.style.display = 'none'; }, 280);
+    const b = p.querySelector('.modal');
+    if (b) b.classList.remove('open');
+    p.classList.remove('open');
   }
   try {
-    localStorage.setItem('mancing_popup_seen', JSON.stringify({ ts: Date.now() }));
+    localStorage.setItem('panen_popup_seen', JSON.stringify({ ts: Date.now() }));
   } catch (e) {}
 
   setTimeout(() => {
@@ -1989,19 +1908,17 @@ function closeCustomPopup() {
 function openThreadsPromoModal() {
   const m = document.getElementById('threads-promo-modal');
   if (!m) return;
-  m.style.display = 'flex';
-  setTimeout(() => {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 40);
+  m.classList.add('open');
+  const b = m.querySelector('.modal');
+  if (b) b.classList.add('open');
 }
 
 function closeThreadsPromoModal() {
   const m = document.getElementById('threads-promo-modal');
   if (m) {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(0.85)'; b.style.opacity = '0'; }
-    setTimeout(() => { m.style.display = 'none'; }, 260);
+    const b = m.querySelector('.modal');
+    if (b) b.classList.remove('open');
+    m.classList.remove('open');
   }
   try {
     sessionStorage.setItem('threads_promo_modal_closed', '1');
@@ -2015,11 +1932,9 @@ function triggerThreadsPopupIfEligible() {
   if (sessionStorage.getItem('threads_promo_modal_closed') === '1') return false;
   const m = document.getElementById('threads-promo-modal');
   if (!m) return false;
-  m.style.display = 'flex';
-  setTimeout(() => {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 40);
+  m.classList.add('open');
+  const b = m.querySelector('.modal');
+  if (b) b.classList.add('open');
   return true;
 }
 
@@ -2028,35 +1943,31 @@ function triggerCheckinPopupIfEligible() {
   if (sessionStorage.getItem('checkin_prompt_closed') === '1') return;
 
   try {
-    const at = localStorage.getItem('mancing_tour_active');
+    const at = localStorage.getItem('panen_tour_active') || localStorage.getItem('mancing_tour_active');
     if (at && JSON.parse(at).isRunning) return;
   } catch(e) {}
 
   const m = document.getElementById('checkin-prompt-modal');
   if (!m) return;
-  m.style.display = 'flex';
-  setTimeout(() => {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 40);
+  m.classList.add('open');
+  const b = m.querySelector('.modal');
+  if (b) b.classList.add('open');
 }
 
 function openCheckinModal() {
   const m = document.getElementById('checkin-prompt-modal');
   if (!m) { window.location.href = '/checkin'; return; }
-  m.style.display = 'flex';
-  setTimeout(() => {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(1)'; b.style.opacity = '1'; }
-  }, 40);
+  m.classList.add('open');
+  const b = m.querySelector('.modal');
+  if (b) b.classList.add('open');
 }
 
 function closeCheckinModal() {
   const m = document.getElementById('checkin-prompt-modal');
   if (m) {
-    const b = m.querySelector('.amber-modal-box');
-    if (b) { b.style.transform = 'scale(0.85)'; b.style.opacity = '0'; }
-    setTimeout(() => { m.style.display = 'none'; }, 280);
+    const b = m.querySelector('.modal');
+    if (b) b.classList.remove('open');
+    m.classList.remove('open');
   }
   try {
     sessionStorage.setItem('checkin_prompt_closed', '1');
@@ -2064,12 +1975,12 @@ function closeCheckinModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const allTourDone = localStorage.getItem('mancing_tour_done') === '1';
+  const allTourDone = localStorage.getItem('panen_tour_done') === '1' || localStorage.getItem('mancing_tour_done') === '1';
 
   try {
     const b = document.getElementById('tour-invite-card');
     if (b) {
-      if (allTourDone || localStorage.getItem('mancing_tour_banner_dismissed') === '1') {
+      if (allTourDone || localStorage.getItem('panen_tour_banner_dismissed') === '1' || localStorage.getItem('mancing_tour_banner_dismissed') === '1') {
         b.style.display = 'none';
       } else {
         b.style.display = 'block';
@@ -2079,7 +1990,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isTourRunningNow = false;
   try {
-    const rawTour = localStorage.getItem('mancing_tour_active');
+    const rawTour = localStorage.getItem('panen_tour_active') || localStorage.getItem('mancing_tour_active');
     if (rawTour && JSON.parse(rawTour).isRunning) {
       isTourRunningNow = true;
     }
@@ -2091,7 +2002,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (showCustom && customPopupEl) {
     try {
-      const raw = localStorage.getItem('mancing_popup_seen');
+      const raw = localStorage.getItem('panen_popup_seen') || localStorage.getItem('mancing_popup_seen');
       if (raw) {
         const data = JSON.parse(raw);
         if (resetMs > 0 && (Date.now() - data.ts) < resetMs) {

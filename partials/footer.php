@@ -15,15 +15,15 @@
     height: auto !important;
     border: none !important;
     border-radius: 22px 22px 0 0 !important;
-    background: #ffffff !important;
+    background: var(--wood, #b8763a) !important;
     box-shadow:
-      0 -6px 20px rgba(30, 27, 46, 0.08),
-      inset 0 2px 4px #ffffff,
-      inset 0 -3px 8px rgba(251, 146, 60, 0.08) !important;
+      0 -4px 0 var(--wood-d, #7c4a1f),
+      0 -8px 25px rgba(45, 25, 10, 0.35),
+      inset 0 2px 0 rgba(255, 255, 255, 0.35) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    padding: 9px 12px calc(9px + env(safe-area-inset-bottom)) !important;
+    gap: 8px !important;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
     z-index: 9999 !important;
   }
 
@@ -36,51 +36,36 @@
     align-items: center;
     gap: 8px;
     height: 52px;
-    padding: 0 12px 0 5px;
-    border-radius: 18px;
+    padding: 0 12px 0 6px;
+    border-radius: 16px;
     text-decoration: none;
-    background: linear-gradient(145deg, #fff1f2 0%, #ffe4e6 100%);
-    box-shadow: inset 2px 2px 4px #ffffff, inset -2px -2px 5px rgba(244, 63, 94, 0.14);
+    background: linear-gradient(180deg, #8ee86a 0%, var(--g1, #6dd047) 50%, #52b52e 100%);
+    box-shadow: 0 3px 0 var(--g2, #3f9a24), inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .nav-play-main:active { transform: scale(0.95); }
+  .nav-play-main:active { transform: translateY(2px) scale(0.96); box-shadow: 0 1px 0 var(--g2, #3f9a24); }
   .nav-play-btn {
-    width: 42px; height: 42px;
-    border-radius: 14px;
-    background: linear-gradient(145deg, #fdba74 0%, #fb7185 45%, #f43f5e 100%);
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 35% 35%, #fff, var(--parch-2, #fdebc4));
     display: flex; align-items: center; justify-content: center;
     position: relative;
-    box-shadow:
-      0 5px 12px rgba(244, 63, 94, 0.38),
-      inset 2.5px 2.5px 4px rgba(255, 255, 255, 0.6),
-      inset -2.5px -2.5px 5px rgba(190, 18, 60, 0.35);
-  }
-  .nav-play-btn::before {
-    content: '';
-    position: absolute;
-    top: 4px; left: 6px;
-    width: 12px; height: 5px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    transform: rotate(-20deg);
+    box-shadow: 0 2px 0 rgba(60, 30, 5, 0.2), inset 0 1px 2px #fff;
   }
   .nav-play-btn i {
     font-size: 20px !important;
-    color: #ffffff !important;
+    color: var(--g2, #3f9a24) !important;
     margin-left: 2px;
   }
   .nav-play-text {
     display: flex;
     flex-direction: column;
     line-height: 1.1;
-    font-family: 'Nunito', sans-serif;
+    font-family: var(--font-game, 'Fredoka', 'Nunito', sans-serif);
   }
-  .nav-play-text strong { font-size: 12.5px; font-weight: 900; color: #e11d48; letter-spacing: -0.2px; }
-  .nav-play-text small { font-size: 9px; font-weight: 800; color: #fb7185; }
-  .nav-play-main.active { background: linear-gradient(145deg, #ffe4e6, #fecdd3); }
-  .nav-play-main.active .nav-play-btn {
-    background: linear-gradient(145deg, #fde68a 0%, #fbbf24 40%, #f43f5e 100%);
-  }
+  .nav-play-text strong { font-size: 13.5px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 0 var(--g2, #3f9a24); letter-spacing: 0.2px; }
+  .nav-play-text small { font-size: 9.5px; font-weight: 700; color: #e8f9df; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); }
+  .nav-play-main.active { filter: brightness(1.08); }
 
   /* 4 menu kanan */
   .nav-tabs {
@@ -91,8 +76,6 @@
     min-width: 0;
   }
   .nav-item {
-    --dock-c: #f43f5e;
-    --dock-bg: #ffe4e6;
     flex: none !important;
     display: flex !important;
     flex-direction: column !important;
@@ -102,33 +85,27 @@
     height: 48px !important;
     border-radius: 14px !important;
     text-decoration: none !important;
-    color: #8a8296 !important;
-    font-size: 9.5px !important;
-    font-weight: 800 !important;
-    font-family: 'Nunito', sans-serif !important;
+    color: var(--parch-2, #fdebc4) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    font-family: var(--font-game, 'Fredoka', 'Nunito', sans-serif) !important;
     background: transparent !important;
-    text-shadow: none !important;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3) !important;
     transition: color 0.15s, background 0.15s, transform 0.12s !important;
   }
-  .nav-item--home    { --dock-c: #e11d48; --dock-bg: #fff1f2; }
-  .nav-item--upgrade { --dock-c: #9333ea; --dock-bg: #f3e8ff; }
-  .nav-item--crew    { --dock-c: #059669; --dock-bg: #d1fae5; }
-  .nav-item--cabin   { --dock-c: #d97706; --dock-bg: #fef3c7; }
-  .nav-item:active { transform: scale(0.92) !important; }
+  .nav-item:active { transform: translateY(2px) scale(0.94) !important; }
   .nav-item i {
     font-size: 19px !important;
-    color: #a8a2b3 !important;
-    transform: none !important;
-    filter: none !important;
+    color: var(--parch-2, #fdebc4) !important;
     transition: color 0.15s !important;
   }
   .nav-item.active {
-    color: var(--dock-c) !important;
-    font-weight: 900 !important;
-    background: var(--dock-bg) !important;
-    box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.9), inset -2px -2px 4px rgba(0, 0, 0, 0.05) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    background: rgba(255, 246, 224, 0.24) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 2px 4px rgba(0, 0, 0, 0.15) !important;
   }
-  .nav-item.active i { color: var(--dock-c) !important; }
+  .nav-item.active i { color: #ffd43b !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
 
   @media (max-width: 360px) {
     .bottom-nav { gap: 6px !important; padding-left: 8px !important; padding-right: 8px !important; }
@@ -155,7 +132,7 @@
     <div class="nav-tabs">
       <a href="/home" class="nav-item nav-item--home <?= ($activePage??'')==='home'?'active':'' ?>">
         <i class="<?= ($activePage??'')==='home'?'ph-fill':'ph-bold' ?> ph-house-simple"></i>
-        Dermaga
+        Beranda
       </a>
       <a href="/upgrade" class="nav-item nav-item--upgrade <?= ($activePage??'')==='upgrade'?'active':'' ?>">
         <i class="<?= ($activePage??'')==='upgrade'?'ph-fill':'ph-bold' ?> ph-crown-simple"></i>
@@ -163,11 +140,11 @@
       </a>
       <a href="/referral" class="nav-item nav-item--crew <?= ($activePage??'')==='referral'?'active':'' ?>">
         <i class="<?= ($activePage??'')==='referral'?'ph-fill':'ph-bold' ?> ph-users-three"></i>
-        Kru Laut
+        Undang
       </a>
       <a href="/profile" class="nav-item nav-item--cabin <?= ($activePage??'')==='profile'?'active':'' ?>">
         <i class="<?= ($activePage??'')==='profile'?'ph-fill':'ph-bold' ?> ph-user-circle"></i>
-        Kabin
+        Profil
       </a>
     </div>
   </nav>

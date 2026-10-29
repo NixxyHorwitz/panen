@@ -1,0 +1,569 @@
+/* ============================================================
+   GAME-UI.CSS — Sawah Panen Cuan Design System
+   Dipakai bersama oleh user/farm.php & user/home.php
+   Nuansa lembah sawah: kayu, perkamen, langit biru, tombol berbibir 3D
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap');
+
+:root {
+  --ink: #3b2414;
+  --muted: #8a6a4a;
+  --parch: #fff6e0;
+  --parch-2: #fdebc4;
+  --wood: #b8763a;
+  --wood-d: #7c4a1f;
+  --wood-l: #d9a066;
+  --slot: #fffaf0;
+  --slot-bd: #ecc98c;
+
+  /* Pasangan tombol muka & bibir bawah */
+  --g1: #6dd047; --g2: #3f9a24; /* hijau */
+  --y1: #ffd43b; --y2: #d69a0b; /* kuning */
+  --b1: #4cc0f7; --b2: #1f84c6; /* biru */
+  --r1: #ff6b6b; --r2: #c9373b; /* merah */
+
+  --font-game: 'Fredoka', 'Nunito', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+/* --- Ikon 3D Global Drop Shadow --- */
+.ic img, .hic img, .dock-ic img, .wal-ic img, .lvl-star img,
+.price img, .lock-badge img, .nb-btn img, .fly-icon img, .token-ic img,
+.slot-ic img, .portal-3d-ic img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 3px 2px rgba(60, 30, 5, .28));
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* ============================================================
+   1. TOMBOL GAME BERBIBIR 3D (.nb-btn)
+   Muka gradien + bibir bawah warna gelap, turun 3px saat ditekan
+   ============================================================ */
+.nb-btn {
+  --f: #fff;
+  --l: #d6c3a0;
+  --t: var(--ink);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-game);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .2px;
+  color: var(--t);
+  text-decoration: none;
+  border: 0;
+  outline: 0;
+  cursor: pointer;
+  padding: 9px 16px 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--f) 70%, #fff) 0%, var(--f) 55%);
+  box-shadow: 0 4px 0 var(--l), 0 6px 10px rgba(60, 30, 5, .25), inset 0 2px 0 rgba(255, 255, 255, .55);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .18);
+  transition: transform .08s, box-shadow .08s, filter .15s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.nb-btn img { width: 22px; height: 22px; margin: -2px 0; }
+.nb-btn i { font-size: 18px; }
+
+.nb-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.nb-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--l), 0 2px 4px rgba(60, 30, 5, .25), inset 0 1px 0 rgba(255, 255, 255, .4);
+}
+.nb-btn:disabled {
+  opacity: .55;
+  filter: grayscale(.65);
+  cursor: not-allowed;
+  box-shadow: 0 2px 0 var(--l);
+  transform: none;
+}
+
+/* Varian Tombol */
+.nb-btn.g { --f: var(--g1); --l: var(--g2); --t: #fff; }
+.nb-btn.y { --f: var(--y1); --l: var(--y2); --t: #5b3405; text-shadow: 0 1px 0 rgba(255, 255, 255, .55); }
+.nb-btn.b { --f: var(--b1); --l: var(--b2); --t: #fff; }
+.nb-btn.r { --f: var(--r1); --l: var(--r2); --t: #fff; }
+.nb-btn.wood { --f: var(--wood-l); --l: var(--wood-d); --t: #fff; }
+.nb-btn.ghost {
+  --f: var(--parch);
+  --l: var(--slot-bd);
+  --t: var(--ink);
+  box-shadow: 0 3px 0 var(--slot-bd), inset 0 2px 0 #fff;
+  text-shadow: none;
+}
+
+/* Ukuran Tombol */
+.nb-btn.sm {
+  padding: 5px 11px 6px;
+  font-size: 12.5px;
+  border-radius: 10px;
+  box-shadow: 0 3px 0 var(--l), 0 4px 6px rgba(60, 30, 5, .2);
+}
+.nb-btn.sm:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--l);
+}
+.nb-btn.lg {
+  padding: 13px 22px 14px;
+  font-size: 17px;
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--l), 0 8px 14px rgba(60, 30, 5, .28), inset 0 2px 0 rgba(255, 255, 255, .6);
+}
+.nb-btn.lg:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--l);
+}
+.nb-btn.full { width: 100%; }
+
+/* ============================================================
+   2. CURRENCY BAR (.wallet) & LEVEL BADGE (.lvl)
+   Pil kayu transparan dengan ikon menonjol
+   ============================================================ */
+.wallet-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 999px;
+  background: rgba(59, 36, 20, .78);
+  color: #fff;
+  box-shadow: 0 3px 0 rgba(59, 36, 20, .45), 0 4px 10px rgba(0, 0, 0, .25), inset 0 1px 1px rgba(255, 255, 255, .25);
+  text-decoration: none;
+  min-width: 122px;
+  user-select: none;
+}
+.wal-ic {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  margin-left: -3px;
+}
+.wal-tx {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  flex: 1;
+}
+.wal-tx small {
+  font-size: 9px;
+  font-weight: 800;
+  color: #fde68a;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.wal-tx b {
+  font-family: var(--font-game);
+  font-size: 14.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.wal-add {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #a6f08a, var(--g1) 50%, var(--g2));
+  box-shadow: 0 2px 0 var(--g2), 0 2px 4px rgba(0, 0, 0, .2);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  border: 0;
+  margin-left: 2px;
+  text-decoration: none;
+  transition: transform .08s;
+}
+.wal-add:active { transform: translateY(2px) scale(.92); }
+
+/* Level / Pangkat */
+.lvl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 999px;
+  background: var(--wood);
+  box-shadow: 0 3px 0 var(--wood-d), 0 4px 8px rgba(60, 30, 5, .25);
+  color: #fff;
+  font-family: var(--font-game);
+  text-decoration: none;
+  user-select: none;
+}
+.lvl-star {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.lvl b {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.lvl small {
+  font-size: 10px;
+  color: var(--parch-2);
+  font-weight: 700;
+}
+
+/* ============================================================
+   3. PANEL KAYU & PERKAMEN (.game-panel / .parch-card)
+   ============================================================ */
+.game-panel {
+  position: relative;
+  background: var(--wood);
+  padding: 7px;
+  border-radius: 24px;
+  box-shadow: 0 5px 0 var(--wood-d), 0 12px 28px rgba(45, 25, 10, .22), inset 0 2px 0 rgba(255, 255, 255, .32);
+}
+.parch-card {
+  position: relative;
+  background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .75), transparent 45%), var(--parch);
+  border-radius: 18px;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--ink);
+}
+
+/* Pita Judul Panel (.ribbon) */
+.ribbon {
+  --rb1: var(--g1);
+  --rb2: var(--g2);
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 22px 7px;
+  font-family: var(--font-game);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.1;
+  color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rb1) 75%, #fff), var(--rb1) 60%);
+  border-radius: 8px;
+  box-shadow: 0 3px 0 var(--rb2), inset 0 2px 0 rgba(255, 255, 255, .45);
+  text-shadow: 0 2px 0 var(--rb2);
+  text-align: center;
+  user-select: none;
+}
+.ribbon::before, .ribbon::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  width: 18px;
+  height: 100%;
+  background: var(--rb2);
+}
+.ribbon::before {
+  left: -12px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 6px 50%);
+}
+.ribbon::after {
+  right: -12px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%);
+}
+
+.ribbon.y { --rb1: var(--y1); --rb2: var(--y2); color: #5b3405; text-shadow: 0 1px 0 rgba(255, 255, 255, .45); }
+.ribbon.b { --rb1: var(--b1); --rb2: var(--b2); }
+.ribbon.r { --rb1: var(--r1); --rb2: var(--r2); }
+.ribbon.wood { --rb1: var(--wood-l); --rb2: var(--wood-d); }
+
+/* Ikon Menonjol di Atas Panel (.hic) */
+.hic {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #fff, var(--parch-2) 70%);
+  font-size: 28px;
+  color: var(--wood-d);
+  box-shadow: 0 0 0 5px var(--wood), 0 4px 0 6px var(--wood-d), inset 0 -3px 6px rgba(160, 100, 40, .25);
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  user-select: none;
+}
+
+/* ============================================================
+   4. SLOT ITEM (.ic) & BADGE JUMLAH (.qty)
+   Kotak membulat terang dengan inner border --slot-bd
+   ============================================================ */
+.ic {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 35%, #fff, var(--slot));
+  box-shadow: inset 0 2px 0 #fff, 0 0 0 2px var(--slot-bd), 0 3px 6px rgba(60, 30, 5, .15);
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.ic.sm { width: 42px; height: 42px; border-radius: 13px; padding: 4px; }
+.ic.lg { width: 68px; height: 68px; border-radius: 20px; padding: 7px; }
+.ic.xl { width: 80px; height: 80px; border-radius: 22px; padding: 8px; }
+
+.qty {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, var(--parch-2));
+  color: var(--ink);
+  font-family: var(--font-game);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 1px 6px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 0 #d6c3a0, 0 2px 6px rgba(0, 0, 0, .2);
+  white-space: nowrap;
+}
+
+/* Baris item / slot (.slot-row) */
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 16px;
+  padding: 8px 10px;
+  background: var(--slot);
+  box-shadow: 0 0 0 2px var(--slot-bd), 0 2px 5px rgba(60, 30, 5, .08);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+/* ============================================================
+   5. PROGRESS BAR (.prog)
+   Tebal, membulat, isi gradien hijau/kuning, inner shadow
+   ============================================================ */
+.prog {
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(120, 80, 30, .2);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(80, 50, 20, .35);
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #a6f08a, var(--g1) 55%, var(--g2));
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .6);
+  transition: width .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+.prog-fill.gold {
+  background: linear-gradient(180deg, #fff3b0, var(--y1) 55%, var(--y2));
+}
+.prog-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-game);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .55);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   6. MODAL & SHEET GAME (.modal, .sheet, .backdrop)
+   Panel kayu berisi perkamen dengan tombol silang merah
+   ============================================================ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: rgba(30, 18, 8, .55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.backdrop.open, .backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  position: fixed;
+  z-index: 9995;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -46%) scale(.85);
+  width: min(370px, calc(100% - 24px));
+  background: var(--wood);
+  border-radius: 26px;
+  padding: 7px;
+  box-shadow: 0 6px 0 var(--wood-d), 0 20px 45px rgba(30, 18, 8, .45), inset 0 2px 0 rgba(255, 255, 255, .32);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .28s cubic-bezier(.34, 1.56, .64, 1), opacity .2s;
+  display: flex;
+  flex-direction: column;
+}
+.modal.open, .modal.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px 8px;
+  margin-top: 18px;
+  border-radius: 20px 20px 0 0;
+  background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .7), transparent 40%), var(--parch);
+}
+.modal-head .hic {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.modal-head p {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.close {
+  position: absolute;
+  top: -12px;
+  right: 4px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 18px;
+  background: radial-gradient(circle at 50% 30%, #ff9a9a, var(--r1) 65%);
+  box-shadow: 0 3px 0 var(--r2), 0 0 0 4px var(--wood), 0 5px 10px rgba(0, 0, 0, .25);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  border: 0;
+  cursor: pointer;
+  transition: transform .08s;
+  z-index: 10;
+}
+.close:active { transform: translateY(2px) scale(.95); }
+
+.modal-body {
+  overflow-y: auto;
+  padding: 10px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+  background: var(--parch);
+  border-radius: 0 0 20px 20px;
+  color: var(--ink);
+}
+
+/* ============================================================
+   7. TOAST NOTIFIKASI GAME (.game-toast)
+   ============================================================ */
+#game-toasts {
+  position: fixed;
+  z-index: 9999;
+  top: calc(var(--safe-t) + 70px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  pointer-events: none;
+  width: min(420px, calc(100% - 24px));
+}
+.game-toast {
+  background: rgba(59, 36, 20, .92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .3), 0 0 0 2px var(--wood);
+  animation: gameToastIn .35s cubic-bezier(.34, 1.56, .64, 1);
+  pointer-events: auto;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .3);
+}
+.game-toast.ok i { color: #a6f08a; }
+.game-toast.err { background: rgba(150, 30, 35, .94); }
+.game-toast.err i { color: #ff9a9a; }
+.game-toast.gold { background: rgba(140, 85, 5, .94); }
+.game-toast.gold i { color: #fde047; }
+.game-toast.out { opacity: 0; transform: translateY(-8px); transition: .25s; }
+@keyframes gameToastIn { from { opacity: 0; transform: translateY(-12px) scale(.9); } }
+
+/* ============================================================
+   8. LATAR BELAKANG LEMBAH SAWAH (SKY & MOUNTAINS)
+   ============================================================ */
+.farm-valley-bg {
+  background: linear-gradient(180deg, #8fd3ff 0%, #c9ecff 40%, #dcefff 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+.valley-mountain-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 180px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.valley-mountain-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .nb-btn, .close, .wal-add { transition: none !important; }
+}
