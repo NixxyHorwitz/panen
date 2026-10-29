@@ -32,7 +32,7 @@ RewriteRule ^checkin/?$     user/checkin.php     [L,QSA]
 RewriteRule ^missions/?$    user/missions.php    [L,QSA]
 RewriteRule ^redeem/?$      user/redeem.php      [L,QSA]
 RewriteRule ^invest/?$      user/invest.php      [L,QSA]
-RewriteRule ^minigame/?$    user/minigame.php    [L,QSA]
+RewriteRule ^minigame/?$    /farm                [R=301,L]
 RewriteRule ^events/?$      user/events.php      [L,QSA]
 RewriteRule ^referral/?$    user/referral.php    [L,QSA]
 RewriteRule ^history/?$     user/history.php     [L,QSA]
@@ -47,13 +47,8 @@ RewriteRule ^global-chat/?$   user/global_chat.php   [L,QSA]
 RewriteRule ^survey/?$        user/survey.php        [L,QSA]
 RewriteRule ^survei/?$        user/survey.php        [L,QSA]
 RewriteRule ^chat_action/?$   chat_action.php        [L,QSA]
-# ── Farm Tycoon routes (Modular /farm) ──────────
+# ── Sawah Panen Cuan ───────────────────────
 RewriteRule ^farm/?$            user/farm.php        [L,QSA]
-RewriteRule ^farm/stall/?$      farm/stall.php       [L,QSA]
-RewriteRule ^farm/shop/?$       farm/shop.php        [L,QSA]
-RewriteRule ^farm/logs/?$       farm/logs.php        [L,QSA]
-RewriteRule ^farm_shop/?$       farm/shop.php        [L,QSA]
-RewriteRule ^shop/?$            farm/shop.php        [L,QSA]
 RewriteRule ^api/farm_action/?$ api/farm_action.php  [L,QSA]
 
 # ── Console routes ─────────────────────────

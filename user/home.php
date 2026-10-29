@@ -31,7 +31,6 @@ if (!$is_guest) {
 // ── KONFIGURASI HOME CMS (console/home_cms.php) ──
 $cms     = home_cms_config($pdo);
 $H       = $cms['hero'];
-$fish_on = !empty($cms['fishing_engine']['enabled']);
 $cms_txt = static fn(string $t): string => str_replace('{username}', (string)($GLOBALS['user']['username'] ?? 'Kapten'), $t);
 
 // ── TUGAS UTAMA: DATA NONTON VIDEO ──
@@ -513,7 +512,7 @@ require dirname(__DIR__) . '/partials/header.php';
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
 }
 .fantasy-portal-card:active { transform: translateY(2px) scale(0.97); }
-.portal-card--fish {
+.portal-card--farm {
   background:
     linear-gradient(160deg, #ffffff 0%, #fff7ed 60%, #ffe4e6 100%) padding-box,
     var(--reef-border) border-box;
@@ -553,7 +552,7 @@ require dirname(__DIR__) . '/partials/header.php';
     inset 2px 2px 3px rgba(255, 255, 255, 0.7),
     inset -2px -2px 4px rgba(0, 0, 0, 0.12);
 }
-.portal-clay-icon--fish  { background: linear-gradient(145deg, #fdba74, #f43f5e); }
+.portal-clay-icon--farm  { background: linear-gradient(145deg, #86efac, #059669); }
 .portal-clay-icon--watch { background: linear-gradient(145deg, #c084fc, #8b5cf6 55%, #0891b2); }
 
 .portal-sparkle-tag {
@@ -567,7 +566,7 @@ require dirname(__DIR__) . '/partials/header.php';
   align-items: center;
   gap: 3px;
 }
-.portal-card--fish .portal-sparkle-tag  { background: #ffe4e6; color: #be123c; }
+.portal-card--farm .portal-sparkle-tag  { background: #ffe4e6; color: #be123c; }
 .portal-card--watch .portal-sparkle-tag { background: #f3e8ff; color: #7e22ce; }
 
 /* Jendela ilustrasi biota di dalam portal */
@@ -581,23 +580,13 @@ require dirname(__DIR__) . '/partials/header.php';
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.10), 0 3px 8px rgba(0, 0, 0, 0.05);
 }
 .portal-scene svg { display: block; width: 100%; height: 100%; }
-.portal-scene--reef  { background: linear-gradient(180deg, #a5f3fc 0%, #67e8f9 55%, #22d3ee 100%); }
+.portal-scene--field { background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 60%, #dcfce7 100%); }
+.farm-sway { transform-box: fill-box; transform-origin: bottom center; animation: farmSway 3.2s ease-in-out infinite; }
+.farm-sun  { transform-box: fill-box; transform-origin: center; animation: farmSun 6s ease-in-out infinite; }
+@keyframes farmSway { 50% { transform: rotate(-4deg); } }
+@keyframes farmSun  { 50% { transform: scale(1.08); } }
 .portal-scene--jelly { background: radial-gradient(circle at 50% 40%, #6d28d9 0%, #3b0764 55%, #164e63 100%); }
 
-.fish-jump-a, .fish-jump-b {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.fish-jump-a { animation: fishJumpA 3.6s ease-in-out infinite; }
-.fish-jump-b { animation: fishJumpB 4.2s ease-in-out infinite; animation-delay: -1.6s; }
-@keyframes fishJumpA {
-  0%, 100% { transform: translate(-4px, 10px) rotate(-28deg); }
-  50%      { transform: translate(6px, -6px) rotate(14deg); }
-}
-@keyframes fishJumpB {
-  0%, 100% { transform: translate(4px, 8px) rotate(24deg); }
-  50%      { transform: translate(-6px, -5px) rotate(-12deg); }
-}
 .jelly-bob {
   transform-box: fill-box;
   transform-origin: center;
@@ -629,15 +618,6 @@ require dirname(__DIR__) . '/partials/header.php';
   color: var(--reef-muted);
   margin-bottom: 7px;
 }
-.portal-bait-line {
-  font-size: 10px;
-  font-weight: 900;
-  color: #d97706;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
 .portal-wave-progress {
   width: 100%;
@@ -668,7 +648,7 @@ require dirname(__DIR__) . '/partials/header.php';
   border: none;
   transition: filter 0.15s;
 }
-.portal-card--fish .portal-cta-badge {
+.portal-card--farm .portal-cta-badge {
   background: linear-gradient(145deg, #fb7185, #f43f5e);
   box-shadow: 0 5px 12px rgba(244, 63, 94, 0.30), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.55), inset -2px -2px 4px rgba(190, 18, 60, 0.3);
 }
@@ -1113,7 +1093,7 @@ require dirname(__DIR__) . '/partials/header.php';
 }
 @media (prefers-reduced-motion: reduce) {
   .sea-bubble, .kelp-blade, .fish-swim, .pearl-glow, .starfish-wiggle,
-  .fish-jump-a, .fish-jump-b, .jelly-bob, .sparkle-bubble, .vault-live-dot, .clay-token-icon.t-vip::after {
+  .farm-sway, .farm-sun, .jelly-bob, .sparkle-bubble, .vault-live-dot, .clay-token-icon.t-vip::after {
     animation: none !important;
   }
 }
@@ -1243,11 +1223,6 @@ require dirname(__DIR__) . '/partials/header.php';
             <span class="vault-stat-capsule">
               <i class="ph-bold ph-wallet"></i> Kas <strong>Rp <?= number_format((float)($user['balance_dep'] ?? 0), 0, ',', '.') ?></strong>
             </span>
-            <?php if ($fish_on): ?>
-            <span class="vault-stat-capsule">
-              <i class="ph-fill ph-fish"></i> <strong><?= (int)($user['fishing_baits'] ?? 0) ?></strong> Umpan
-            </span>
-            <?php endif; ?>
           </div>
           <?php endif; ?>
         </div>
@@ -1307,94 +1282,65 @@ require dirname(__DIR__) . '/partials/header.php';
   </div>
   <?php endif; ?>
 
-  <!-- ── 2. DUA PORTAL BIOTA (KOLAM MANCING & BIOSKOP SAMUDRA) ── -->
+  <!-- ── 2. DUA PORTAL (SAWAH PANEN CUAN & BIOSKOP SAMUDRA) ── -->
   <?php
-    $FS = $cms['fishing_spotlight'];
-    $show_fish_portal  = $fish_on && !empty($FS['enabled']);
+    $FS = $cms['farm_spotlight'];
+    $show_farm_portal  = !empty($FS['enabled']);
     $show_watch_portal = !empty($H['show_watch_cta']);
   ?>
-  <?php if ($show_fish_portal || $show_watch_portal): ?>
-  <div class="fantasy-portals-grid <?= $show_fish_portal && $show_watch_portal ? '' : 'is-single' ?>">
-    <?php if ($show_fish_portal): ?>
-    <!-- Portal 1: Mancing Cuan — ikan badut & yellow tang melompat di atas karang -->
-    <a href="<?= htmlspecialchars((string)($FS['url'] ?: '/minigame')) ?>" class="fantasy-portal-card portal-card--fish" id="tour-sidejob-card">
+  <?php if ($show_farm_portal || $show_watch_portal): ?>
+  <div class="fantasy-portals-grid <?= $show_farm_portal && $show_watch_portal ? '' : 'is-single' ?>">
+    <?php if ($show_farm_portal): ?>
+    <!-- Portal 1: Sawah Panen Cuan — padi emas bergoyang di bawah matahari -->
+    <a href="<?= htmlspecialchars((string)($FS['url'] ?: '/farm')) ?>" class="fantasy-portal-card portal-card--farm" id="tour-sidejob-card">
       <div>
         <div class="portal-top-bar">
-          <div class="portal-clay-icon portal-clay-icon--fish">
-            <i class="ph-fill ph-fish-simple"></i>
+          <div class="portal-clay-icon portal-clay-icon--farm">
+            <i class="ph-fill ph-plant"></i>
           </div>
-          <span class="portal-sparkle-tag"><i class="ph-fill ph-sparkle"></i> <?= htmlspecialchars((string)($FS['badge'] ?: 'Kolam Cuan')) ?></span>
+          <span class="portal-sparkle-tag"><i class="ph-fill ph-sparkle"></i> <?= htmlspecialchars((string)($FS['badge'] ?: 'Sawah Cuan')) ?></span>
         </div>
-        <div class="portal-scene portal-scene--reef" aria-hidden="true">
+        <div class="portal-scene portal-scene--field" aria-hidden="true">
           <svg viewBox="0 0 180 74" preserveAspectRatio="xMidYMax slice" fill="none">
-            <!-- Sinar matahari bawah air -->
-            <path d="M30 0 L48 0 L22 74 L4 74 Z" fill="#ffffff" opacity="0.18"/>
-            <path d="M96 0 L108 0 L92 74 L78 74 Z" fill="#ffffff" opacity="0.14"/>
-            <path d="M150 0 L160 0 L170 74 L156 74 Z" fill="#ffffff" opacity="0.12"/>
-            <!-- Pasir -->
-            <path d="M0 64 C30 58, 60 66, 90 61 C120 56, 150 64, 180 60 V74 H0 Z" fill="#fdba74"/>
-            <!-- Karang otak emas -->
-            <ellipse cx="34" cy="62" rx="14" ry="9" fill="#fbbf24"/>
-            <path d="M24 60 C28 56, 32 64, 36 58 C40 54, 42 62, 44 60" stroke="#d97706" stroke-width="1.4" stroke-linecap="round"/>
-            <!-- Anemon ungu -->
-            <g stroke="#c084fc" stroke-width="3" stroke-linecap="round">
-              <path d="M70 64 C68 56, 64 52, 62 46"/><path d="M73 64 C73 55, 72 50, 72 44"/>
-              <path d="M76 64 C78 56, 82 52, 84 47"/><path d="M71.5 64 C70 58, 66 56, 66 50"/>
-              <path d="M74.5 64 C76 58, 79 55, 80 50"/>
-            </g>
-            <g fill="#f0abfc"><circle cx="62" cy="46" r="2"/><circle cx="72" cy="44" r="2"/><circle cx="84" cy="47" r="2"/><circle cx="66" cy="50" r="1.7"/><circle cx="80" cy="50" r="1.7"/></g>
-            <!-- Karang bercabang coral -->
-            <g stroke="#f43f5e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M140 66 V52 L132 42 M140 55 L148 44 L146 36 M148 44 L155 40"/>
-              <path d="M162 66 V56 L168 50"/>
-            </g>
-            <g fill="#fda4af"><circle cx="132" cy="42" r="2.4"/><circle cx="146" cy="36" r="2.4"/><circle cx="155" cy="40" r="2.2"/><circle cx="168" cy="50" r="2.2"/></g>
-            <!-- Rumput laut -->
-            <path d="M110 66 C106 58, 114 52, 108 42" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
-            <path d="M116 66 C120 58, 113 54, 118 46" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
-
-            <!-- Ikan badut melompat -->
-            <g class="fish-jump-a">
-              <g transform="translate(48 26)">
-                <path d="M-15 0 L-22 -6 L-21 6 Z" fill="#ea580c"/>
-                <ellipse cx="0" cy="0" rx="15" ry="9" fill="#f97316"/>
-                <path d="M-5 -8.6 C-3 -3, -3 3, -5 8.6 L-1 8.9 C0 3, 0 -3, -1 -8.9 Z" fill="#ffffff" stroke="#1e1b2e" stroke-opacity="0.4" stroke-width="0.6"/>
-                <path d="M6 -7.4 C7.5 -3, 7.5 3, 6 7.4 L9 6.4 C10 3, 10 -3, 9 -6.4 Z" fill="#ffffff" stroke="#1e1b2e" stroke-opacity="0.4" stroke-width="0.6"/>
-                <ellipse cx="-1" cy="-4" rx="7" ry="2" fill="#ffffff" opacity="0.4"/>
-                <circle cx="11" cy="-2" r="2.1" fill="#ffffff"/><circle cx="11.6" cy="-2.2" r="1.1" fill="#1e1b2e"/>
+            <!-- Matahari -->
+            <g class="farm-sun"><circle cx="150" cy="16" r="10" fill="#fde047"/><circle cx="150" cy="16" r="14" fill="#fde047" opacity="0.25"/></g>
+            <!-- Gunung -->
+            <path d="M0 46 L28 22 L52 42 L80 18 L112 44 L140 26 L180 48 V60 H0 Z" fill="#86efac"/>
+            <path d="M80 18 L88 25 L82 27 L76 23 Z" fill="#ffffff" opacity="0.8"/>
+            <path d="M0 52 C40 44, 90 56, 180 48 V74 H0 Z" fill="#4ade80"/>
+            <!-- Petak sawah -->
+            <path d="M0 60 C50 54, 120 62, 180 56 V74 H0 Z" fill="#a16207"/>
+            <g stroke="#78350f" stroke-width="1.2" opacity="0.55"><path d="M0 65 C60 60, 120 67, 180 62"/><path d="M0 70 C60 66, 120 72, 180 68"/></g>
+            <!-- Padi emas -->
+            <g class="farm-sway">
+              <g stroke="#65a30d" stroke-width="1.6" stroke-linecap="round">
+                <path d="M30 64 V48"/><path d="M36 64 V46"/><path d="M42 64 V49"/>
+                <path d="M120 63 V47"/><path d="M126 63 V45"/><path d="M132 63 V48"/>
+              </g>
+              <g fill="#facc15">
+                <ellipse cx="31" cy="46" rx="2.4" ry="5" transform="rotate(20 31 46)"/><ellipse cx="37" cy="44" rx="2.4" ry="5" transform="rotate(25 37 44)"/><ellipse cx="43" cy="47" rx="2.4" ry="5" transform="rotate(18 43 47)"/>
+                <ellipse cx="121" cy="45" rx="2.4" ry="5" transform="rotate(20 121 45)"/><ellipse cx="127" cy="43" rx="2.4" ry="5" transform="rotate(25 127 43)"/><ellipse cx="133" cy="46" rx="2.4" ry="5" transform="rotate(18 133 46)"/>
               </g>
             </g>
-            <!-- Yellow tang melompat -->
-            <g class="fish-jump-b">
-              <g transform="translate(112 22) scale(-1 1)">
-                <path d="M-13 0 L-20 -6 L-20 6 Z" fill="#eab308"/>
-                <path d="M-6 -9 C0 -16, 8 -12, 10 -6 Z" fill="#facc15"/>
-                <path d="M-6 9 C0 16, 8 12, 10 6 Z" fill="#facc15"/>
-                <ellipse cx="0" cy="0" rx="13" ry="10.5" fill="#fde047"/>
-                <path d="M-11 0 L-8 -1.6 L-8 1.6 Z" fill="#ffffff"/>
-                <ellipse cx="1" cy="-5" rx="6" ry="2" fill="#ffffff" opacity="0.5"/>
-                <circle cx="8" cy="-2" r="2" fill="#ffffff"/><circle cx="8.5" cy="-2.2" r="1.05" fill="#1e1b2e"/>
-                <path d="M12 1.5 L15 2.5" stroke="#ca8a04" stroke-width="1.6" stroke-linecap="round"/>
-              </g>
-            </g>
-            <!-- Percikan gelembung -->
+            <!-- Semangka & cabai -->
+            <ellipse cx="78" cy="64" rx="9" ry="6.5" fill="#22c55e"/>
+            <path d="M71 62 C76 60, 80 60, 85 62 M71 66 C76 64, 80 64, 85 66" stroke="#15803d" stroke-width="1.3"/>
+            <path d="M96 58 C98 62, 99 66, 97 70" stroke="#ef4444" stroke-width="3.2" stroke-linecap="round"/>
+            <path d="M103 58 C105 62, 106 66, 104 70" stroke="#dc2626" stroke-width="3.2" stroke-linecap="round"/>
+            <!-- Kilau panen -->
             <g fill="#ffffff">
-              <circle class="sparkle-bubble" cx="62" cy="14" r="2"/>
-              <circle class="sparkle-bubble" cx="68" cy="8" r="1.3"/>
-              <circle class="sparkle-bubble" cx="96" cy="12" r="1.6"/>
-              <circle class="sparkle-bubble" cx="126" cy="8" r="1.2"/>
+              <circle class="sparkle-bubble" cx="40" cy="36" r="1.6"/>
+              <circle class="sparkle-bubble" cx="124" cy="34" r="1.4"/>
+              <circle class="sparkle-bubble" cx="84" cy="50" r="1.2"/>
             </g>
           </svg>
         </div>
-        <div class="portal-heading"><?= htmlspecialchars((string)($FS['title'] ?: 'Mancing Cuan')) ?></div>
-        <div class="portal-subtext"><?= htmlspecialchars((string)($FS['desc'] ?: 'Pancing Ikan Emas Samudra')) ?></div>
+        <div class="portal-heading"><?= htmlspecialchars((string)($FS['title'] ?: 'Sawah Panen Cuan')) ?></div>
+        <div class="portal-subtext"><?= htmlspecialchars((string)($FS['desc'] ?: 'Tanam, panen, jual jadi saldo')) ?></div>
       </div>
       <div>
-        <div class="portal-bait-line">
-          <i class="ph-fill ph-bug"></i> <?= (int)($user['fishing_baits'] ?? 0) ?> Umpan Tersedia
-        </div>
         <div class="portal-cta-badge">
-          <span><?= htmlspecialchars((string)($FS['cta'] ?: 'Lempar Kail')) ?></span>
+          <span><?= htmlspecialchars((string)($FS['cta'] ?: 'Mulai Bertani')) ?></span>
           <i class="ph-bold ph-arrow-right"></i>
         </div>
       </div>
@@ -1506,8 +1452,8 @@ require dirname(__DIR__) . '/partials/header.php';
 
   <!-- ── 3. MENU CEPAT (Bento tiles dari CMS) ── -->
   <?php
-    $tiles = array_values(array_filter((array)($cms['bento']['tiles'] ?? []), function ($t) use ($fish_on) {
-        return !empty($t['enabled']) && ($fish_on || ($t['id'] ?? '') !== 'fishing');
+    $tiles = array_values(array_filter((array)($cms['bento']['tiles'] ?? []), function ($t) {
+        return !empty($t['enabled']) && ($t['id'] ?? '') !== 'fishing'; // tile lama Mancing (fitur dihapus)
     }));
     $bento_cnt = count($tiles);
     $bento_cols = ($bento_cnt >= 9 || $bento_cnt === 5) ? 5 : ($bento_cnt === 6 ? 3 : min(4, max(3, $bento_cnt)));

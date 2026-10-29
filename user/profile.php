@@ -942,9 +942,9 @@ $_psvg = [
         <span class="pm-ring"><span class="pm-glass pm--violet"><i class="ph-fill ph-film-strip"></i></span></span>
         <span class="pm-lbl">Tonton<br>Video</span>
       </a>
-      <a href="/minigame" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--coral"><i class="ph-fill ph-fish-simple"></i></span></span>
-        <span class="pm-lbl">Mancing<br>Cuan</span>
+      <a href="/farm" class="pm-item">
+        <span class="pm-ring"><span class="pm-glass pm--green"><i class="ph-fill ph-plant"></i></span></span>
+        <span class="pm-lbl">Sawah<br>Cuan</span>
       </a>
       <a href="/missions" class="pm-item">
         <span class="pm-ring"><span class="pm-glass pm--green"><i class="ph-fill ph-target"></i></span></span>

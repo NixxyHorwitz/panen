@@ -134,37 +134,18 @@ $upgrades = $pdo->prepare("
 $upgrades->execute([$user['id']]);
 $upgrades = $upgrades->fetchAll(PDO::FETCH_ASSOC);
 
-// ── 10. Penjualan Ikan (Pasar Ikan) ──
-require_once dirname(__DIR__) . '/lib/fishing.php';
-$fish_sales = [];
-$fish_sales_total = 0.0;
+// ── 10. Penjualan Hasil Panen (Pasar Pengepul, Sawah Panen Cuan) ──
+$farm_sales = [];
+$farm_sales_total = 0.0;
 try {
-    $fs = $pdo->prepare("SELECT id, fish_count, total, created_at FROM fishing_sales WHERE user_id = ? ORDER BY id DESC LIMIT 50");
+    $fs = $pdo->prepare("SELECT id, qty, amount, created_at FROM farm_logs WHERE user_id = ? AND action = 'sell_all' ORDER BY id DESC LIMIT 50");
     $fs->execute([$user['id']]);
-    $fish_sales = $fs->fetchAll(PDO::FETCH_ASSOC);
-    $fst = $pdo->prepare("SELECT COALESCE(SUM(total), 0) FROM fishing_sales WHERE user_id = ?");
+    $farm_sales = $fs->fetchAll(PDO::FETCH_ASSOC);
+    $fst = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM farm_logs WHERE user_id = ? AND action = 'sell_all'");
     $fst->execute([$user['id']]);
-    $fish_sales_total = (float)$fst->fetchColumn();
-    if ($fish_sales) {
-        $ids = array_column($fish_sales, 'id');
-        $in  = implode(',', array_fill(0, count($ids), '?'));
-        $fi  = $pdo->prepare("SELECT sale_id, rarity FROM fishing_logs WHERE sale_id IN ($in)");
-        $fi->execute($ids);
-        $bySale = [];
-        foreach ($fi as $row) {
-            $b = fishing_badge_of((string)$row['rarity']);
-            $bySale[(int)$row['sale_id']][$b] = ($bySale[(int)$row['sale_id']][$b] ?? 0) + 1;
-        }
-        $rank = array_flip(array_reverse(FISHING_BADGES)); // jackpot dulu, lalu super, ...
-        foreach ($fish_sales as &$sale) {
-            $mix = $bySale[(int)$sale['id']] ?? [];
-            uksort($mix, fn($a, $b) => ($rank[$a] ?? 9) <=> ($rank[$b] ?? 9));
-            $sale['mix'] = $mix;
-        }
-        unset($sale);
-    }
+    $farm_sales_total = (float)$fst->fetchColumn();
 } catch (\Throwable $e) {
-    $fish_sales = [];
+    $farm_sales = [];
 }
 
 // ── Summary Totals ──
@@ -319,22 +300,19 @@ foreach ($upgrades as $upg) {
     ];
 }
 
-foreach ($fish_sales as $sale) {
-    $parts = [];
-    foreach ($sale['mix'] as $b => $n) $parts[] = (FISHING_SPECIES[$b] ?? $b) . ' ×' . $n;
+foreach ($farm_sales as $sale) {
     $unified[] = [
-        'type'        => 'fish',
-        'sub_type'    => 'Jual Ikan',
-        'title'       => 'Jual ' . (int)$sale['fish_count'] . ' ikan di Pasar',
-        'sub'         => implode(' · ', $parts),
-        'amount'      => (float)$sale['total'],
+        'type'        => 'farm',
+        'sub_type'    => 'Jual Panen',
+        'title'       => 'Jual ' . (int)$sale['qty'] . ' hasil panen di Pasar Pengepul',
+        'sub'         => null,
+        'amount'      => (float)$sale['amount'],
         'is_income'   => true,
         'status'      => 'approved',
         'admin_note'  => null,
         'time'        => $sale['created_at'],
-        'icon'        => 'ph-fish-simple',
+        'icon'        => 'ph-basket',
         'logo'        => null,
-        'fish'        => array_keys($sale['mix']),
         'raw'         => $sale
     ];
 }
@@ -347,7 +325,7 @@ usort($unified, function(array $a, array $b): int {
 // Group counts for tabs
 $counts = [
     'all'      => count($unified),
-    'fish'     => count($fish_sales),
+    'farm'     => count($farm_sales),
     'withdraw' => count($wds),
     'deposit'  => count($deposits),
     'reward'   => count($rewards),
@@ -399,8 +377,8 @@ require dirname(__DIR__) . '/partials/header.php';
 .hx-tab em { font-style: normal; min-width: 17px; padding: 0 5px; border-radius: 999px; font-size: 9.5px; text-align: center; background: rgba(8, 145, 178, 0.12); color: #0e7490; }
 .hx-tab.on { color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 5px 12px rgba(225, 29, 72, 0.28), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
 .hx-tab.on em { background: #fff; color: #e11d48; }
-.hx-tab.fish.on { background: linear-gradient(145deg, #67e8f9, #0891b2); box-shadow: 0 5px 12px rgba(8, 145, 178, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.hx-tab.fish.on em { color: #0891b2; }
+.hx-tab.farm.on { background: linear-gradient(145deg, #6ee7b7, #059669); box-shadow: 0 5px 12px rgba(5, 150, 105, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
+.hx-tab.farm.on em { color: #059669; }
 
 /* Grup per tanggal */
 .hx-day { margin-bottom: 8px; }
@@ -420,16 +398,9 @@ require dirname(__DIR__) . '/partials/header.php';
 .hx-ico.t-reward { background: linear-gradient(145deg, #fcd34d, #f59e0b); }
 .hx-ico.t-bonus { background: linear-gradient(145deg, #c084fc, #7c3aed); }
 .hx-ico.t-upgrade { background: linear-gradient(145deg, #fde68a, #d97706); }
+.hx-ico.t-farm { background: linear-gradient(145deg, #6ee7b7, #059669); }
 .hx-ico.logo { background: #fff; padding: 4px; box-shadow: inset 0 0 0 1.5px rgba(8, 145, 178, 0.15); }
 .hx-ico.logo img { width: 100%; height: 100%; object-fit: contain; }
-/* Ikon ikan 3D bertumpuk */
-.hx-ico.fish { width: 46px; background: radial-gradient(ellipse at 50% 60%, #cffafe 0%, #e0f2fe 55%, #fff 100%); box-shadow: inset 0 0 0 1.5px rgba(8, 145, 178, 0.18); overflow: visible; }
-.hx-ico.fish img { position: absolute; width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(8, 51, 68, 0.25)); }
-.hx-ico.fish img:nth-child(1) { left: 1px; top: 2px; z-index: 3; }
-.hx-ico.fish img:nth-child(2) { left: 10px; top: 6px; z-index: 2; opacity: 0.95; }
-.hx-ico.fish img:nth-child(3) { left: 17px; top: 0; z-index: 1; opacity: 0.9; }
-.hx-ico.fish.n1 img:nth-child(1) { left: 8px; top: 2px; width: 32px; height: 32px; }
-.hx-ico.fish.n2 img:nth-child(1) { left: 2px; } .hx-ico.fish.n2 img:nth-child(2) { left: 14px; top: 4px; }
 .hx-body { flex: 1; min-width: 0; }
 .hx-title { font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hx-meta { margin-top: 1px; font-size: 9.5px; font-weight: 700; color: var(--reef-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -440,10 +411,6 @@ require dirname(__DIR__) . '/partials/header.php';
 .hx-st { display: inline-flex; align-items: center; gap: 3px; margin-top: 1px; font-size: 8.5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px; }
 .hx-st::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .hx-st.succ { color: #059669; } .hx-st.warn { color: #d97706; } .hx-st.err { color: #e11d48; } .hx-st.hold { color: #64748b; } .hx-st.info { color: #0284c7; }
-/* Fish mix chips */
-.hx-mix { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
-.hx-mix span { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px 0 2px; border-radius: 999px; font-size: 9px; font-weight: 900; background: rgba(8, 145, 178, 0.09); color: #0e7490; }
-.hx-mix img { width: 16px; height: 16px; object-fit: contain; }
 /* Catatan & aksi */
 .hx-note { display: flex; gap: 5px; margin: 5px 0 0 43px; padding: 5px 8px; border-radius: 10px; background: #fff1f2; font-size: 10px; font-weight: 700; color: #9f1239; line-height: 1.35; }
 .hx-note i { font-size: 12px; color: #e11d48; flex-shrink: 0; margin-top: 1px; }
@@ -493,7 +460,7 @@ $hx_status = static function (array $it): array {
         $st === 'revoked'  => ['err', 'Dibatalkan'],
         $st === 'locked'   => ['info', 'Beku'],
         $st === 'claimed'  => ['succ', 'Dicairkan'],
-        default            => ['succ', $it['type'] === 'fish' ? 'Terjual' : 'Sukses'],
+        default            => ['succ', $it['type'] === 'farm' ? 'Terjual' : 'Sukses'],
     };
 };
 $hx_day = static function (string $time): string {
@@ -504,7 +471,7 @@ $hx_day = static function (string $time): string {
 };
 $hx_tabs = [
     'all'      => ['Semua', 'ph-squares-four'],
-    'fish'     => ['Jual Ikan', 'ph-fish-simple'],
+    'farm'     => ['Jual Panen', 'ph-basket'],
     'withdraw' => ['Tarik', 'ph-paper-plane-tilt'],
     'deposit'  => ['Top Up', 'ph-wallet'],
     'reward'   => ['Nonton', 'ph-play-circle'],
@@ -513,10 +480,10 @@ $hx_tabs = [
 if (!isset($hx_tabs[$tab])) $tab = 'all';
 $hx_items = $tab === 'all' ? $unified : array_values(array_filter($unified, fn($it) => $it['type'] === $tab));
 $hx_empty = [
-    'all'      => ['ph-clock-counter-clockwise', 'Belum ada transaksi', 'Tonton video, mancing, atau selesaikan misi untuk mengisi buku kasmu!', '/home', 'Mulai Cuan'],
-    'fish'     => ['', 'Belum ada ikan terjual', 'Tangkap ikan lalu jual di Pasar Ikan (tombol Ember) untuk mencairkannya jadi Saldo Tarik.', '/minigame', 'Mulai Mancing'],
+    'all'      => ['ph-clock-counter-clockwise', 'Belum ada transaksi', 'Tonton video, bertani, atau selesaikan misi untuk mengisi buku kasmu!', '/home', 'Mulai Cuan'],
+    'farm'     => ['ph-basket', 'Belum ada hasil panen terjual', 'Tanam &amp; panen di Sawah Panen Cuan, lalu jual di Pasar Pengepul untuk mencairkannya jadi Saldo Tarik.', '/farm', 'Mulai Bertani'],
     'withdraw' => ['ph-paper-plane-tilt', 'Belum ada penarikan', 'Kumpulkan saldo lalu tarik ke e-wallet atau rekening bankmu.', '/withdraw', 'Tarik Saldo'],
-    'deposit'  => ['ph-wallet', 'Belum ada top up', 'Top up saldo untuk upgrade paket atau beli umpan mancing.', '/deposit', 'Top Up'],
+    'deposit'  => ['ph-wallet', 'Belum ada top up', 'Top up saldo untuk upgrade paket atau beli bibit di Sawah Panen Cuan.', '/deposit', 'Top Up'],
     'reward'   => ['ph-play-circle', 'Belum ada riwayat nonton', 'Tonton video untuk mendapatkan rupiah di setiap video.', '/home', 'Nonton Sekarang'],
     'bonus'    => ['ph-gift', 'Belum ada bonus masuk', 'Selesaikan survei, misi harian, atau ajak kawan untuk dapat bonus.', '/referral', 'Ajak Kawan'],
 ][$tab];
@@ -542,7 +509,7 @@ $HX_PAGE = 25;
     </div>
     <div class="hx-mini">
       <div><i class="ph-fill ph-sparkle"></i><b><?= format_rp($total_earned) ?></b><small>Total Cuan</small></div>
-      <div><i class="ph-fill ph-fish-simple"></i><b><?= format_rp($fish_sales_total) ?></b><small>Jual Ikan</small></div>
+      <div><i class="ph-fill ph-basket"></i><b><?= format_rp($farm_sales_total) ?></b><small>Jual Panen</small></div>
       <div><i class="ph-fill ph-arrow-down-left"></i><b><?= format_rp($total_dep) ?></b><small>Top Up</small></div>
       <div><i class="ph-fill ph-hand-coins"></i><b><?= format_rp($total_wd) ?></b><small>Ditarik</small></div>
     </div>
@@ -551,13 +518,13 @@ $HX_PAGE = 25;
   <!-- TAB -->
   <nav class="hx-tabs" aria-label="Filter riwayat">
     <?php foreach ($hx_tabs as $key => [$lbl, $ic]): ?>
-      <a href="?tab=<?= $key ?>" class="hx-tab <?= $key === 'fish' ? 'fish' : '' ?> <?= $tab === $key ? 'on' : '' ?>"><i class="ph-bold <?= $ic ?>"></i><?= htmlspecialchars($lbl) ?><em><?= (int)($counts[$key] ?? 0) ?></em></a>
+      <a href="?tab=<?= $key ?>" class="hx-tab <?= $key === 'farm' ? 'farm' : '' ?> <?= $tab === $key ? 'on' : '' ?>"><i class="ph-bold <?= $ic ?>"></i><?= htmlspecialchars($lbl) ?><em><?= (int)($counts[$key] ?? 0) ?></em></a>
     <?php endforeach; ?>
   </nav>
 
   <?php if (!$hx_items): ?>
     <div class="hx-empty">
-      <div class="ic"><?php if ($tab === 'fish'): ?><img src="/assets/img/fish/bagus.png" alt=""><?php else: ?><i class="ph-fill <?= $hx_empty[0] ?>"></i><?php endif; ?></div>
+      <div class="ic"><i class="ph-fill <?= $hx_empty[0] ?>"></i></div>
       <b><?= $hx_empty[1] ?></b>
       <small><?= $hx_empty[2] ?></small>
       <a href="<?= $hx_empty[3] ?>"><i class="ph-bold ph-arrow-right"></i> <?= $hx_empty[4] ?></a>
@@ -580,23 +547,14 @@ $HX_PAGE = 25;
       <?php endif; ?>
             <div class="hx-row" data-i="<?= $i ?>" <?= $i >= $HX_PAGE ? 'hidden' : '' ?>>
               <div class="hx-main">
-                <?php if ($item['type'] === 'fish'): $fb = array_slice($item['fish'] ?? [], 0, 3); ?>
-                  <div class="hx-ico fish n<?= count($fb) ?>">
-                    <?php foreach ($fb as $b): ?><img src="/assets/img/fish/<?= htmlspecialchars($b) ?>.png" alt="<?= htmlspecialchars(FISHING_SPECIES[$b] ?? $b) ?>" loading="lazy"><?php endforeach; ?>
-                  </div>
-                <?php elseif (!empty($item['logo'])): ?>
+                <?php if (!empty($item['logo'])): ?>
                   <div class="hx-ico logo"><img src="/assets/banks/<?= htmlspecialchars($item['logo']) ?>" alt="" loading="lazy"></div>
                 <?php else: ?>
                   <div class="hx-ico t-<?= htmlspecialchars($item['type']) ?>"><i class="ph-fill <?= htmlspecialchars((string)$item['icon']) ?>"></i></div>
                 <?php endif; ?>
                 <div class="hx-body">
                   <div class="hx-title"><?= htmlspecialchars((string)$item['title']) ?></div>
-                  <div class="hx-meta"><b><?= htmlspecialchars((string)$item['sub_type']) ?></b> · <?= date('H:i', strtotime((string)$item['time'])) ?><?php if ($item['type'] !== 'fish' && !empty($item['sub'])): ?> · <?= htmlspecialchars((string)$item['sub']) ?><?php endif; ?></div>
-                  <?php if ($item['type'] === 'fish' && !empty($item['raw']['mix'])): ?>
-                    <div class="hx-mix">
-                      <?php foreach ($item['raw']['mix'] as $b => $n): ?><span><img src="/assets/img/fish/<?= htmlspecialchars($b) ?>.png" alt="" loading="lazy"><?= ['biasa' => 'Mujair', 'bagus' => 'Gurame', 'langka' => 'Kakap', 'super' => 'Barramundi', 'jackpot' => 'Peti'][$b] ?? htmlspecialchars($b) ?> ×<?= (int)$n ?></span><?php endforeach; ?>
-                    </div>
-                  <?php endif; ?>
+                  <div class="hx-meta"><b><?= htmlspecialchars((string)$item['sub_type']) ?></b> · <?= date('H:i', strtotime((string)$item['time'])) ?><?php if (!empty($item['sub'])): ?> · <?= htmlspecialchars((string)$item['sub']) ?><?php endif; ?></div>
                 </div>
                 <div class="hx-right">
                   <div class="hx-amt <?= $item['is_income'] ? 'in' : 'out' ?>"><?= ($item['is_income'] ? '+' : '-') . format_rp((float)$item['amount']) ?></div>

@@ -296,7 +296,7 @@ require __DIR__ . '/partials/header.php';
           <label class="c-label">Meta Keywords (opsional)</label>
           <input type="text" name="seo_keywords" class="c-form-control"
                  value="<?= htmlspecialchars($s('seo_keywords')) ?>"
-                 placeholder="nonton video reward, tonton dapat uang, mancing cuan, ...">
+                 placeholder="nonton video reward, tonton dapat uang, sawah panen cuan, ...">
         </div>
         <div class="c-form-group">
           <label class="c-label">Meta Author</label>

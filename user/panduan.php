@@ -37,13 +37,10 @@ try {
     }
 } catch (\Throwable) {}
 
-// Umpan, kunci ikan & joran
-try { $bait_packs = $pdo->query("SELECT name, qty, price FROM fishing_bait_packs WHERE is_active = 1 ORDER BY sort_order ASC, id ASC")->fetchAll(); } catch (\Throwable) { $bait_packs = []; }
-try { $rod_count = (int)$pdo->query("SELECT COUNT(*) FROM fishing_rod_skins WHERE is_active = 1")->fetchColumn(); } catch (\Throwable) { $rod_count = 0; }
-$fe          = function_exists('home_cms_config') ? (home_cms_config($pdo)['fishing_engine'] ?? []) : [];
-$lock_price  = max(0, (float)($fe['lock_price'] ?? 2000));
-$lock_free   = max(0, (int)($fe['lock_free_trials'] ?? 2));
-$bait_from   = $bait_packs ? min(array_map(fn($b) => (float)$b['price'] / max(1, (int)$b['qty']), $bait_packs)) : 0;
+// Sawah Panen Cuan: bibit & biaya petak (lihat lib/farm.php)
+require_once dirname(__DIR__) . '/lib/farm.php';
+try { $farm_crops = $pdo->query("SELECT name, growth_secs, seed_price, yield_min, yield_max, unit_price FROM farm_crops WHERE is_active = 1 ORDER BY sort_order, id")->fetchAll(); } catch (\Throwable) { $farm_crops = []; }
+$farm_cfg = farm_config($pdo);
 
 try {
     $wallets = $pdo->query("SELECT name FROM payment_channels WHERE is_active = 1 ORDER BY type DESC, sort_order ASC")->fetchAll(PDO::FETCH_COLUMN);
@@ -128,7 +125,7 @@ require dirname(__DIR__) . '/partials/header.php';
 .pd-tile.wide .tx { flex: 1; min-width: 0; }
 .pd-tile.wide .amt { position: static; flex-shrink: 0; }
 
-/* Alur mancing */
+/* Alur bertani */
 .pd-flow { position: relative; display: flex; flex-direction: column; gap: 9px; padding-left: 4px; }
 .pd-flow::before { content: ''; position: absolute; left: 18px; top: 14px; bottom: 14px; width: 2px; background: repeating-linear-gradient(180deg, #a5f3fc 0 5px, transparent 5px 9px); }
 .pd-st { position: relative; display: flex; gap: 10px; align-items: flex-start; }
@@ -139,10 +136,6 @@ require dirname(__DIR__) . '/partials/header.php';
 .pd-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .pd-pills span { font-size: 9.5px; font-weight: 900; padding: 2px 7px; border-radius: 7px; background: #fff; border: 1.5px solid #fff; box-shadow: 0 1px 3px rgba(30, 27, 46, .08); }
 
-.pd-rar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 10px; }
-.pd-rar div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px; border-radius: 12px; background: #fff; box-shadow: 0 2px 5px rgba(30, 27, 46, .06); }
-.pd-rar img { width: 32px; height: 32px; object-fit: contain; }
-.pd-rar span { font-size: 8.5px; font-weight: 900; text-align: center; line-height: 1.1; }
 
 /* Dua saldo */
 .pd-wallets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -221,7 +214,7 @@ require dirname(__DIR__) . '/partials/header.php';
 
   <!-- 3 LANGKAH -->
   <div class="pd-path">
-    <a href="/videos"><span class="ico i-coral"><i class="ph-fill ph-play"></i></span><b>Nonton &amp; Mancing</b></a>
+    <a href="/videos"><span class="ico i-coral"><i class="ph-fill ph-play"></i></span><b>Nonton &amp; Bertani</b></a>
     <i class="ph-bold ph-caret-right"></i>
     <a href="/missions"><span class="ico i-sun"><i class="ph-fill ph-target"></i></span><b>Kejar Misi</b></a>
     <i class="ph-bold ph-caret-right"></i>
@@ -230,7 +223,7 @@ require dirname(__DIR__) . '/partials/header.php';
 
   <nav class="pd-nav" id="pd-nav">
     <a href="#cuan" class="on">Sumber Cuan</a>
-    <a href="#mancing">Mancing</a>
+    <a href="#sawah">Sawah</a>
     <a href="#saldo">Saldo</a>
     <a href="#pangkat">Pangkat</a>
     <a href="#tarik">Penarikan</a>
@@ -242,7 +235,7 @@ require dirname(__DIR__) . '/partials/header.php';
     <div class="pd-h"><span class="ico i-coral"><i class="ph-fill ph-coins"></i></span><h3>Sumber Cuan</h3><span>semua masuk Saldo Tarik</span></div>
     <div class="pd-bento">
       <a href="/videos" class="pd-tile"><span class="ico i-coral"><i class="ph-fill ph-film-strip"></i></span><b>Nonton Video</b><p>Tonton sampai hitungan selesai, reward langsung masuk.</p></a>
-      <a href="/minigame" class="pd-tile"><span class="ico i-lagoon"><i class="ph-fill ph-fish-simple"></i></span><b>Mancing</b><p>Tangkap ikan, jual di Pasar Ikan jadi saldo.</p></a>
+      <a href="/farm" class="pd-tile"><span class="ico i-kelp"><i class="ph-fill ph-plant"></i></span><b>Sawah Panen Cuan</b><p>Tanam, panen, jual ke Pasar Pengepul jadi saldo.</p></a>
       <a href="/missions" class="pd-tile"><?php if (!empty($mission_sum)): ?><span class="amt"><?= count($mission_sum) ? array_sum(array_column($mission_sum, 'n')) : 0 ?> misi</span><?php endif; ?>
         <span class="ico i-sun"><i class="ph-fill ph-target"></i></span><b>Misi</b><p>Harian, mingguan &amp; sekali seumur akun.</p></a>
       <a href="/checkin" class="pd-tile"><span class="amt"><?= $rp_short($ci_min) ?>–<?= $rp_short($ci_max) ?></span>
@@ -256,35 +249,24 @@ require dirname(__DIR__) . '/partials/header.php';
     </div>
   </section>
 
-  <!-- 2. MANCING -->
-  <section class="pd-sec" id="mancing">
-    <div class="pd-h"><span class="ico i-lagoon"><i class="ph-fill ph-fish"></i></span><h3>Cara Mancing</h3><span>dari umpan sampai cuan</span></div>
+  <!-- 2. SAWAH PANEN CUAN -->
+  <section class="pd-sec" id="sawah">
+    <div class="pd-h"><span class="ico i-kelp"><i class="ph-fill ph-plant"></i></span><h3>Cara Bertani</h3><span>dari bibit sampai cuan</span></div>
     <div class="pd-card">
       <div class="pd-flow">
-        <div class="pd-st"><span class="ico i-sand"><i class="ph-fill ph-bug"></i></span><div><b>1. Siapkan umpan</b>
-          <p>Satu umpan = satu lemparan. Beli paket di toko umpan pakai <strong>Saldo Beli</strong><?= $bait_from > 0 ? ' (mulai ' . format_rp(round($bait_from)) . '/umpan)' : '' ?>.</p>
-          <?php if ($bait_packs): ?><div class="pd-pills"><?php foreach ($bait_packs as $b): ?><span><?= htmlspecialchars($b['name']) ?> · <?= (int)$b['qty'] ?>x · <?= $rp_short((float)$b['price']) ?></span><?php endforeach; ?></div><?php endif; ?></div></div>
-        <div class="pd-st"><span class="ico i-lagoon"><i class="ph-fill ph-arrow-bend-up-right"></i></span><div><b>2. Lempar, lalu HOOK!</b>
-          <p>Tahan tombol untuk isi tenaga, lepas untuk melempar. Abaikan getaran kecil; saat muncul <strong>STRIKE!!</strong> tekan <strong>HOOK</strong> dalam 1,5 detik.</p></div></div>
-        <div class="pd-st"><span class="ico i-coral"><i class="ph-fill ph-arrows-clockwise"></i></span><div><b>3. Gulung sampai meter penuh</b>
-          <p>Tahan <strong>Gulung</strong>. Saat Tegangan Senar masuk zona merah, lepas sebentar. Kalau senar sampai penuh, ikan kabur menjauh. Ikan langka melawan lebih kuat.</p></div></div>
-        <div class="pd-st"><span class="ico i-violet"><i class="ph-fill ph-lock-key"></i></span><div><b>4. Susah? Kunci atau lepaskan</b>
-          <p><strong>Kunci Ikan</strong> membuat ikan tidak bisa kabur (<?= $lock_price > 0 ? format_rp($lock_price) . ' dari Saldo Beli' : 'gratis' ?><?= $lock_free > 0 ? ', ' . $lock_free . 'x pertama gratis' : '' ?>). Atau <strong>Lepaskan</strong> kalau menyerah, umpan tidak kembali.</p></div></div>
-        <div class="pd-st"><span class="ico i-kelp"><i class="ph-fill ph-storefront"></i></span><div><b>5. Jual di Pasar Ikan</b>
-          <p>Hasil tangkapan masuk Ember. Jual kapan saja, uangnya masuk <strong>Saldo Tarik</strong>. Harga pasar berubah tiap hari, pantau trennya.</p></div></div>
+        <div class="pd-st"><span class="ico i-sand"><i class="ph-fill ph-plant"></i></span><div><b>1. Tanam bibit</b>
+          <p>Ketuk petak kosong, pilih bibit. Bibit di kantong dipakai dulu; kalau kosong, 1 bibit dibeli otomatis pakai <strong>Saldo Beli</strong>.</p>
+          <?php if ($farm_crops): ?><div class="pd-pills"><?php foreach ($farm_crops as $c): ?><span><?= htmlspecialchars($c['name']) ?> · <?= $rp_short((float)$c['seed_price']) ?></span><?php endforeach; ?></div><?php endif; ?></div></div>
+        <div class="pd-st"><span class="ico i-lagoon"><i class="ph-fill ph-timer"></i></span><div><b>2. Tunggu tumbuh</b>
+          <p>Timer di atas petak menunjukkan sisa waktu. Tanaman tetap tumbuh walau aplikasi ditutup. Mau cepat? Pakai <strong>Pupuk Kilat</strong>.</p></div></div>
+        <div class="pd-st"><span class="ico i-coral"><i class="ph-fill ph-bug"></i></span><div><b>3. Awas hama</b>
+          <p>Kadang ulat datang<?= $farm_cfg['pest_chance'] > 0 ? ' (peluang ' . (int)$farm_cfg['pest_chance'] . '%)' : '' ?>. Semprot <strong>Pestisida</strong> supaya hasil panen tetap penuh; kalau dibiarkan, hasilnya tinggal separuh.</p></div></div>
+        <div class="pd-st"><span class="ico i-violet"><i class="ph-fill ph-scissors"></i></span><div><b>4. Panen ke Lumbung</b>
+          <p>Ketuk tanaman yang berkilau emas. Hasil panen masuk <strong>Lumbung</strong> dan memberi XP untuk naik level petani &amp; membuka bibit baru.</p></div></div>
+        <div class="pd-st"><span class="ico i-kelp"><i class="ph-fill ph-storefront"></i></span><div><b>5. Jual di Pasar Pengepul</b>
+          <p>Jual semua isi lumbung sekali ketuk, uangnya masuk <strong>Saldo Tarik</strong>. Petak baru bisa dibuka mulai <?= format_rp(farm_plot_cost($farm_cfg, $farm_cfg['free_plots'])) ?>.</p></div></div>
       </div>
-
-      <div class="pd-rar">
-        <div><img src="/assets/img/fish/biasa.png" alt=""><span style="color:#0284c7">Biasa</span></div>
-        <div><img src="/assets/img/fish/bagus.png" alt=""><span style="color:#d97706">Bagus</span></div>
-        <div><img src="/assets/img/fish/langka.png" alt=""><span style="color:#e11d48">Langka</span></div>
-        <div><img src="/assets/img/fish/super.png" alt=""><span style="color:#7c3aed">Super</span></div>
-        <div><img src="/assets/img/fish/jackpot.png" alt=""><span style="color:#059669">Peti Harta</span></div>
-        <div><img src="/assets/img/fish/junk-boot.png" alt=""><span style="color:#78716c">Sampah</span></div>
-      </div>
-      <p style="margin:8px 2px 0;font-size:10.5px;font-weight:700;color:var(--reef-muted);line-height:1.4">Makin langka makin mahal. Kadang yang nyangkut sampah laut (zonk).
-        <?php if ($rod_count > 1): ?>Ada <strong style="color:var(--reef-ink)"><?= $rod_count ?> joran</strong> yang terbuka dari jumlah tangkapan, Peti Harta, atau pangkat. Joran lebih bagus = gulung lebih kuat &amp; gigitan lebih cepat.<?php endif; ?></p>
-      <a href="/minigame" class="pd-btn lag"><i class="ph-fill ph-fish-simple"></i>Mulai Mancing</a>
+      <a href="/farm" class="pd-btn lag"><i class="ph-fill ph-plant"></i>Mulai Bertani</a>
     </div>
   </section>
 
@@ -293,11 +275,11 @@ require dirname(__DIR__) . '/partials/header.php';
     <div class="pd-h"><span class="ico i-kelp"><i class="ph-fill ph-wallet"></i></span><h3>Dua Jenis Saldo</h3></div>
     <div class="pd-wallets">
       <div class="pd-wal wd"><i class="ph-fill ph-hand-coins big"></i><b>Saldo Tarik</b>
-        <small>Dari</small><ul><li>Video &amp; jual ikan</li><li>Misi &amp; check-in</li><li>Referral &amp; event</li></ul>
+        <small>Dari</small><ul><li>Video &amp; jual panen</li><li>Misi &amp; check-in</li><li>Referral &amp; event</li></ul>
         <small>Untuk</small><ul><li>Dicairkan ke rekening</li></ul></div>
       <div class="pd-wal dep"><i class="ph-fill ph-vault big"></i><b>Saldo Beli</b>
         <small>Dari</small><ul><li>Isi Kas (deposit)</li></ul>
-        <small>Untuk</small><ul><li>Naik pangkat</li><li>Beli umpan</li><li>Kunci ikan</li></ul></div>
+        <small>Untuk</small><ul><li>Naik pangkat</li><li>Beli bibit &amp; pupuk</li><li>Buka petak sawah</li></ul></div>
     </div>
   </section>
 
@@ -349,9 +331,9 @@ require dirname(__DIR__) . '/partials/header.php';
       <details class="pd-q" open><summary>Kenapa saldo tidak bisa ditarik?<i class="ph-bold ph-caret-down"></i></summary>
         <div>Cek: saldo sudah mencapai minimal pangkatmu, tidak ada penarikan lain yang diproses, rekening sudah diisi, dan sedang di luar jam tutup.</div></details>
       <details class="pd-q"><summary>Kuota video habis, lalu apa?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Kuota video reset tiap hari. Sambil menunggu, kamu tetap bisa mancing, kejar misi, dan check-in. Kuota lebih banyak tersedia di pangkat lebih tinggi.</div></details>
-      <details class="pd-q"><summary>Umpan habis, bisa mancing gratis?<i class="ph-bold ph-caret-down"></i></summary>
-        <div>Setiap lemparan butuh 1 umpan. Umpan dibeli dengan Saldo Beli lewat Isi Kas, lalu hasil jual ikannya masuk Saldo Tarik.</div></details>
+        <div>Kuota video reset tiap hari. Sambil menunggu, kamu tetap bisa bertani, kejar misi, dan check-in. Kuota lebih banyak tersedia di pangkat lebih tinggi.</div></details>
+      <details class="pd-q"><summary>Bibit habis, bisa tanam gratis?<i class="ph-bold ph-caret-down"></i></summary>
+        <div>Setiap tanam butuh 1 bibit. Bibit dibeli dengan Saldo Beli lewat Isi Kas, lalu hasil jual panennya masuk Saldo Tarik.</div></details>
       <details class="pd-q"><summary>Kapan bonus referral cair?<i class="ph-bold ph-caret-down"></i></summary>
         <div>Bonus <?= format_rp($ref_bonus) ?> per kawan yang daftar<?= $ref_hold > 0 ? ' ditahan ' . $ref_hold . ' hari dulu' : '' ?>, plus <?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari setiap isi kas mereka. Akun palsu atau daftar sendiri terdeteksi otomatis dan bonusnya tidak diberikan.</div></details>
       <details class="pd-q"><summary>Bagaimana ganti rekening?<i class="ph-bold ph-caret-down"></i></summary>
@@ -365,7 +347,7 @@ require dirname(__DIR__) . '/partials/header.php';
   </section>
 
   <div class="pd-cta">
-    <a href="/minigame" class="a2"><i class="ph-fill ph-fish-simple"></i>Mancing</a>
+    <a href="/farm" class="a2"><i class="ph-fill ph-plant"></i>Bertani</a>
     <a href="<?= htmlspecialchars($panduan_cta_url) ?>" class="a1"><i class="ph-fill ph-play-circle"></i><?= htmlspecialchars($panduan_cta_text) ?></a>
   </div>
 

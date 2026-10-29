@@ -226,7 +226,7 @@ function home_cms_config(PDO $pdo): array {
         'hero' => [
             'show_user_bar'      => true,
             'show_mascot'        => true,
-            'mascot_text'        => 'Halo {username}! Nonton video hari ini & kumpulkan saldo Rupiah. Pancing ikan cuan & bagikan bukti hasilmu!',
+            'mascot_text'        => 'Halo {username}! Nonton video hari ini & kumpulkan saldo Rupiah. Panen sawah cuan & bagikan bukti hasilmu!',
             'show_balance_card'  => true,
             'show_today_stats'   => true,
             'show_ref_strip'     => true,
@@ -239,8 +239,8 @@ function home_cms_config(PDO $pdo): array {
         // 2. TOUR PANDUAN PENGGUNA BARU
         'tour' => [
             'show_banner' => true,
-            'title'       => 'Baru di MancingCuan? Yuk Ikuti Panduan Singkat! 🎣',
-            'desc'        => 'Pelajari langkah mudah menghasilkan saldo rupiah dari nonton video dan mancing cuan:',
+            'title'       => 'Baru di MancingCuan? Yuk Ikuti Panduan Singkat! 🌾',
+            'desc'        => 'Pelajari langkah mudah menghasilkan saldo rupiah dari nonton video dan bertani di Sawah Panen Cuan:',
         ],
         // 3. BENTO QUICK TILES
         'bento' => [
@@ -256,12 +256,12 @@ function home_cms_config(PDO $pdo): array {
                     'bg'      => 'linear-gradient(135deg,#f97316,#ea580c)',
                 ],
                 [
-                    'id'      => 'fishing',
+                    'id'      => 'farm',
                     'enabled' => true,
-                    'label'   => 'Mancing',
-                    'url'     => '/minigame',
-                    'icon'    => 'ph-fish',
-                    'bg'      => 'linear-gradient(135deg,#0284c7,#0369a1)',
+                    'label'   => 'Sawah',
+                    'url'     => '/farm',
+                    'icon'    => 'ph-plant',
+                    'bg'      => 'linear-gradient(135deg,#34d399,#059669)',
                 ],
                 [
                     'id'      => 'threads',
@@ -358,20 +358,20 @@ function home_cms_config(PDO $pdo): array {
             'desc'    => 'Tonton video pilihan berdurasi singkat dan saldo cuan langsung bertambah otomatis!',
             'limit'   => 4,
         ],
-        // 9. SPOTLIGHT GAME MANCING CUAN
-        'fishing_spotlight' => [
+        // 9. SPOTLIGHT GAME SAWAH PANEN CUAN
+        'farm_spotlight' => [
             'enabled' => true,
-            'badge'   => '🎣 GAME SPOTLIGHT',
-            'title'   => 'Kolam Pemancingan Cuan 🐟',
-            'desc'    => 'Lempar kailmu, strike ikan berkantong uang tunai, dan kumpulkan saldo tarik rupiah!',
-            'cta'     => 'Mulai Mancing Sekarang',
-            'url'     => '/minigame',
+            'badge'   => 'GAME SPOTLIGHT',
+            'title'   => 'Sawah Panen Cuan',
+            'desc'    => 'Tanam bibit, panen hasil, jual ke pasar jadi saldo tarik rupiah!',
+            'cta'     => 'Mulai Bertani',
+            'url'     => '/farm',
         ],
         // 10. TIPS CUAN
         'tips' => [
             'enabled' => true,
             'title'   => 'Tips Cuan Harian',
-            'text'    => 'Tonton video sampai kuota harianmu penuh, pancing ikan cuan, dan undang teman untuk komisi pasif tanpa batas!',
+            'text'    => 'Tonton video sampai kuota harianmu penuh, panen sawah cuan, dan undang teman untuk komisi pasif tanpa batas!',
         ],
         // 11. INBOX NOTIFIKASI
         'notif_inbox' => [
@@ -384,21 +384,13 @@ function home_cms_config(PDO $pdo): array {
             'sub'     => 'Raih Rp 75K',
             'badge'   => 'Hot',
         ],
-        // 13. SISTEM ENGINE MANCING
-        'fishing_engine' => [
-            'enabled'          => true,
-            'daily_free_baits' => 3,
-            'bait_per_video'   => 0,  // umpan gratis kini dari misi harian (Tonton 3 & 6 Video)
-            'ember_3d'         => true,
-            'lock_price'       => 2000,
-            'lock_free_trials' => 2,
-            'fight_hardness'   => 1,
-            'reward_min'       => 100,
-            'reward_max'       => 5000,
-            'bait_pack_price'  => 5000,
-            'bait_pack_qty'    => 5,
-        ],
     ];
+
+    // Bersihkan konfigurasi fitur mancing yang sudah dihapus (bila masih tersimpan di DB)
+    unset($saved['fishing_spotlight'], $saved['fishing_engine']);
+    if (isset($saved['bento']['tiles']) && is_array($saved['bento']['tiles'])) {
+        $saved['bento']['tiles'] = array_values(array_filter($saved['bento']['tiles'], fn($t) => ($t['id'] ?? '') !== 'fishing'));
+    }
 
     // Deep merge saved into defaults
     foreach ($defaults as $sec => $val) {

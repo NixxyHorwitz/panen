@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
 
-// Dashboard = Pusat Analisis (deposit, trafik, nonton, mancing, jam sibuk, keaktifan, user online)
+// Dashboard = Pusat Analisis (deposit, trafik, nonton, sawah, jam sibuk, keaktifan, user online)
 if (!staff_can('dashboard')) {
     redirect(staff_home_url());
 }
@@ -42,8 +42,8 @@ if (!function_exists('format_activity_path')) {
         if ($clean === '/home' || $clean === '') {
             return ['label' => 'Dashboard User', 'badge' => 'rgba(56,189,248,0.15)', 'color' => '#38bdf8', 'icon' => '🏠'];
         }
-        if (strpos($clean, '/minigame') !== false) {
-            return ['label' => 'Minigame Cuan', 'badge' => 'rgba(16,185,129,0.15)', 'color' => '#10b981', 'icon' => '🎮'];
+        if (strpos($clean, '/farm') !== false) {
+            return ['label' => 'Sawah Panen Cuan', 'badge' => 'rgba(16,185,129,0.15)', 'color' => '#10b981', 'icon' => '🌾'];
         }
         if (strpos($clean, '/withdraw') !== false) {
             return ['label' => 'Halaman WD', 'badge' => 'rgba(239,68,68,0.15)', 'color' => '#f87171', 'icon' => '💸'];
@@ -91,14 +91,14 @@ $depoSuccessRate = 0.0; $avgDepoAmount = 0;
 $totalViews = $totalUniqueVisitors = $totalActiveUsers = 0;
 $totalWatches = $totalUniqueViewers = 0; $totalRewardsGiven = 0.0; $avgWatchPerViewer = 0.0;
 $topPages = $topWatchedVideos = $activityStream = $onlineUsers = $topPlatformUsers = [];
-$fishCasts = $fishAnglers = $fishJunk = $fishJackpot = $fishSoldCount = $fishBaitPacks = $fishBaitQty = $fishLocks = $fishLocksPaid = $fishReleased = 0;
-$fishCatchValue = $fishSoldValue = $fishBaitRevenue = $fishLockRevenue = 0.0; $fishCastsPerAngler = $fishJunkRate = 0.0;
-$fishRarity = $topAnglers = []; $fishHourly = array_fill(0, 24, 0);
-$hourlyActivity = array_fill(0, 24, ['watches' => 0, 'deposits' => 0, 'views' => 0, 'fishing' => 0]);
+$farmHarvests = $farmFarmers = $farmSoldCount = $farmSpentCount = $farmSpeedUps = $farmUnlocks = 0;
+$farmHarvestValue = $farmSoldValue = $farmSpent = 0.0;
+$farmCrops = $topFarmers = []; $farmHourly = array_fill(0, 24, 0);
+$hourlyActivity = array_fill(0, 24, ['watches' => 0, 'deposits' => 0, 'views' => 0, 'farm' => 0]);
 $hourlyOnline = array_fill(0, 24, ['unique_users' => 0, 'page_hits' => 0]);
 $peakHour = $peakOnlineHour = $peakOnlineCount = $peakOnlineHits = 0; $avgOnlinePerHour = 0;
 $tierDist = []; $totalTierUsersCount = 0; $onlineCount = 0;
-$chartLabels = $chartDepoData = $chartViewsData = $chartWatchData = $chartFishData = [];
+$chartLabels = $chartDepoData = $chartViewsData = $chartWatchData = $chartFarmData = [];
 
 try {
     // ── 1. DEPOSIT METRICS ─────────────────────────────────────────────
@@ -207,74 +207,64 @@ try {
         ORDER BY watch_count DESC LIMIT 5
     ")->fetchAll();
 
-    // ── 3B. FITUR MANCING ─────────────────────────────────────────────
-    // Dipisah dalam try sendiri: bila tabel mancing belum ada, analitik lain tetap tampil.
-    $fishCasts = $fishAnglers = $fishJunk = $fishJackpot = $fishSoldCount = $fishBaitPacks = $fishBaitQty = $fishLocks = $fishLocksPaid = $fishReleased = 0;
-    $fishCatchValue = $fishSoldValue = $fishBaitRevenue = $fishLockRevenue = 0.0;
-    $fishDailyMap = []; $fishHourly = array_fill(0, 24, 0);
-    $fishRarity = []; $topAnglers = []; $recFish = [];
+    // ── 3B. SAWAH PANEN CUAN ─────────────────────────────────────────
+    // Dipisah dalam try sendiri: bila tabel farm belum ada, analitik lain tetap tampil.
+    $farmDailyMap = []; $recFarm = [];
     try {
         $f = $pdo->query("
-            SELECT COUNT(*) casts, COUNT(DISTINCT user_id) anglers, COALESCE(SUM(reward), 0) catch_value,
-                   SUM(UPPER(rarity) = 'JUNK') junk, SUM(UPPER(rarity) = 'JACKPOT') jackpot
-            FROM fishing_logs WHERE {$dateCondition}
+            SELECT SUM(l.action = 'harvest') harvests, COUNT(DISTINCT l.user_id) farmers,
+                   COALESCE(SUM(CASE WHEN l.action = 'harvest' THEN l.qty * c.unit_price END), 0) harvest_value,
+                   COALESCE(SUM(CASE WHEN l.wallet = 'wd' THEN l.amount END), 0) sold_value,
+                   COALESCE(SUM(CASE WHEN l.action = 'sell_all' THEN l.qty END), 0) sold_count,
+                   COALESCE(SUM(CASE WHEN l.wallet = 'dep' THEN l.amount END), 0) spent,
+                   SUM(l.wallet = 'dep') spent_count, SUM(l.action = 'speed_up') speed_ups, SUM(l.action = 'unlock_plot') unlocks
+            FROM farm_logs l LEFT JOIN farm_crops c ON c.id = l.ref_id AND l.action = 'harvest'
+            WHERE l.{$dateCondition}
         ")->fetch();
-        $fishCasts      = (int)($f['casts'] ?? 0);
-        $fishAnglers    = (int)($f['anglers'] ?? 0);
-        $fishCatchValue = (float)($f['catch_value'] ?? 0);
-        $fishJunk       = (int)($f['junk'] ?? 0);
-        $fishJackpot    = (int)($f['jackpot'] ?? 0);
+        $farmHarvests     = (int)($f['harvests'] ?? 0);
+        $farmFarmers      = (int)($f['farmers'] ?? 0);
+        $farmHarvestValue = (float)($f['harvest_value'] ?? 0);
+        $farmSoldValue    = (float)($f['sold_value'] ?? 0);
+        $farmSoldCount    = (int)($f['sold_count'] ?? 0);
+        $farmSpent        = (float)($f['spent'] ?? 0);
+        $farmSpentCount   = (int)($f['spent_count'] ?? 0);
+        $farmSpeedUps     = (int)($f['speed_ups'] ?? 0);
+        $farmUnlocks      = (int)($f['unlocks'] ?? 0);
 
-        $s = $pdo->query("SELECT COALESCE(SUM(total), 0) v, COALESCE(SUM(fish_count), 0) n FROM fishing_sales WHERE {$dateCondition}")->fetch();
-        $fishSoldValue = (float)$s['v']; $fishSoldCount = (int)$s['n'];
+        foreach ($pdo->query("SELECT DATE(created_at) d, COUNT(*) cnt FROM farm_logs WHERE action = 'harvest' AND {$dateCondition} GROUP BY d") as $r) $farmDailyMap[$r['d']] = $r;
+        foreach ($pdo->query("SELECT HOUR(created_at) h, COUNT(*) cnt FROM farm_logs WHERE {$dateCondition} GROUP BY h") as $r) $farmHourly[(int)$r['h']] = (int)$r['cnt'];
 
-        $b = $pdo->query("SELECT COUNT(*) n, COALESCE(SUM(qty), 0) q, COALESCE(SUM(price), 0) v FROM fishing_bait_purchases WHERE {$dateCondition}")->fetch();
-        $fishBaitPacks = (int)$b['n']; $fishBaitQty = (int)$b['q']; $fishBaitRevenue = (float)$b['v'];
-
-        $l = $pdo->query("SELECT COUNT(*) n, SUM(is_free = 0) paid, COALESCE(SUM(price), 0) v FROM fishing_lock_uses WHERE {$dateCondition}")->fetch();
-        $fishLocks = (int)$l['n']; $fishLocksPaid = (int)$l['paid']; $fishLockRevenue = (float)$l['v'];
-
-        $fishReleased = (int)$pdo->query("SELECT COUNT(*) FROM fishing_released WHERE {$dateCondition}")->fetchColumn();
-
-        foreach ($pdo->query("SELECT DATE(created_at) d, COUNT(*) cnt, COALESCE(SUM(reward), 0) val FROM fishing_logs WHERE {$dateCondition} GROUP BY d") as $r) $fishDailyMap[$r['d']] = $r;
-        foreach ($pdo->query("SELECT HOUR(created_at) h, COUNT(*) cnt FROM fishing_logs WHERE {$dateCondition} GROUP BY h") as $r) $fishHourly[(int)$r['h']] = (int)$r['cnt'];
-
-        $fishRarity = $pdo->query("
-            SELECT rarity, COUNT(*) cnt, COALESCE(SUM(reward), 0) val FROM fishing_logs WHERE {$dateCondition}
-            GROUP BY rarity ORDER BY FIELD(UPPER(rarity), 'COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'JACKPOT', 'JUNK')
+        $farmCrops = $pdo->query("
+            SELECT c.name, c.color, COUNT(*) cnt, COALESCE(SUM(l.qty * c.unit_price), 0) val
+            FROM farm_logs l JOIN farm_crops c ON c.id = l.ref_id
+            WHERE l.action = 'harvest' AND l.{$dateCondition}
+            GROUP BY c.id ORDER BY cnt DESC
         ")->fetchAll();
 
-        $topAnglers = $pdo->query("
-            SELECT u.id, u.username, COUNT(fl.id) casts, COALESCE(SUM(fl.reward), 0) catch_value,
-                   SUM(UPPER(fl.rarity) IN ('RARE', 'EPIC', 'JACKPOT')) rare_plus,
-                   (SELECT COALESCE(SUM(fs.total), 0) FROM fishing_sales fs WHERE fs.user_id = u.id AND fs.{$dateCondition}) sold_value
-            FROM fishing_logs fl JOIN users u ON u.id = fl.user_id
-            WHERE fl.{$dateCondition}
-            GROUP BY u.id ORDER BY catch_value DESC LIMIT 8
+        $topFarmers = $pdo->query("
+            SELECT u.id, u.username, SUM(l.action = 'harvest') harvests,
+                   COALESCE(SUM(CASE WHEN l.wallet = 'wd' THEN l.amount END), 0) sold_value
+            FROM farm_logs l JOIN users u ON u.id = l.user_id
+            WHERE l.{$dateCondition}
+            GROUP BY u.id ORDER BY sold_value DESC, harvests DESC LIMIT 8
         ")->fetchAll();
 
         // Untuk live stream gabungan
         foreach ($pdo->query("
-            SELECT fl.id, fl.reward amount, fl.rarity status, fl.created_at, u.username, fl.fish_name extra_info, 'fish' act_type
-            FROM fishing_logs fl JOIN users u ON u.id = fl.user_id ORDER BY fl.id DESC LIMIT 15
-        ") as $r) $recFish[] = $r;
-        foreach ($pdo->query("
-            SELECT fs.id, fs.total amount, 'sold' status, fs.created_at, u.username, fs.fish_count extra_info, 'fish_sale' act_type
-            FROM fishing_sales fs JOIN users u ON u.id = fs.user_id ORDER BY fs.id DESC LIMIT 10
-        ") as $r) $recFish[] = $r;
-        foreach ($pdo->query("
-            SELECT bp.id, bp.price amount, 'bait' status, bp.created_at, u.username, CONCAT(bp.pack_name, ' (+', bp.qty, ' umpan)') extra_info, 'fish_bait' act_type
-            FROM fishing_bait_purchases bp JOIN users u ON u.id = bp.user_id ORDER BY bp.id DESC LIMIT 10
-        ") as $r) $recFish[] = $r;
+            SELECT l.id, l.amount, l.action status, l.created_at, u.username, l.qty, l.wallet,
+                   COALESCE(c.name, i.name, '') extra_info, 'farm' act_type
+            FROM farm_logs l JOIN users u ON u.id = l.user_id
+            LEFT JOIN farm_crops c ON c.id = l.ref_id AND l.action IN ('plant', 'harvest', 'buy_seed')
+            LEFT JOIN farm_items i ON i.id = l.ref_id AND l.action IN ('speed_up', 'cure', 'buy_item')
+            ORDER BY l.id DESC LIMIT 25
+        ") as $r) $recFarm[] = $r;
     } catch (\Throwable $fe) {
-        $fishError = $fe->getMessage();
+        $farmError = $fe->getMessage();
     }
-    $fishCastsPerAngler = $fishAnglers > 0 ? round($fishCasts / $fishAnglers, 1) : 0.0;
-    $fishJunkRate       = $fishCasts > 0 ? round($fishJunk / $fishCasts * 100, 1) : 0.0;
 
     // ── 4. HOURLY ACTIVITY HEATMAP (00:00 - 23:00) ───────────────────
-    $hourlyActivity = array_fill(0, 24, ['watches' => 0, 'deposits' => 0, 'views' => 0, 'fishing' => 0]);
-    foreach ($fishHourly as $h => $c) $hourlyActivity[$h]['fishing'] = $c;
+    $hourlyActivity = array_fill(0, 24, ['watches' => 0, 'deposits' => 0, 'views' => 0, 'farm' => 0]);
+    foreach ($farmHourly as $h => $c) $hourlyActivity[$h]['farm'] = $c;
 
     // Hourly watches
     $hw = $pdo->query("
@@ -306,7 +296,7 @@ try {
     // Cari jam tersibuk (Peak Hour)
     $peakHour = 0; $peakScore = 0;
     foreach ($hourlyActivity as $h => $act) {
-        $score = ($act['watches'] * 2) + ($act['fishing'] * 2) + ($act['deposits'] * 5) + $act['views'];
+        $score = ($act['watches'] * 2) + ($act['farm'] * 2) + ($act['deposits'] * 5) + $act['views'];
         if ($score > $peakScore) { $peakScore = $score; $peakHour = $h; }
     }
 
@@ -376,7 +366,7 @@ try {
         ) wh ON wh.user_id = u.id
         LEFT JOIN (
             SELECT user_id, COUNT(*) as cnt 
-            FROM fishing_logs 
+            FROM farm_logs
             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) 
             GROUP BY user_id
         ) fl ON fl.user_id = u.id
@@ -474,8 +464,8 @@ try {
     ")->fetchAll();
     foreach ($recReg as $item) { $activityStream[] = $item; }
 
-    // Recent fishing (tangkapan, jual ikan, beli umpan)
-    foreach ($recFish as $item) { $activityStream[] = $item; }
+    // Aktivitas sawah (tanam, panen, jual, beli)
+    foreach ($recFarm as $item) { $activityStream[] = $item; }
 
     // Urutkan seluruh aktivitas stream berdasarkan timestamp DESC
     usort($activityStream, function($a, $b) {
@@ -527,7 +517,7 @@ try {
     $chartDepoData = [];
     $chartViewsData = [];
     $chartWatchData = [];
-    $chartFishData = [];
+    $chartFarmData = [];
 
     if ($range === 'today') {
         // Mode today: Breakdown 24 jam
@@ -537,7 +527,7 @@ try {
             $chartDepoData[] = (float)($hourlyActivity[$h]['deposits'] ?? 0);
             $chartViewsData[] = (int)($hourlyActivity[$h]['views'] ?? 0);
             $chartWatchData[] = (int)($hourlyActivity[$h]['watches'] ?? 0);
-            $chartFishData[] = (int)($hourlyActivity[$h]['fishing'] ?? 0);
+            $chartFarmData[] = (int)($hourlyActivity[$h]['farm'] ?? 0);
         }
     } else {
         // Mode N days
@@ -547,7 +537,7 @@ try {
             $chartDepoData[] = (float)($depoDailyMap[$date]['total_nominal'] ?? 0);
             $chartViewsData[] = (int)($pvDailyMap[$date]['views'] ?? 0);
             $chartWatchData[] = (int)($watchDailyMap[$date]['cnt'] ?? 0);
-            $chartFishData[] = (int)($fishDailyMap[$date]['cnt'] ?? 0);
+            $chartFarmData[] = (int)($farmDailyMap[$date]['cnt'] ?? 0);
         }
     }
 
@@ -572,11 +562,7 @@ $pageTitle  = 'Dashboard';
 $activePage = 'dashboard';
 require __DIR__ . '/partials/header.php';
 
-$rarityMeta = [
-    'COMMON' => ['Biasa', '#38bdf8'], 'UNCOMMON' => ['Bagus', '#f59e0b'], 'RARE' => ['Langka', '#f43f5e'],
-    'EPIC'   => ['Super', '#a855f7'], 'JACKPOT'  => ['Peti Harta', '#10b981'], 'JUNK' => ['Sampah', '#78716c'],
-];
-$fishRarityMax = max(1, ...array_map(fn($r) => (int)$r['cnt'], $fishRarity ?: [['cnt' => 1]]));
+$farmCropMax = max(1, ...array_map(fn($r) => (int)$r['cnt'], $farmCrops ?: [['cnt' => 1]]));
 $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
 ?>
 
@@ -654,7 +640,7 @@ $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
 <div class="db-h">
   <div>
     <h4>📊 Dashboard</h4>
-    <small>Deposit, trafik, nonton, mancing & jam sibuk — <?= htmlspecialchars($rangeTitle) ?></small>
+    <small>Deposit, trafik, nonton, sawah & jam sibuk — <?= htmlspecialchars($rangeTitle) ?></small>
   </div>
   <div class="d-flex align-items-center gap-2 flex-wrap">
     <a href="#section-online-users" class="db-pill" style="background:rgba(16,185,129,0.1);color:#34d399;border-color:rgba(16,185,129,0.3);"><span class="online-dot"></span><?= $onlineCount ?> online</a>
@@ -691,9 +677,9 @@ $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
     <div class="s"><b><?= number_format($totalUniqueViewers) ?></b> penonton · reward <b><?= format_rp($totalRewardsGiven) ?></b></div>
   </div>
   <div class="db-k" style="--c:#22d3ee">
-    <div class="l">🎣 Mancing</div>
-    <div class="v"><?= number_format($fishCasts) ?> <span style="font-size:11px;color:#64748b;">lempar</span></div>
-    <div class="s"><b><?= number_format($fishAnglers) ?></b> pemancing · jual <b><?= format_rp($fishSoldValue) ?></b></div>
+    <div class="l">🌾 Sawah</div>
+    <div class="v"><?= number_format($farmHarvests) ?> <span style="font-size:11px;color:#64748b;">panen</span></div>
+    <div class="s"><b><?= number_format($farmFarmers) ?></b> petani · jual <b><?= format_rp($farmSoldValue) ?></b></div>
   </div>
   <div class="db-k" style="--c:#a855f7">
     <div class="l">🔥 Puncak online</div>
@@ -713,7 +699,7 @@ $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
     <div class="c-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
       <span class="c-card-title">📈 Tren aktivitas</span>
       <div style="font-size:10.5px;color:#94a3b8;">
-        <?php foreach ([['#10b981', 'Deposit'], ['#38bdf8', 'Visitor'], ['#f59e0b', 'Nonton'], ['#22d3ee', 'Mancing']] as [$c, $l]): ?>
+        <?php foreach ([['#10b981', 'Deposit'], ['#38bdf8', 'Visitor'], ['#f59e0b', 'Nonton'], ['#22d3ee', 'Panen']] as [$c, $l]): ?>
           <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:<?= $c ?>;margin:0 3px 0 8px;"></span><?= $l ?>
         <?php endforeach; ?>
       </div>
@@ -729,40 +715,40 @@ $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
   </div>
 </div>
 
-<!-- ── Mancing · Konten · Live ── -->
+<!-- ── Sawah · Konten · Live ── -->
 <div class="db-row db-3">
 
-  <div class="c-card" id="section-fishing">
+  <div class="c-card" id="section-farm">
     <div class="c-card-header d-flex align-items-center justify-content-between">
-      <span class="c-card-title">🎣 Mancing</span>
-      <a href="/console/fishing_dashboard.php" style="font-size:11px;color:#22d3ee;text-decoration:none;">Detail &rarr;</a>
+      <span class="c-card-title">🌾 Sawah Panen Cuan</span>
+      <a href="/console/farm.php" style="font-size:11px;color:#22d3ee;text-decoration:none;">Detail &rarr;</a>
     </div>
     <div class="c-card-body">
-      <?php if (!empty($fishError)): ?>
-        <div class="text-warning" style="font-size:11.5px;">Data mancing belum bisa dimuat.</div>
+      <?php if (!empty($farmError)): ?>
+        <div class="text-warning" style="font-size:11.5px;">Data sawah belum bisa dimuat.</div>
       <?php else: ?>
         <div class="db-list mb-2">
-          <?php if (empty($fishRarity)): ?><div class="text-secondary">Belum ada tangkapan.</div><?php endif; ?>
-          <?php foreach ($fishRarity as $r): [$lbl, $col] = $rarityMeta[strtoupper((string)$r['rarity'])] ?? [(string)$r['rarity'], '#94a3b8']; ?>
+          <?php if (empty($farmCrops)): ?><div class="text-secondary">Belum ada panen.</div><?php endif; ?>
+          <?php foreach ($farmCrops as $r): $col = htmlspecialchars((string)$r['color']); ?>
             <div style="padding:3px 0;">
-              <div class="d-flex justify-content-between" style="font-size:11px;"><span style="color:<?= $col ?>;font-weight:700;"><?= htmlspecialchars($lbl) ?></span>
+              <div class="d-flex justify-content-between" style="font-size:11px;"><span style="color:<?= $col ?>;font-weight:700;"><?= htmlspecialchars((string)$r['name']) ?></span>
                 <span class="text-secondary"><?= number_format((int)$r['cnt']) ?>x · <?= format_rp((float)$r['val']) ?></span></div>
-              <div class="db-bar"><i style="width:<?= round($r['cnt'] / $fishRarityMax * 100) ?>%;background:<?= $col ?>;"></i></div>
+              <div class="db-bar"><i style="width:<?= round($r['cnt'] / $farmCropMax * 100) ?>%;background:<?= $col ?>;"></i></div>
             </div>
           <?php endforeach; ?>
         </div>
         <div class="d-flex flex-wrap gap-1 mb-2" style="font-size:10.5px;">
-          <span class="badge" style="background:rgba(34,211,238,0.1);color:#67e8f9;">Tangkapan <?= format_rp($fishCatchValue) ?></span>
-          <span class="badge" style="background:rgba(251,146,60,0.1);color:#fdba74;">Umpan <?= number_format($fishBaitPacks) ?> paket · <?= format_rp($fishBaitRevenue) ?></span>
-          <span class="badge" style="background:rgba(168,85,247,0.1);color:#d8b4fe;">Kunci <?= number_format($fishLocks) ?>x (<?= number_format($fishLocksPaid) ?> bayar)</span>
-          <span class="badge" style="background:rgba(120,113,108,0.15);color:#a8a29e;">Sampah <?= $fishJunkRate ?>%</span>
+          <span class="badge" style="background:rgba(34,211,238,0.1);color:#67e8f9;">Nilai panen <?= format_rp($farmHarvestValue) ?></span>
+          <span class="badge" style="background:rgba(251,146,60,0.1);color:#fdba74;">Belanja <?= number_format($farmSpentCount) ?>x · <?= format_rp($farmSpent) ?></span>
+          <span class="badge" style="background:rgba(168,85,247,0.1);color:#d8b4fe;">Pupuk Kilat <?= number_format($farmSpeedUps) ?>x</span>
+          <span class="badge" style="background:rgba(16,185,129,0.1);color:#6ee7b7;">Petak dibuka <?= number_format($farmUnlocks) ?></span>
         </div>
         <div class="db-list">
-          <?php foreach (array_slice($topAnglers, 0, 5) as $i => $a): ?>
+          <?php foreach (array_slice($topFarmers, 0, 5) as $i => $a): ?>
             <div class="r"><span class="text-secondary" style="width:14px;"><?= $i + 1 ?></span>
               <a class="n" href="/console/user_detail.php?id=<?= (int)$a['id'] ?>" style="text-decoration:none;"><?= htmlspecialchars($a['username']) ?></a>
-              <span class="m" style="color:#22d3ee;"><?= (int)$a['casts'] ?>x</span>
-              <span class="m" style="color:#10b981;"><?= format_rp((float)$a['catch_value']) ?></span></div>
+              <span class="m" style="color:#22d3ee;"><?= (int)$a['harvests'] ?>x</span>
+              <span class="m" style="color:#10b981;"><?= format_rp((float)$a['sold_value']) ?></span></div>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
@@ -811,11 +797,13 @@ $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
               'deposit'   => ['💳', 'rgba(16,185,129,0.15)', "$u deposit <span style=\"color:#10b981\">$amt</span> · " . htmlspecialchars((string)$act['status'])],
               'watch'     => ['🎬', 'rgba(245,158,11,0.15)', "$u nonton <span style=\"color:#f59e0b\">+$amt</span> · " . htmlspecialchars((string)($act['extra_info'] ?? ''))],
               'upgrade'   => ['👑', 'rgba(168,85,247,0.15)', "$u upgrade <span style=\"color:#a855f7\">" . htmlspecialchars((string)($act['extra_info'] ?? '')) . "</span> · $amt"],
-              'fish'      => $st === 'JUNK'
-                  ? ['🥾', 'rgba(120,113,108,0.15)', "$u dapat sampah · " . htmlspecialchars((string)($act['extra_info'] ?? ''))]
-                  : ['🎣', 'rgba(34,211,238,0.15)', "$u tangkap <span style=\"color:#22d3ee\">$amt</span> · " . htmlspecialchars((string)($act['extra_info'] ?? '')) . " ($st)"],
-              'fish_sale' => ['🏪', 'rgba(16,185,129,0.15)', "$u jual " . (int)$act['extra_info'] . " ikan <span style=\"color:#10b981\">+$amt</span>"],
-              'fish_bait' => ['🪱', 'rgba(251,146,60,0.15)', "$u beli umpan <span style=\"color:#fb923c\">$amt</span> · " . htmlspecialchars((string)($act['extra_info'] ?? ''))],
+              'farm'      => match ($st) {
+                  'HARVEST'     => ['🌾', 'rgba(34,211,238,0.15)', "$u panen " . (int)$act['qty'] . ' ' . htmlspecialchars((string)$act['extra_info'])],
+                  'SELL_ALL'    => ['🏪', 'rgba(16,185,129,0.15)', "$u jual " . (int)$act['qty'] . " hasil panen <span style=\"color:#10b981\">+$amt</span>"],
+                  'UNLOCK_PLOT' => ['🔓', 'rgba(251,191,36,0.15)', "$u buka petak <span style=\"color:#fbbf24\">$amt</span>"],
+                  default       => ['🌱', 'rgba(251,146,60,0.15)', "$u " . ['PLANT' => 'tanam', 'SPEED_UP' => 'pakai', 'CURE' => 'pakai', 'BUY_SEED' => 'beli bibit', 'BUY_ITEM' => 'beli'][$st] . ' ' . htmlspecialchars((string)$act['extra_info'])
+                                     . ((float)$act['amount'] > 0 ? " <span style=\"color:#fb923c\">$amt</span>" : '')],
+              },
               default     => ['👤', 'rgba(56,189,248,0.15)', "User baru $u · ref " . htmlspecialchars((string)($act['extra_info'] ?? '-'))],
           }; ?>
           <div class="f"><span class="ic" style="background:<?= $bg ?>"><?= $ic ?></span><span class="tx"><?= $txt ?></span>
@@ -850,7 +838,7 @@ $rangeQs = $range !== '7' ? '?range=' . urlencode($range) : '';
   <div class="c-card">
     <div class="c-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
       <span class="c-card-title">👑 Tier keaktifan</span>
-      <span style="font-size:10px;color:#64748b;" title="Pageview 1 · nonton 8 · mancing 4 · deposit 25 · bonus login aktif">skor: view 1 · nonton 8 · mancing 4 · depo 25</span>
+      <span style="font-size:10px;color:#64748b;" title="Pageview 1 · nonton 8 · sawah 4 · deposit 25 · bonus login aktif">skor: view 1 · nonton 8 · sawah 4 · depo 25</span>
     </div>
     <div class="c-card-body">
       <div class="db-tiers">
@@ -960,8 +948,8 @@ document.addEventListener('DOMContentLoaded', function() {
             pointHoverRadius: 5
           },
           {
-            label: 'Lempar Kail',
-            data: <?= json_encode($chartFishData) ?>,
+            label: 'Panen',
+            data: <?= json_encode($chartFarmData) ?>,
             borderColor: '#22d3ee',
             backgroundColor: 'transparent',
             borderWidth: 2,
@@ -1064,8 +1052,8 @@ document.addEventListener('DOMContentLoaded', function() {
             stack: 'combined'
           },
           {
-            label: 'Mancing',
-            data: <?= json_encode(array_column($hourlyActivity, 'fishing')) ?>,
+            label: 'Sawah',
+            data: <?= json_encode(array_column($hourlyActivity, 'farm')) ?>,
             backgroundColor: '#22d3ee',
             borderRadius: 4,
             stack: 'combined'

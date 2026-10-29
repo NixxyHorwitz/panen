@@ -5,9 +5,13 @@ require_once dirname(__DIR__) . '/auth/guard.php';
 // Aturan: hadiah uang misi tidak boleh receh, minimal Rp 1.500 (berlaku juga bila nilai di DB lebih kecil)
 const MISSION_MIN_REWARD = 1500;
 
+// Misi fitur mancing (sudah dihapus) disembunyikan walau masih aktif di database
+const FISHING_MISSION_SLUGS = ['daily_cast_5', 'daily_sell_fish', 'weekly_catch_30', 'weekly_rare_3', 'lifetime_100_fish', 'lifetime_jackpot'];
+
 // ── Daftar misi dari database (tabel `missions`, satu sumber untuk halaman ini, riwayat & console) ──
 $ALL_MISSIONS = [];
 foreach ($pdo->query("SELECT * FROM missions WHERE is_active = 1 ORDER BY FIELD(category, 'daily', 'weekly', 'lifetime'), sort_order, id") as $r) {
+    if (in_array((string)$r['slug'], FISHING_MISSION_SLUGS, true)) continue;
     $ALL_MISSIONS[] = [
         'slug'     => (string)$r['slug'],
         'category' => (string)$r['category'],
@@ -15,7 +19,6 @@ foreach ($pdo->query("SELECT * FROM missions WHERE is_active = 1 ORDER BY FIELD(
         'desc'     => (string)$r['description'],
         'target'   => max(1, (int)$r['target_value']),
         'reward'   => max(MISSION_MIN_REWARD, (float)$r['reward_amount']),
-        'bait'     => max(0, (int)($r['reward_bait'] ?? 0)),   // hadiah umpan pancing (opsional)
         'icon'     => (string)($r['icon'] ?: 'ph-target'),
     ];
 }
@@ -27,7 +30,7 @@ function mission_kind(string $slug): array {
         str_contains($slug, '_wd')                                   => ['wd', '/withdraw'],
         str_contains($slug, 'upgrade')                               => ['up', '/upgrade'],
         str_contains($slug, 'active')                                => ['mix', '/home'],
-        (bool)preg_match('/cast|sell|catch|rare|fish|jackpot/', $slug) => ['fish', '/minigame'],
+        (bool)preg_match('/plant|harvest/', $slug)                    => ['fish', '/farm'],
         default                                                      => ['video', '/videos'],
     };
 }
@@ -39,7 +42,6 @@ function get_progress(PDO $pdo, array $user, array $mission): int {
         try { $s = $pdo->prepare($sql); $s->execute($p); return (int)$s->fetchColumn(); } catch (\Throwable) { return 0; }
     };
     $week  = "YEARWEEK(%s, 1) = YEARWEEK(CURDATE(), 1)";
-    $notJunk = "UPPER(rarity) <> 'JUNK'";
     switch ($mission['slug']) {
         // Video
         case 'daily_watch_3':
@@ -50,25 +52,20 @@ function get_progress(PDO $pdo, array $user, array $mission): int {
             return $q("SELECT COUNT(*) FROM watch_history WHERE user_id = ? AND " . sprintf($week, 'watched_at'), [$uid]);
         case 'lifetime_100_videos':
             return $q("SELECT COUNT(*) FROM watch_history WHERE user_id = ?", [$uid]);
-        // Mancing (zonk/sampah tidak dihitung sebagai tangkapan)
-        case 'daily_cast_5':
-            return $q("SELECT COUNT(*) FROM fishing_logs WHERE user_id = ? AND DATE(created_at) = CURDATE()", [$uid])
-                 + $q("SELECT COUNT(*) FROM fishing_released WHERE user_id = ? AND DATE(caught_at) = CURDATE()", [$uid]);
-        case 'daily_sell_fish':
-            return $q("SELECT COUNT(*) FROM fishing_sales WHERE user_id = ? AND DATE(created_at) = CURDATE()", [$uid]);
-        case 'weekly_catch_30':
-            return $q("SELECT COUNT(*) FROM fishing_logs WHERE user_id = ? AND $notJunk AND " . sprintf($week, 'created_at'), [$uid]);
-        case 'weekly_rare_3':
-            return $q("SELECT COUNT(*) FROM fishing_logs WHERE user_id = ? AND UPPER(rarity) IN ('RARE', 'EPIC', 'JACKPOT') AND " . sprintf($week, 'created_at'), [$uid]);
-        case 'lifetime_100_fish':
-            return $q("SELECT COUNT(*) FROM fishing_logs WHERE user_id = ? AND $notJunk", [$uid]);
-        case 'lifetime_jackpot':
-            return $q("SELECT COUNT(*) FROM fishing_logs WHERE user_id = ? AND UPPER(rarity) = 'JACKPOT'", [$uid]);
-        // Gabungan: hari berbeda dengan aktivitas nonton ATAU mancing
+        // Sawah Panen Cuan (farm_logs)
+        case 'daily_plant_3':
+            return $q("SELECT COUNT(*) FROM farm_logs WHERE user_id = ? AND action = 'plant' AND DATE(created_at) = CURDATE()", [$uid]);
+        case 'daily_sell_harvest':
+            return $q("SELECT COUNT(*) FROM farm_logs WHERE user_id = ? AND action = 'sell_all' AND DATE(created_at) = CURDATE()", [$uid]);
+        case 'weekly_harvest_20':
+            return $q("SELECT COUNT(*) FROM farm_logs WHERE user_id = ? AND action = 'harvest' AND " . sprintf($week, 'created_at'), [$uid]);
+        case 'lifetime_harvest_100':
+            return $q("SELECT COUNT(*) FROM farm_logs WHERE user_id = ? AND action = 'harvest'", [$uid]);
+        // Gabungan: hari berbeda dengan aktivitas nonton ATAU bertani
         case 'weekly_active_5':
             return $q("SELECT COUNT(*) FROM (
                          SELECT DATE(watched_at) d FROM watch_history WHERE user_id = ? AND " . sprintf($week, 'watched_at') . "
-                         UNION SELECT DATE(created_at) FROM fishing_logs WHERE user_id = ? AND " . sprintf($week, 'created_at') . "
+                         UNION SELECT DATE(created_at) FROM farm_logs WHERE user_id = ? AND " . sprintf($week, 'created_at') . "
                        ) x", [$uid, $uid]);
         // Lainnya
         case 'lifetime_first_ref':
@@ -120,19 +117,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'claim
         }
         $pdo->prepare("INSERT INTO user_missions (user_id, mission_slug, progress, completed_at, claimed_at, period_key) VALUES (?, ?, ?, NOW(), NOW(), ?)")
             ->execute([$user['id'], $slug, $progress, $period]);
-        $pdo->prepare("UPDATE users SET balance_wd = balance_wd + ?, fishing_baits = fishing_baits + ? WHERE id = ?")
-            ->execute([$mission['reward'], $mission['bait'], $user['id']]);
+        $pdo->prepare("UPDATE users SET balance_wd = balance_wd + ? WHERE id = ?")
+            ->execute([$mission['reward'], $user['id']]);
         $pdo->commit();
 
-        $bait_txt = $mission['bait'] > 0 ? ' + ' . $mission['bait'] . ' umpan' : '';
         $tg  = "🎯 <b>MEMBER KLAIM MISI!</b>\n";
         $tg .= "Username: <code>" . htmlspecialchars((string)$user['username']) . "</code>\n";
         $tg .= "Misi: <b>" . htmlspecialchars($mission['title']) . "</b>\n";
-        $tg .= "Reward: " . format_rp($mission['reward']) . $bait_txt;
+        $tg .= "Reward: " . format_rp($mission['reward']);
         send_telegram_notif($pdo, $tg, [], 'misi');
 
         $msg = $mission['reward'] > 0 ? 'Hadiah +' . format_rp($mission['reward']) . ' masuk ke Saldo Tarik' : 'Misi selesai';
-        echo json_encode(['ok' => true, 'msg' => $msg . ($mission['bait'] > 0 ? ' dan +' . $mission['bait'] . ' umpan pancing!' : '!'), 'reward' => $mission['reward']]);
+        echo json_encode(['ok' => true, 'msg' => $msg . '!', 'reward' => $mission['reward']]);
     } catch (\Throwable $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         echo json_encode(['ok' => false, 'msg' => 'Gagal mengklaim, coba lagi.']);
@@ -259,7 +255,7 @@ require dirname(__DIR__) . '/partials/header.php';
       <div class="ms-row <?= $m['claimed'] ? 'is-claimed' : '' ?>" id="mr-<?= htmlspecialchars($m['slug']) ?>" data-reward="<?= (float)$m['reward'] ?>">
         <span class="ms-ic k-<?= $m['kind'] ?>"><i class="ph-fill <?= htmlspecialchars($m['icon']) ?>"></i></span>
         <div class="ms-body">
-          <div class="ms-title"><span><?= htmlspecialchars($m['title']) ?></span><em>+<?= format_rp($m['reward']) ?><?php if (!empty($m['bait'])): ?> · <i class="ph-fill ph-fish-simple"></i>+<?= (int)$m['bait'] ?> umpan<?php endif; ?></em></div>
+          <div class="ms-title"><span><?= htmlspecialchars($m['title']) ?></span><em>+<?= format_rp($m['reward']) ?></em></div>
           <div class="ms-bar"><i style="width:<?= $pct ?>%"></i></div>
           <div class="ms-meta"><span><?= htmlspecialchars($m['desc']) ?></span><b><?= $m['progress'] ?>/<?= $m['target'] ?></b></div>
         </div>

@@ -440,18 +440,6 @@ require dirname(__DIR__) . '/partials/header.php';
 .pk-trust span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 4px; border: 2px solid #fff; border-radius: 15px; background: rgba(255, 255, 255, 0.7); font-size: 9.5px; font-weight: 900; text-align: center; box-shadow: 0 3px 8px rgba(8, 145, 178, 0.06); }
 .pk-trust i { font-size: 18px; }
 .pk-trust span:nth-child(1) i { color: #059669; } .pk-trust span:nth-child(2) i { color: #f59e0b; } .pk-trust span:nth-child(3) i { color: #0891b2; }
-/* Bonus joran */
-.pk-rod-ttl { display: flex; align-items: center; gap: 5px; margin: 10px 2px 5px; font-size: 10.5px; font-weight: 900; color: #0e7490; }
-.pk-rod-ttl i { font-size: 14px; }
-.pk-rod-ttl small { margin-left: auto; font-size: 9px; font-weight: 800; color: var(--reef-muted); }
-.pk-rod { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 14px; background: rgba(255, 255, 255, 0.9); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--rc) 22%, transparent); }
-.pk-rod + .pk-rod { margin-top: 5px; }
-.pk-rod-ic { width: 36px; height: 36px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, color-mix(in srgb, var(--rc) 55%, #fff), var(--rc)); border: 2px solid #fff; box-shadow: 0 4px 9px color-mix(in srgb, var(--rc) 35%, transparent), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.45); }
-.pk-rod-ic svg { width: 24px; height: 24px; }
-.pk-rod-tx { flex: 1; min-width: 0; }
-.pk-rod-tx b { display: block; font-size: 11.5px; font-weight: 900; color: var(--rc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pk-rod-b { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
-.pk-rod-b em { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; font-style: normal; font-size: 9.5px; font-weight: 900; color: var(--reef-ink); background: color-mix(in srgb, var(--rc) 12%, #fff); }
 /* Panduan lipat */
 .pk-guide { margin-top: 8px; border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); overflow: hidden; }
 .pk-guide summary { display: flex; align-items: center; gap: 6px; padding: 10px 12px; cursor: pointer; list-style: none; font-size: 12px; font-weight: 900; }
@@ -496,15 +484,6 @@ require dirname(__DIR__) . '/partials/header.php';
 <?php
 $paid = array_values(array_filter($memberships, fn($m) => (float)$m['price'] > 0));
 usort($paid, fn($a, $b) => (float)$a['price'] <=> (float)$b['price']);
-// Benefit joran mancing: joran ber-syarat pangkat (req_tier = sort_order pangkat), lihat Console › Fish System › Joran
-$rods_by_tier = [];
-try {
-    require_once dirname(__DIR__) . '/lib/fishing.php';
-    foreach (fishing_rod_catalog($pdo) as $rk => $rd) {
-        if ($rd['tier'] > 0) $rods_by_tier[$rd['tier']][] = $rd + ['key' => $rk];
-    }
-} catch (\Throwable $e) { $rods_by_tier = []; }
-$ROD_COLOR = ['biasa' => '#0891b2', 'bagus' => '#059669', 'langka' => '#e11d48', 'super' => '#7c3aed', 'jackpot' => '#d97706'];
 $free_rank  = current(array_filter($memberships, fn($m) => (float)$m['price'] == 0)) ?: null;
 $cur_id     = $active_membership ? (int)$active_membership['id'] : 0;
 $hot_idx    = count($paid) >= 3 ? 1 : -1;
@@ -599,25 +578,6 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
           <?php if ($is_top): ?><span><i class="ph-bold ph-crown"></i> Pencairan prioritas</span><?php endif; ?>
         </div>
         <?php endif; ?>
-        <?php
-          $tier_no   = (int)$m['sort_order'];
-          $tier_rods = $rods_by_tier[$tier_no] ?? [];
-          $all_rods  = 0; foreach ($rods_by_tier as $t => $list) if ($t <= $tier_no) $all_rods += count($list);
-        ?>
-        <?php if ($tier_rods): ?>
-        <div class="pk-rod-ttl"><i class="ph-fill ph-fish-simple"></i> Bonus Joran Mancing<?php if ($all_rods > count($tier_rods)): ?><small>+<?= $all_rods - count($tier_rods) ?> joran pangkat bawah</small><?php endif; ?></div>
-        <?php foreach ($tier_rods as $rd): $rc = $ROD_COLOR[$rd['rarity']] ?? '#0891b2'; ?>
-        <div class="pk-rod" style="--rc: <?= $rc ?>">
-          <span class="pk-rod-ic">
-            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 28L26 5" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/><circle cx="11.5" cy="21.5" r="3.6" fill="#fde68a" stroke="#fff" stroke-width="1.3"/><path d="M26 5 C29 11 28 17 24 20" stroke="#fff" stroke-width="1.2" fill="none" opacity=".85"/><circle cx="24" cy="21" r="2.2" fill="#fb7185" stroke="#fff" stroke-width="1"/></svg>
-          </span>
-          <span class="pk-rod-tx">
-            <b><?= htmlspecialchars($rd['name']) ?></b>
-            <span class="pk-rod-b"><em><i class="ph-bold ph-arrows-clockwise"></i> Tarik +<?= (int)$rd['reel'] ?>%</em><em><i class="ph-bold ph-timer"></i> Umpan +<?= (int)$rd['bite'] ?>%</em></span>
-          </span>
-        </div>
-        <?php endforeach; ?>
-        <?php endif; ?>
         <button type="button" class="pk-cta <?= $is_cur ? 'is-cur' : (!$can_afford ? 'low' : '') ?>"
           onclick="<?= !$can_afford && !$is_cur ? "location.href='/deposit'" : 'openConfirm(' . (int)$m['id'] . ", '" . htmlspecialchars($m['name'], ENT_QUOTES) . "', " . $active_price . ', ' . (int)$m['duration_days'] . ')' ?>">
           <?php if ($is_cur): ?><i class="ph-bold ph-arrows-clockwise"></i> Perpanjang Pangkat
@@ -641,7 +601,7 @@ $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_forma
     <ol class="pk-steps">
       <li><span>1</span><small>Isi <b>Saldo Beli</b> lewat tombol +</small></li>
       <li><span>2</span><small>Pilih pangkat, tekan tombol, konfirmasi</small></li>
-      <li><span>3</span><small>Pangkat aktif, joran baru terbuka saat mancing</small></li>
+      <li><span>3</span><small>Pangkat aktif, kuota nonton &amp; bonus langsung berlaku</small></li>
     </ol>
   </details>
 </div>

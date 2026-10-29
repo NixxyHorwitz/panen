@@ -449,7 +449,7 @@ i[class^="ph-"] {
 }
 .twp-card-icon.wd { background: #ffe4e6; color: #e11d48; }
 .twp-card-icon.dep { background: #d1fae5; color: #059669; }
-.twp-card-icon.baits { background: #fef3c7; color: #d97706; }
+.twp-card-icon.farm { background: #d1fae5; color: #059669; }
 .twp-card-lbl {
   font-size: 8px;
   font-weight: 800;
@@ -468,7 +468,7 @@ i[class^="ph-"] {
 }
 .twp-card-btn.wd { background: linear-gradient(145deg, #fb7185, #f43f5e); }
 .twp-card-btn.dep { background: linear-gradient(145deg, #34d399, #059669); }
-.twp-card-btn.baits { background: linear-gradient(145deg, #fbbf24, #d97706); }
+.twp-card-btn.farm { background: linear-gradient(145deg, #34d399, #059669); }
 
 @media (prefers-reduced-motion: reduce) {
   body::before, .pulse-emerald-dot, .brand-logo img { animation: none !important; }
@@ -573,16 +573,16 @@ i[class^="ph-"] {
           <a href="/deposit" class="twp-card-btn dep">+ Top Up</a>
         </div>
 
-        <!-- Card 3: Umpan Pancing -->
+        <!-- Card 3: Sawah Panen Cuan -->
         <div class="twp-card">
           <div class="twp-card-left">
-            <div class="twp-card-icon baits"><i class="ph-fill ph-fish"></i></div>
+            <div class="twp-card-icon farm"><i class="ph-fill ph-plant"></i></div>
             <div>
-              <div class="twp-card-lbl">Umpan Pancing</div>
-              <div class="twp-card-val"><?= (int)($user['fishing_baits'] ?? 0) ?> Umpan</div>
+              <div class="twp-card-lbl">Sawah Panen Cuan</div>
+              <div class="twp-card-val">Tanam &amp; Panen</div>
             </div>
           </div>
-          <a href="/minigame" class="twp-card-btn baits">Mancing &rarr;</a>
+          <a href="/farm" class="twp-card-btn farm">Bertani &rarr;</a>
         </div>
       </div>
     </div>

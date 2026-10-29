@@ -32,8 +32,7 @@ define('STAFF_PERMISSIONS', [
     'staff_roles'     => 'Peran & Izin',
     'orderkuota'      => 'OrderKuota API',
     'surveys'         => 'Survei Pengguna',
-    'home_cms'        => 'CMS Beranda & Mancing',
-    'fishing'         => 'Fish System',
+    'home_cms'        => 'CMS Beranda',
     'farm'            => 'Sawah Panen Cuan',
 ]);
 
@@ -128,7 +127,6 @@ function staff_home_url(): string {
         'vouchers'        => '/console/vouchers.php',
         'investments'     => '/console/investments.php',
         'orderkuota'      => '/console/orderkuota.php',
-        'fishing'         => '/console/fishing_dashboard.php',
         'farm'            => '/console/farm.php',
     ];
 

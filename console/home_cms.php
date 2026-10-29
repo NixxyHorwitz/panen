@@ -93,13 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $curConfig['featured_videos']['desc']    = trim((string)($_POST['featured_videos_desc'] ?? ''));
         $curConfig['featured_videos']['limit']   = max(1, min(20, (int)($_POST['featured_videos_limit'] ?? 4)));
 
-        // 9. FISHING SPOTLIGHT CARD
-        $curConfig['fishing_spotlight']['enabled'] = isset($_POST['fishing_spotlight_enabled']);
-        $curConfig['fishing_spotlight']['badge']   = trim((string)($_POST['fishing_spotlight_badge'] ?? '🎣 GAME SPOTLIGHT'));
-        $curConfig['fishing_spotlight']['title']   = trim((string)($_POST['fishing_spotlight_title'] ?? 'Kolam Pemancingan Cuan 🐟'));
-        $curConfig['fishing_spotlight']['desc']    = trim((string)($_POST['fishing_spotlight_desc'] ?? ''));
-        $curConfig['fishing_spotlight']['cta']     = trim((string)($_POST['fishing_spotlight_cta'] ?? 'Mulai Mancing Sekarang'));
-        $curConfig['fishing_spotlight']['url']     = trim((string)($_POST['fishing_spotlight_url'] ?? '/minigame'));
+        // 9. SPOTLIGHT SAWAH PANEN CUAN
+        $curConfig['farm_spotlight']['enabled'] = isset($_POST['farm_spotlight_enabled']);
+        $curConfig['farm_spotlight']['badge']   = trim((string)($_POST['farm_spotlight_badge'] ?? 'GAME SPOTLIGHT'));
+        $curConfig['farm_spotlight']['title']   = trim((string)($_POST['farm_spotlight_title'] ?? 'Sawah Panen Cuan'));
+        $curConfig['farm_spotlight']['desc']    = trim((string)($_POST['farm_spotlight_desc'] ?? ''));
+        $curConfig['farm_spotlight']['cta']     = trim((string)($_POST['farm_spotlight_cta'] ?? 'Mulai Bertani'));
+        $curConfig['farm_spotlight']['url']     = trim((string)($_POST['farm_spotlight_url'] ?? '/farm'));
 
         // 10. TIPS BOX
         $curConfig['tips']['enabled'] = isset($_POST['tips_enabled']);
@@ -115,14 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $curConfig['floating_promo']['sub']     = trim((string)($_POST['floating_promo_sub'] ?? 'Raih Rp 75K'));
         $curConfig['floating_promo']['badge']   = trim((string)($_POST['floating_promo_badge'] ?? 'Hot'));
 
-        // 13. FISHING ENGINE SETTINGS
-        $curConfig['fishing_engine']['enabled']          = isset($_POST['fishing_engine_enabled']);
-        $curConfig['fishing_engine']['daily_free_baits'] = max(0, (int)($_POST['fishing_daily_free_baits'] ?? 3));
-        $curConfig['fishing_engine']['bait_per_video']   = max(0, (int)($_POST['fishing_bait_per_video'] ?? 0));
-
         home_cms_config_set($pdo, $curConfig);
 
-        $_SESSION['cms_flash'] = '✅ Pengaturan Tata Letak Beranda & Sistem Mancing berhasil disimpan!';
+        $_SESSION['cms_flash'] = '✅ Pengaturan Tata Letak Beranda berhasil disimpan!';
         $_SESSION['cms_flash_type'] = 'success';
         redirect('/console/home_cms.php');
     }
@@ -147,7 +142,7 @@ require __DIR__ . '/partials/header.php';
       <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="text-warning"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
       CMS &amp; Tata Letak Beranda
     </h1>
-    <p class="text-muted small mb-0">Atur elemen, sembunyikan/munculkan fitur, ubah teks promosi, dan kelola sistem game mancing secara visual.</p>
+    <p class="text-muted small mb-0">Atur elemen, sembunyikan/munculkan fitur, ubah teks promosi, dan kelola kartu Sawah Panen Cuan secara visual.</p>
   </div>
   <div class="d-flex gap-2">
     <a href="/" target="_blank" class="btn btn-sm btn-outline-info d-flex align-items-center gap-2">
@@ -244,8 +239,8 @@ require __DIR__ . '/partials/header.php';
     <button type="button" class="cms-tab-btn" onclick="switchCmsTab('tab-content')">
       🎬 Video &amp; Tips
     </button>
-    <button type="button" class="cms-tab-btn" onclick="switchCmsTab('tab-fishing')">
-      🎣 Sistem Engine Mancing
+    <button type="button" class="cms-tab-btn" onclick="switchCmsTab('tab-farm')">
+      🌾 Sawah Panen Cuan
     </button>
   </div>
 
@@ -680,94 +675,44 @@ require __DIR__ . '/partials/header.php';
   </div>
 
   <!-- ══════════════════════════════════════════════
-       TAB 5: SISTEM & ENGINE MANCING CUAN
+       TAB 5: SPOTLIGHT SAWAH PANEN CUAN
        ══════════════════════════════════════════════ -->
-  <div id="tab-fishing" class="cms-tab-pane">
+  <div id="tab-farm" class="cms-tab-pane">
     <div class="cms-card">
-      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <div>
-          <div class="cms-card-title text-info">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
-            ⚙️ Sistem Engine Game Mancing Cuan
-          </div>
-          <div class="cms-card-sub mb-0">Pengaturan logika mesin game memancing: kuota umpan, drop rate ikan, nominal reward saldo, dan penjualan paket umpan.</div>
-          <?php if (staff_can('fishing')): ?>
-          <a href="/console/fishing_dashboard.php" class="small fw-bold text-info">🎣 Kelola lengkap (paket umpan, joran, harga pasar, log) di menu Fish System →</a>
-          <?php endif; ?>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <label class="small text-light fw-bold">Status Fitur Game:</label>
-          <div class="form-check form-switch m-0">
-            <input class="form-check-input cms-toggle" type="checkbox" name="fishing_engine_enabled" <?= !empty($cms['fishing_engine']['enabled']) ? 'checked' : '' ?>>
-          </div>
-        </div>
+      <div class="mb-3">
+        <div class="cms-card-title text-success">🌾 Spotlight Sawah Panen Cuan</div>
+        <div class="cms-card-sub mb-0">Kartu ajakan bertani di Beranda. Ekonomi game (bibit, harga jual, petak, hama) diatur di menu Console › Kelola Farm.</div>
+        <?php if (staff_can('farm')): ?>
+        <a href="/console/farm.php" class="small fw-bold text-success">🌾 Buka Kelola Farm →</a>
+        <?php endif; ?>
       </div>
-
-      <div class="row g-3">
-        <!-- Spotlight Card di Beranda -->
-        <div class="col-md-6">
-          <div class="p-3 rounded-3" style="background:#090d16;border:1px solid #1e243d;">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="fw-bold text-warning small">🎯 Spotlight Card Mancing di Beranda</div>
-              <div class="form-check form-switch m-0">
-                <input class="form-check-input cms-toggle" type="checkbox" name="fishing_spotlight_enabled" <?= $cms['fishing_spotlight']['enabled'] ? 'checked' : '' ?>>
-              </div>
-            </div>
-            <div class="mb-2">
-              <label class="small text-muted">Badge Banner:</label>
-              <input type="text" name="fishing_spotlight_badge" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['fishing_spotlight']['badge']) ?>">
-            </div>
-            <div class="mb-2">
-              <label class="small text-muted">Judul Banner:</label>
-              <input type="text" name="fishing_spotlight_title" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['fishing_spotlight']['title']) ?>">
-            </div>
-            <div class="mb-2">
-              <label class="small text-muted">Deskripsi Ajakan Mancing:</label>
-              <textarea name="fishing_spotlight_desc" class="form-control form-control-sm bg-dark text-light border-secondary" rows="2"><?= htmlspecialchars($cms['fishing_spotlight']['desc']) ?></textarea>
-            </div>
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="small text-muted">Label Tombol:</label>
-                <input type="text" name="fishing_spotlight_cta" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['fishing_spotlight']['cta']) ?>">
-              </div>
-              <div class="col-6">
-                <label class="small text-muted">Tautan URL:</label>
-                <input type="text" name="fishing_spotlight_url" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['fishing_spotlight']['url']) ?>">
-              </div>
-            </div>
+      <div class="p-3 rounded-3" style="background:#090d16;border:1px solid #1e243d;max-width:640px;">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="fw-bold text-warning small">🎯 Tampilkan kartu di Beranda</div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input cms-toggle" type="checkbox" name="farm_spotlight_enabled" <?= $cms['farm_spotlight']['enabled'] ? 'checked' : '' ?>>
           </div>
         </div>
-
-        <!-- Aturan Umpan & Reward Mancing -->
-        <div class="col-md-6">
-          <div class="p-3 rounded-3" style="background:#090d16;border:1px solid #1e243d;">
-            <div class="fw-bold text-info small mb-3">🪱 Aturan Umpan &amp; Pembagian Cuan</div>
-            
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="small text-muted">Umpan Gratis Harian:</label>
-                <div class="input-group input-group-sm">
-                  <input type="number" name="fishing_daily_free_baits" min="0" max="50" class="form-control bg-dark text-light border-secondary" value="<?= (int)($cms['fishing_engine']['daily_free_baits'] ?? 3) ?>">
-                  <span class="input-group-text bg-secondary text-light">Umpan</span>
-                </div>
-                <div class="form-text text-muted" style="font-size:10px;">Diberikan gratis tiap hari saat login/checkin.</div>
-              </div>
-              <div class="col-6">
-                <label class="small text-muted">Bonus Umpan per Video:</label>
-                <div class="input-group input-group-sm">
-                  <input type="number" name="fishing_bait_per_video" min="0" max="10" class="form-control bg-dark text-light border-secondary" value="<?= (int)($cms['fishing_engine']['bait_per_video'] ?? 0) ?>">
-                  <span class="input-group-text bg-secondary text-light">Umpan</span>
-                </div>
-                <div class="form-text text-muted" style="font-size:10px;">Diberikan otomatis selesai tonton video.</div>
-              </div>
-            </div>
-
-            <div class="small p-2 rounded" style="background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);color:#a5f3fc">
-              Harga dasar ikan & peluangnya kini diatur per jenis ikan di
-              <a href="/console/fishing_species.php" class="text-info fw-bold">Fish System › Harga Ikan</a>,
-              paket umpan di <a href="/console/fishing_baits.php" class="text-info fw-bold">Fish System › Umpan</a>.
-            </div>
-
+        <div class="mb-2">
+          <label class="small text-muted">Badge Banner:</label>
+          <input type="text" name="farm_spotlight_badge" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['farm_spotlight']['badge']) ?>">
+        </div>
+        <div class="mb-2">
+          <label class="small text-muted">Judul Banner:</label>
+          <input type="text" name="farm_spotlight_title" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['farm_spotlight']['title']) ?>">
+        </div>
+        <div class="mb-2">
+          <label class="small text-muted">Deskripsi Ajakan:</label>
+          <textarea name="farm_spotlight_desc" class="form-control form-control-sm bg-dark text-light border-secondary" rows="2"><?= htmlspecialchars($cms['farm_spotlight']['desc']) ?></textarea>
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="small text-muted">Label Tombol:</label>
+            <input type="text" name="farm_spotlight_cta" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['farm_spotlight']['cta']) ?>">
+          </div>
+          <div class="col-6">
+            <label class="small text-muted">Tautan URL:</label>
+            <input type="text" name="farm_spotlight_url" class="form-control form-control-sm bg-dark text-light border-secondary" value="<?= htmlspecialchars($cms['farm_spotlight']['url']) ?>">
           </div>
         </div>
       </div>

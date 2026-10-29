@@ -1102,8 +1102,8 @@ if ($streak == 0 && $already) $completed_days = 1;
       <a href="/withdraw" class="ci-action-btn ci-action-btn--wd">
         <i class="ph-bold ph-arrow-up-right"></i> Tarik Tunai
       </a>
-      <a href="/minigame" class="ci-action-btn ci-action-btn--fish">
-        <i class="ph-fill ph-fish"></i> Mancing Cuan
+      <a href="/farm" class="ci-action-btn ci-action-btn--fish">
+        <i class="ph-fill ph-plant"></i> Sawah Cuan
       </a>
     </div>
   </div>
