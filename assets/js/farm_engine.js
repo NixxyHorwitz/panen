@@ -30,7 +30,9 @@
   const GRID_Z = -1;                 // pusat grid digeser ke belakang memberi ruang sungai
   const SOIL_TOP = 0.34;             // tinggi permukaan tanah petak
   const FENCE = { x0: -7.0, x1: 7.0, z0: -6.6, z1: 4.6, gate: 1.1 };
-  const STREAM = { x0: -10.4, x1: 12.08, z0: 6.2, z1: 7.8, y: 0.07 };
+  const STREAM = { x0: -21, x1: 16.5, z0: 6.2, z1: 7.8, y: 0.07 };
+  const POND = { x: 19.8, z: 7, r: 3.8 };
+  const FALL_H = 5.5;                // tinggi air terjun di kaki gunung barat
   const WINDMILL = new THREE.Vector3(-9.3, 0, -7.4);
   const SCARECROW = new THREE.Vector3(-8.3, 0, -3.6);
   const PAN_LIMIT = 6;
@@ -409,32 +411,53 @@
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const PLANT_OFFSETS = [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]];
 
-  /** Pulau melayang + sungai tepi + kincir + orang-orangan + pagar + pohon (batang) → satu geometri. */
+  /** Lembah + pegunungan + sungai + kincir + orang-orangan + pagar + pohon (batang) → satu geometri. */
   function buildStaticWorld() {
     const g = new Geo(11), R = g.rand;
-    const rounded = (w, d, r) => {
-      const s = new THREE.Shape(), x = -w / 2, y = -d / 2;
-      s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
-      s.lineTo(x + w, y + d - r); s.absarc(x + w - r, y + d - r, r, 0, Math.PI / 2, false);
-      s.lineTo(x + r, y + d); s.absarc(x + r, y + d - r, r, Math.PI / 2, Math.PI, false);
-      s.lineTo(x, y + r); s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
-      return s;
+    const tmp = new THREE.Color();
+
+    // Hamparan rumput lembah (luas, menghilang di kabut)
+    const g1 = new THREE.Color('#4a9e3a'), g2 = new THREE.Color('#5cae43'), g3 = new THREE.Color('#3d8233');
+    g.add(new THREE.CircleGeometry(95, 64, 0, Math.PI * 2), (l, w) => {
+      const n = Math.sin(w.x * 0.21) * Math.cos(w.z * 0.17) + Math.sin(w.x * 0.07 + w.z * 0.09);
+      const far = clamp((Math.hypot(w.x, w.z) - 22) / 30, 0, 1);
+      return tmp.copy(g1).lerp(g2, clamp(n * 0.25 + 0.25, 0, 0.5)).lerp(g3, far * 0.45);
+    }, { r: [-Math.PI / 2, 0, 0], ol: false, jitter: 0.03 });
+
+    // Bukit kaki gunung (rendah, dekat) + pegunungan berpuncak salju (jauh)
+    const rock = new THREE.Color('#78716c'), snow = new THREE.Color('#f8fafc'), base = new THREE.Color('#4d7c0f'), hill = new THREE.Color('#3f9a45');
+    const peak = (h) => (l, w) => {
+      const t = clamp(w.y / h, 0, 1);
+      if (t > 0.78) return snow;
+      return tmp.copy(base).lerp(rock, clamp((t - 0.25) / 0.45, 0, 1));
     };
-    const grassTop = new THREE.Color(C.grass), grassSide = new THREE.Color(C.grassSide);
-    g.add(new THREE.ExtrudeGeometry(rounded(23.8, 19.8, 2.1), { depth: 0.25, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.1, bevelSegments: 2, curveSegments: 7 }),
-      (l, w, n) => (n.y > 0.7 ? grassTop : grassSide), { r: [-Math.PI / 2, 0, 0], p: [0, -0.35, 0], ol: 0.08, jitter: 0.02 });
-    // Badan tanah terakota dengan strata
-    const dirt = new THREE.Color(C.dirt), deep = new THREE.Color(C.dirtDeep), tmp = new THREE.Color();
-    g.add(new THREE.ExtrudeGeometry(rounded(23.3, 19.3, 1.9), { depth: 1.75, bevelEnabled: false, curveSegments: 7 }),
-      (l, w, n) => {
-        if (n.y < -0.5) return deep;
-        const band = Math.floor((w.y + 2.1) * 2.4) % 2 ? 0.88 : 1;
-        return tmp.copy(deep).lerp(dirt, clamp((w.y + 2.1) / 1.75, 0, 1)).multiplyScalar(band);
-      }, { r: [-Math.PI / 2, 0, 0], p: [0, -2.1, 0], ol: 0.08, jitter: 0.03 });
-    // Batu menggantung di bawah pulau
-    [[-7, -4, 1.8], [-2, 3, 2.3], [4, -3, 2.0], [8, 4, 1.5], [0, -6, 1.4], [-6, 5, 1.3], [7.5, -6.5, 1.2]].forEach(([x, z, r]) => {
-      g.add(new THREE.ConeGeometry(r, r * 1.6, 6), C.dirtDeep, { p: [x, -2.1 - r * 0.8, z], r: [Math.PI, R() * 3, 0], ol: 0.07 });
-    });
+    for (let i = 0; i < 30; i++) {
+      const a = (i / 30) * Math.PI * 2 + R() * 0.15, r = 46 + R() * 12, h = 11 + R() * 13, br = 8 + R() * 5;
+      g.add(new THREE.ConeGeometry(br, h, 6 + Math.floor(R() * 2), 2), peak(h), { p: [Math.cos(a) * r, h / 2 - 0.5, Math.sin(a) * r], r: [0, R() * 3, 0], ol: 0.18, jitter: 0.06 });
+    }
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2 + R() * 0.2, r = 30 + R() * 5;
+      const hx = Math.cos(a) * r, hz = Math.sin(a) * r;
+      if (Math.abs(hz - 7) < 4 && hx > 14) continue; // jangan tutup kolam di timur
+      g.add(new THREE.DodecahedronGeometry(3.5 + R() * 2.5, 1), (l, w) => tmp.copy(hill).lerp(base, clamp(w.y / 6, 0, 1)),
+        { p: [hx, -0.8, hz], s: [1.4, 0.65 + R() * 0.35, 1.2], r: [0, R() * 3, 0], ol: 0.1, jitter: 0.05 });
+    }
+    // Tebing batu & air terjun sumber sungai (barat)
+    const fx = STREAM.x0;
+    g.add(new THREE.DodecahedronGeometry(4.2, 0), C.stoneDark, { p: [fx - 3.2, FALL_H * 0.42, 7], s: [1, 1.35, 1.3], r: [0.2, 0.5, 0], ol: 0.12 });
+    g.add(new THREE.DodecahedronGeometry(2.4, 0), C.stone, { p: [fx - 1.6, FALL_H - 0.6, 4.8], r: [0.4, 0.2, 0.3], ol: 0.08 });
+    g.add(new THREE.DodecahedronGeometry(2.2, 0), C.stone, { p: [fx - 1.4, FALL_H - 0.8, 9.3], r: [0.1, 0.9, 0.2], ol: 0.08 });
+    for (let i = 0; i < 7; i++) {
+      const a = Math.PI * 0.5 + (i / 6) * Math.PI;
+      g.add(new THREE.DodecahedronGeometry(0.35 + R() * 0.2, 0), C.stoneDark, { p: [fx + 0.6 + Math.cos(a) * -0.5, 0.15, 7 + Math.sin(a) * 1.1], r: [R(), R(), R()], s: [1, 0.7, 1], ol: 0.03 });
+    }
+    // Kolam (timur) dengan batu tepian
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2;
+      if (Math.cos(a) < -0.85 && Math.abs(Math.sin(a)) < 0.3) continue; // celah masuk sungai
+      g.add(new THREE.DodecahedronGeometry(0.32 + R() * 0.22, 0), R() < 0.5 ? C.stone : C.stoneDark,
+        { p: [POND.x + Math.cos(a) * (POND.r + 0.15), 0.1, POND.z + Math.sin(a) * (POND.r + 0.15)], r: [R(), R(), R()], s: [1, 0.6, 1], ol: 0.03 });
+    }
 
     // Bingkai (rim) kayu di sekeliling setiap petak
     for (let i = 1; i <= 12; i++) {
@@ -466,16 +489,11 @@
 
     // Jalan setapak gerbang → jembatan, tepian sungai & jembatan kayu
     g.add(new THREE.BoxGeometry(1.7, 0.06, STREAM.z0 - FENCE.z1 + 0.2), '#e7c89a', { p: [0, 0.03, (FENCE.z1 + STREAM.z0) / 2], ol: false, jitter: 0.08 });
-    const bankLen = STREAM.x1 - STREAM.x0;
+    const bankLen = STREAM.x1 - STREAM.x0 + 0.4;
     [STREAM.z0 - 0.08, STREAM.z1 + 0.08].forEach((z) => g.add(new THREE.BoxGeometry(bankLen, 0.18, 0.2), C.stone, { p: [(STREAM.x0 + STREAM.x1) / 2 - 0.05, 0.09, z], ol: 0.03 }));
     for (let i = 0; i < 26; i++) {
       const x = lerp(STREAM.x0, STREAM.x1 - 0.5, R()), z = R() < 0.5 ? STREAM.z0 - 0.3 - R() * 0.25 : STREAM.z1 + 0.3 + R() * 0.25;
       g.add(new THREE.DodecahedronGeometry(0.12 + R() * 0.12, 0), R() < 0.5 ? C.stone : C.stoneDark, { p: [x, 0.08, z], r: [R() * 3, R() * 3, 0], s: [1, 0.6, 1], ol: 0.025 });
-    }
-    // Mata air (ujung barat sungai)
-    for (let i = 0; i < 7; i++) {
-      const a = Math.PI * 0.5 + (i / 6) * Math.PI;
-      g.add(new THREE.DodecahedronGeometry(0.3 + R() * 0.15, 0), C.stoneDark, { p: [STREAM.x0 + Math.cos(a) * 0.7, 0.15, 7 + Math.sin(a) * 1.0], r: [R(), R(), R()], s: [1, 0.75, 1], ol: 0.03 });
     }
     for (let i = 0; i < 7; i++) g.add(new THREE.BoxGeometry(2.1, 0.1, 0.3), i % 2 ? C.plank : C.woodLight, { p: [0, 0.32 + Math.sin((i / 6) * Math.PI) * 0.14, STREAM.z0 - 0.25 + i * 0.35], ol: 0.025 });
     [-1, 1].forEach((sx) => {
@@ -533,10 +551,10 @@
     // Rumput & bunga acak (hindari pagar, sungai, kincir)
     const blocked = (x, z) => (x > FENCE.x0 - 0.6 && x < FENCE.x1 + 0.6 && z > FENCE.z0 - 0.6 && z < FENCE.z1 + 0.5)
       || (z > STREAM.z0 - 0.7 && z < STREAM.z1 + 0.7) || V(x, 0, z).distanceTo(WINDMILL) < 2 || V(x, 0, z).distanceTo(SCARECROW) < 1
-      || TREES.some((t) => Math.hypot(t.x - x, t.z - z) < 1.2) || Math.abs(x) > 10.9 || Math.abs(z) > 8.9;
+      || TREES.some((t) => Math.hypot(t.x - x, t.z - z) < 1.2) || Math.hypot(x, z) > 27 || Math.hypot(x - POND.x, z - POND.z) < POND.r + 0.8;
     let placed = 0;
-    for (let k = 0; k < 400 && placed < 46; k++) {
-      const x = (R() * 2 - 1) * 11.5, z = (R() * 2 - 1) * 9.5;
+    for (let k = 0; k < 1200 && placed < 150; k++) {
+      const x = (R() * 2 - 1) * 27, z = (R() * 2 - 1) * 27;
       if (blocked(x, z)) continue;
       placed++;
       if (R() < 0.35) {
@@ -550,12 +568,25 @@
     return g.build(0.05);
   }
 
-  const TREES = [
-    { type: 'pine', x: 9.6, z: -7.6 }, { type: 'pine', x: 10.5, z: -4.3 }, { type: 'pine', x: -10.6, z: -1.8 },
-    { type: 'pine', x: 5.6, z: -8.6 }, { type: 'pine', x: 10.4, z: 9.1 }, { type: 'pine', x: -7.6, z: 9.1 },
-    { type: 'birch', x: 9.6, z: 0.4 }, { type: 'birch', x: -10.2, z: 2.6 }, { type: 'birch', x: -3.4, z: -8.7 },
-    { type: 'birch', x: 9.9, z: 3.9 }, { type: 'birch', x: -4.2, z: 9.2 }, { type: 'birch', x: 4.8, z: 9.2 },
-  ];
+  const TREES = (() => {
+    const list = [
+      { type: 'pine', x: 9.6, z: -7.6 }, { type: 'pine', x: 10.5, z: -4.3 }, { type: 'pine', x: -10.6, z: -1.8 },
+      { type: 'pine', x: 5.6, z: -8.6 }, { type: 'pine', x: 10.4, z: 9.1 }, { type: 'pine', x: -7.6, z: 9.1 },
+      { type: 'birch', x: 9.6, z: 0.4 }, { type: 'birch', x: -10.2, z: 2.6 }, { type: 'birch', x: -3.4, z: -8.7 },
+      { type: 'birch', x: 9.9, z: 3.9 }, { type: 'birch', x: -4.2, z: 9.2 }, { type: 'birch', x: 4.8, z: 9.2 },
+    ];
+    const R = rng(77);
+    for (let k = 0; k < 400 && list.length < 60; k++) {
+      const a = R() * Math.PI * 2, r = 14 + R() * 13, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (Math.abs(z - 7) < 2.2 && x > STREAM.x0 - 2 && x < STREAM.x1) continue;     // sungai
+      if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 1.5) continue;                 // kolam
+      if (Math.hypot(x - STREAM.x0 + 2, z - 7) < 6) continue;                          // tebing air terjun
+      if (Math.abs(x) < 2 && z > 4) continue;                                           // jalan & jembatan
+      if (list.some((t) => Math.hypot(t.x - x, t.z - z) < 2.2)) continue;
+      list.push({ type: R() < 0.6 ? 'pine' : 'birch', x, z });
+    }
+    return list;
+  })();
 
   function buildPineCanopy() {
     const g = new Geo(3);
@@ -781,6 +812,7 @@
 
     _initScene() {
       const s = this.scene = new THREE.Scene();
+      s.fog = new THREE.Fog('#dcefff', 48, 120);
       const grad = this.gradient = toonGradient();
       // Material terpisah untuk mesh ber-instanceColor: three r128 tidak mengompilasi
       // ulang program bila satu material dipakai mesh instanced dengan & tanpa instanceColor.
@@ -831,8 +863,8 @@
       // 5) Awan dekoratif + caster bayangan awan
       const cloudGeo = buildCloud(21);
       this.clouds = [
-        { x: -15, y: 8.5, z: -15, s: 1.3, v: 0.35 }, { x: 4, y: 10.5, z: -19, s: 1.6, v: 0.25 }, { x: 18, y: 7.5, z: -11, s: 1.1, v: 0.4 },
-        { x: -21, y: 7, z: 3, s: 1.2, v: 0.3 }, { x: 22, y: 9, z: 6, s: 1.0, v: 0.32 },
+        { x: -15, y: 14, z: -28, s: 2.2, v: 0.35 }, { x: 4, y: 17, z: -36, s: 2.6, v: 0.25 }, { x: 22, y: 13, z: -24, s: 1.9, v: 0.4 },
+        { x: -32, y: 12, z: 3, s: 2.0, v: 0.3 }, { x: 30, y: 15, z: 10, s: 1.8, v: 0.32 }, { x: -6, y: 18, z: -44, s: 3.0, v: 0.2 },
       ];
       this.cloudMesh = this._inst(cloudGeo, this.mat, this.clouds.length, { shadow: false });
       this.cloudShadows = [{ x: -4, z: -2, v: 0.5, s: 1.5 }, { x: 10, z: 4, v: 0.45, s: 1.2 }, { x: -16, z: 6, v: 0.55, s: 1.3 }];
@@ -888,10 +920,7 @@
       world.add(this.particles.points);
       this._updateParticleScale();
 
-      // Intro: pulau naik dari bawah
-      world.position.y = -5;
-      this.introDone = false;
-      global.gsap.to(world.position, { y: 0, duration: 1.2, ease: 'back.out(1.4)', onComplete: () => { this.introDone = true; } });
+      this.introDone = true;
     }
 
     /** Buat InstancedMesh dengan semua instance tersembunyi. */
@@ -908,39 +937,47 @@
     }
 
     _buildWater() {
-      const len = STREAM.x1 - STREAM.x0, w = STREAM.z1 - STREAM.z0, fallH = STREAM.y + 2.35;
-      const strip = new THREE.PlaneGeometry(len, w, 1, 1).toNonIndexed();
-      strip.rotateX(-Math.PI / 2);
-      strip.translate((STREAM.x0 + STREAM.x1) / 2, STREAM.y, (STREAM.z0 + STREAM.z1) / 2);
-      const fall = new THREE.PlaneGeometry(w, fallH, 1, 1).toNonIndexed();
+      const len = STREAM.x1 - STREAM.x0, w = STREAM.z1 - STREAM.z0, zc = (STREAM.z0 + STREAM.z1) / 2;
+      const parts = [];
+      // Air terjun di tebing barat: mengalir ke bawah (flow naik), lalu lanjut ke sungai
+      const fall = new THREE.PlaneGeometry(w, FALL_H, 1, 4).toNonIndexed();
       fall.rotateY(Math.PI / 2);
-      fall.translate(STREAM.x1, STREAM.y - fallH / 2, (STREAM.z0 + STREAM.z1) / 2);
-      const n = strip.attributes.position.count + fall.attributes.position.count;
-      const pos = new Float32Array(n * 3), flow = new Float32Array(n), across = new Float32Array(n);
+      fall.translate(STREAM.x0 - 0.05, STREAM.y + FALL_H / 2, zc);
+      parts.push([fall, (x, y, z) => [FALL_H - y, (z - STREAM.z0) / w, 1]]);
+      const strip = new THREE.PlaneGeometry(len + 0.6, w, 1, 1).toNonIndexed();
+      strip.rotateX(-Math.PI / 2);
+      strip.translate((STREAM.x0 + STREAM.x1 + 0.6) / 2, STREAM.y, zc);
+      parts.push([strip, (x, y, z) => [FALL_H + x - STREAM.x0, (z - STREAM.z0) / w, 0]]);
+      const pond = new THREE.CircleGeometry(POND.r, 32).toNonIndexed();
+      pond.rotateX(-Math.PI / 2);
+      pond.translate(POND.x, STREAM.y + 0.005, POND.z);
+      parts.push([pond, (x, y, z) => [FALL_H + len + Math.hypot(x - POND.x, z - POND.z) * 0.6, 0.5 + 0.5 * Math.hypot(x - POND.x, z - POND.z) / POND.r, 0]]);
+      const n = parts.reduce((a, [geo]) => a + geo.attributes.position.count, 0);
+      const pos = new Float32Array(n * 3), flow = new Float32Array(n), across = new Float32Array(n), isFall = new Float32Array(n);
       let o = 0;
-      [strip, fall].forEach((geo, gi) => {
+      for (const [geo, attr] of parts) {
         const P = geo.attributes.position.array;
         for (let i = 0; i < P.length; i += 3, o++) {
           pos[o * 3] = P[i]; pos[o * 3 + 1] = P[i + 1]; pos[o * 3 + 2] = P[i + 2];
-          flow[o] = gi === 0 ? P[i] - STREAM.x0 : len + (STREAM.y - P[i + 1]);
-          across[o] = (P[i + 2] - STREAM.z0) / w;
+          [flow[o], across[o], isFall[o]] = attr(P[i], P[i + 1], P[i + 2]);
         }
-      });
+      }
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       g.setAttribute('flow', new THREE.BufferAttribute(flow, 1));
       g.setAttribute('across', new THREE.BufferAttribute(across, 1));
+      g.setAttribute('fall', new THREE.BufferAttribute(isFall, 1));
       this.waterMat = new THREE.ShaderMaterial({
-        uniforms: { uTime: { value: 0 }, uLen: { value: len } },
+        uniforms: { uTime: { value: 0 } },
         vertexShader: `
-          attribute float flow; attribute float across;
-          varying float vFlow; varying float vAcross;
-          void main() { vFlow = flow; vAcross = across; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+          attribute float flow; attribute float across; attribute float fall;
+          varying float vFlow; varying float vAcross; varying float vFall;
+          void main() { vFlow = flow; vAcross = across; vFall = fall; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
         fragmentShader: `
-          uniform float uTime; uniform float uLen;
-          varying float vFlow; varying float vAcross;
+          uniform float uTime;
+          varying float vFlow; varying float vAcross; varying float vFall;
           void main() {
-            float fall = step(uLen, vFlow);
+            float fall = vFall;
             float f = vFlow - uTime * mix(0.9, 2.8, fall);
             float wav = sin(f * 2.2 + sin(vAcross * 9.0 + uTime * 1.3) * 1.2) * 0.5 + 0.5;
             vec3 col = mix(vec3(0.008, 0.518, 0.78), vec3(0.22, 0.741, 0.973), 0.3 + 0.5 * wav);
@@ -1133,7 +1170,7 @@
 
       // Awan
       this.clouds.forEach((c, i) => {
-        c.x += c.v * dt; if (c.x > 28) c.x = -28;
+        c.x += c.v * dt; if (c.x > 45) c.x = -45;
         this._setInst(this.cloudMesh, i, c.x, c.y + Math.sin(t * 0.5 + i) * 0.2, c.z, 0, i, 0, c.s);
       });
       this.cloudShadows.forEach((c, i) => {
