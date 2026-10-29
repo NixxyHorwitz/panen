@@ -924,5 +924,14 @@ if ($show_wd_notif) {
   });
 })();
 </script>
+<script>
+// Reveal global untuk elemen [data-rv] (lihat assets/css/pc-game.css)
+(function () {
+  const els = document.querySelectorAll('[data-rv]:not(.in)');
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { els.forEach((el) => el.classList.add('in')); return; }
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -6% 0px' });
+  els.forEach((el) => io.observe(el));
+})();
+</script>
 </body>
 </html>

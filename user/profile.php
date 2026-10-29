@@ -68,7 +68,7 @@ try {
     $_contact_btns = $pdo->query("SELECT * FROM contact_buttons WHERE is_active=1 ORDER BY sort_order ASC, id ASC")->fetchAll();
 } catch (\Throwable) { $_contact_btns = []; }
 
-$pageTitle  = 'Kabin Kapten';
+$pageTitle  = 'Profil Petani';
 $activePage = 'profile';
 require dirname(__DIR__) . '/partials/header.php';
 
@@ -81,930 +81,208 @@ $_psvg = [
 ];
 ?>
 
+<?php
+// Level sawah untuk kartu pemain (sama dengan beranda)
+require_once dirname(__DIR__) . '/lib/farm.php';
+$farm_lv = farm_level(0);
+try {
+    $xs = $pdo->prepare("SELECT xp FROM farm_users WHERE user_id = ?");
+    $xs->execute([$user['id']]);
+    $farm_lv = farm_level((int)$xs->fetchColumn());
+} catch (\Throwable) {}
+$xp_span = max(1, $farm_lv['xp_next'] - $farm_lv['xp_cur']);
+$xp_pct  = (int)min(100, max(0, round(($farm_lv['xp'] - $farm_lv['xp_cur']) / $xp_span * 100)));
+
+$PF_MENU = [
+    ['/videos', 'watch', 'Nonton'], ['/farm', 'padi', 'Sawah'], ['/missions', 'missions', 'Misi'], ['/upgrade', 'upgrade', 'Upgrade'],
+    ['/history', 'receipt', 'Riwayat'], ['/edit-rekening', 'piggy', 'Rekening'], ['/referral', 'referral', 'Undang'], ['/panduan', 'compass', 'Panduan'],
+];
+?>
 <style>
-/* ══════════════════════════════════════════════════════════
-   KABIN KAPTEN — profil di dalam kabin kapal
-   Dinding kayu hangat, jendela bulat (porthole) ke laut karang,
-   tetap memakai palet & clay 3D yang sama dengan Beranda.
-   ══════════════════════════════════════════════════════════ */
-.cabin-stage {
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 6px 12px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-  z-index: 1;
-}
-.cabin-clay {
-  border: 2px solid #ffffff;
-  border-radius: 20px;
-  background: var(--reef-card);
-  box-shadow: var(--reef-clay-shadow);
-}
+/* ══ PROFIL — Kartu Pemain · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.pf-id { display: flex; align-items: center; gap: 12px; }
+.pf-ava { position: relative; flex-shrink: 0; width: 70px; height: 70px; border-radius: 22px; display: grid; place-items: center; font-family: var(--pc-font); font-size: 32px; font-weight: 700; color: #fff;
+  background: linear-gradient(145deg, #4ade80, #15803d); box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffd54f, 0 10px 18px rgba(120, 70, 10, .3); text-shadow: 0 2px 0 rgba(0, 0, 0, .2); }
+.pf-ava .lv { position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; color: #4a3000;
+  background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800, 0 0 0 2px #fff; text-shadow: none; }
+.pf-ava .on { position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px #fff; animation: gGlow 2s infinite; }
+.pf-who { flex: 1; min-width: 0; }
+.pf-who h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-who .mail { font-size: 11.5px; font-weight: 800; color: #7a4f00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.pf-chips .g-chip { background: rgba(255, 255, 255, .8); color: #6b4300; }
+.pf-chips .g-chip.vip { background: linear-gradient(180deg, #ffd54f, #f6b70a); color: #4a3000; }
+.pf-xp { margin-top: 16px; padding: 9px 11px; border-radius: 16px; background: rgba(255, 255, 255, .75); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+.pf-xp-top { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.pf-ticket { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 8px 8px 10px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 2px #fcd34d, 0 4px 0 #e9b949; }
+.pf-ticket img { width: 32px; height: 32px; object-fit: contain; }
+.pf-ticket .t { flex: 1; min-width: 0; }
+.pf-ticket small { display: block; font-size: 10px; font-weight: 900; letter-spacing: .4px; color: #8a5a00; }
+.pf-ticket b { display: block; font-family: var(--pc-font); font-size: 18px; font-weight: 700; letter-spacing: 1.5px; color: var(--pc-ink); }
 
-/* Flash */
-.cabin-flash {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  font-size: 11.5px;
-  font-weight: 800;
-  border: 2px solid #ffffff;
-  box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-.cabin-flash.success { background: #d1fae5; color: #065f46; }
-.cabin-flash.error   { background: #ffe4e6; color: #9f1239; }
+/* Inventaris saldo */
+.pf-inv { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+.pf-slot { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 18px; text-decoration: none; color: inherit; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .12s; }
+.pf-slot:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
+.pf-slot.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+.pf-slot-top { display: flex; align-items: center; gap: 8px; }
+.pf-slot small { display: block; font-size: 10.5px; font-weight: 900; color: var(--pc-muted); }
+.pf-slot b { display: block; font-family: var(--pc-font); font-size: 16px; font-weight: 700; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-slot .meta { font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.pf-slot .go { position: absolute; top: 8px; right: 8px; font-size: 11px; font-weight: 900; color: #15803d; }
+.pf-mini { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+.pf-mini div + div { border-left: 2px dashed #f2e3bd; }
+.pf-mini b { font-size: 18px; }
 
-/* ── 1. HERO: DINDING KABIN KAYU + PORTHOLE ── */
-.cabin-hero {
-  position: relative;
-  overflow: hidden;
-  border: 2px solid #ffffff;
-  border-radius: 24px;
-  padding: 14px 14px 12px;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(254, 240, 138, 0.55) 0, transparent 42%),
-    repeating-linear-gradient(180deg, transparent 0 25px, rgba(180, 83, 9, 0.10) 25px 27px),
-    linear-gradient(170deg, #fff7ed 0%, #fde7c8 60%, #fbd5a5 100%);
-  box-shadow:
-    0 16px 34px rgba(180, 83, 9, 0.16),
-    0 6px 14px rgba(244, 63, 94, 0.08),
-    inset 3px 3px 7px rgba(255, 255, 255, 0.9),
-    inset -4px -5px 10px rgba(180, 83, 9, 0.16);
-}
-/* Lentera kabin menggantung */
-.cabin-lantern {
-  position: absolute;
-  top: 0; left: 50%;
-  width: 22px; height: 40px;
-  pointer-events: none;
-  transform-origin: 50% 0;
-  animation: lanternSwing 4s ease-in-out infinite;
-  z-index: 1;
-}
-@keyframes lanternSwing {
-  0%, 100% { transform: rotate(-4deg); }
-  50% { transform: rotate(4deg); }
-}
-.cabin-porthole {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 84px;
-  height: 84px;
-  pointer-events: none;
-  z-index: 1;
-  filter: drop-shadow(0 5px 8px rgba(120, 53, 15, 0.25));
-}
-.porthole-fish { animation: portFish 7s linear infinite; }
-.porthole-fish--b { animation-duration: 9s; animation-delay: -4s; }
-@keyframes portFish {
-  0% { transform: translateX(-30px); }
-  100% { transform: translateX(110px); }
-}
-.porthole-bubble { animation: portBubble 3.5s ease-in infinite; }
-.porthole-bubble:nth-of-type(2) { animation-delay: -1.2s; }
-.porthole-bubble:nth-of-type(3) { animation-delay: -2.4s; }
-@keyframes portBubble {
-  0% { transform: translateY(0); opacity: 0; }
-  20% { opacity: 0.9; }
-  100% { transform: translateY(-40px); opacity: 0; }
-}
+/* Menu ikon 3D */
+.pf-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; margin-top: 10px; }
+.pf-menu a { display: flex; flex-direction: column; align-items: center; gap: 5px; text-decoration: none; }
+.pf-menu .g-slot { width: 58px; height: 58px; border-radius: 18px; transition: transform .2s var(--pc-ease); }
+.pf-menu a:active .g-slot { transform: scale(.88) rotate(-6deg); }
+.pf-menu span.l { font-family: var(--pc-font); font-size: 12.5px; font-weight: 600; color: var(--pc-ink); }
 
-.cabin-id {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 88px;
-  min-height: 84px;
-}
-.cabin-avatar {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  border-radius: 17px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 900;
-  color: #ffffff;
-  border: 2px solid #ffffff;
-  background: linear-gradient(145deg, #fdba74 0%, #fb7185 50%, #f43f5e 100%);
-  box-shadow:
-    0 6px 14px rgba(244, 63, 94, 0.32),
-    inset 2.5px 2.5px 4px rgba(255, 255, 255, 0.6),
-    inset -2.5px -2.5px 5px rgba(190, 18, 60, 0.3);
-}
-.cabin-online {
-  position: absolute;
-  bottom: -2px; right: -2px;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: #10b981;
-  border: 2px solid #ffffff;
-}
-.cabin-who { min-width: 0; }
-.cabin-eyebrow {
-  font-size: 8.5px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #b45309;
-}
-.cabin-name {
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  letter-spacing: -0.3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cabin-email {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--reef-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 4px;
-}
-.cabin-pills { display: flex; flex-wrap: wrap; gap: 4px; }
-.cabin-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 900;
-  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8);
-}
-.cabin-pill--rank { background: #f3e8ff; color: #7e22ce; }
-.cabin-pill--rank.is-vip { background: linear-gradient(135deg, #fef08a, #fbbf24); color: #78350f; }
-.cabin-pill--days { background: #ffffff; color: #9a3412; }
+/* Pengaturan */
+.pf-set { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.pf-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px 8px 8px; border: 0; border-radius: 16px; cursor: pointer; text-align: left; font: inherit; color: inherit; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
+.pf-row:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
+.pf-row .t { flex: 1; min-width: 0; }
+.pf-row strong { display: block; font-family: var(--pc-font); font-size: 14.5px; font-weight: 600; color: var(--pc-ink); }
+.pf-row small { display: block; font-size: 11px; font-weight: 800; color: var(--pc-muted); }
+.pf-row > i { font-size: 16px; color: #c9a560; }
 
-/* Tiket kru (kode referral) */
-.cabin-ticket {
-  position: relative;
-  z-index: 2;
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 8px 8px 12px;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 4px 10px rgba(180, 83, 9, 0.10), inset -2px -2px 5px rgba(251, 146, 60, 0.12);
-}
-.cabin-ticket::before,
-.cabin-ticket::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: #fbd9ae;
-  transform: translateY(-50%);
-}
-.cabin-ticket::before { left: -6px; }
-.cabin-ticket::after  { right: -6px; }
-.ticket-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.ticket-ico {
-  width: 28px; height: 28px;
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(145deg, #c084fc, #8b5cf6);
-  color: #fff;
-  font-size: 15px;
-  box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), 0 3px 6px rgba(139, 92, 246, 0.3);
-  flex-shrink: 0;
-}
-.ticket-lbl { font-size: 8.5px; font-weight: 900; color: var(--reef-muted); letter-spacing: 0.8px; }
-.ticket-code {
-  font-size: 14px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  letter-spacing: 1.5px;
-  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-}
-.ticket-copy {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 7px 11px;
-  border: none;
-  border-radius: 11px;
-  background: linear-gradient(145deg, #fb7185, #f43f5e);
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 10.5px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(244, 63, 94, 0.3), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), inset -2px -2px 4px rgba(190, 18, 60, 0.3);
-}
-.ticket-copy:active { transform: scale(0.95); }
-
-/* ── 2. RAK KARGO: kartu saldo & aktivitas geser horizontal ── */
-.cabin-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-  margin-bottom: -4px;
-}
-.csh-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-weight: 900;
-  color: var(--reef-ink);
-}
-.csh-title i { color: #b45309; font-size: 15px; }
-.csh-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--reef-muted);
-}
-.cargo-rail {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 74%;
-  gap: 10px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  margin: 0 -12px;
-  padding: 4px 12px 12px;
-  scroll-padding-left: 12px;
-  scrollbar-width: none;
-}
-.cargo-rail::-webkit-scrollbar { display: none; }
-.cargo-card {
-  scroll-snap-align: start;
-  position: relative;
-  overflow: hidden;
-  min-height: 124px;
-  padding: 12px;
-  border: 2px solid #ffffff;
-  border-radius: 20px;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow:
-    0 10px 22px var(--cc-sh),
-    inset 2px 2px 5px rgba(255, 255, 255, 0.4),
-    inset -3px -3px 7px rgba(0, 0, 0, 0.14);
-}
-.cargo-card::after {
-  content: '';
-  position: absolute;
-  right: -22px;
-  bottom: -22px;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  pointer-events: none;
-}
-.cargo--wd   { background: linear-gradient(140deg, #fda4af, #f43f5e 60%, #e11d48); --cc-sh: rgba(244, 63, 94, 0.30); --cc-ink: #e11d48; }
-.cargo--dep  { background: linear-gradient(140deg, #6ee7b7, #10b981 55%, #047857); --cc-sh: rgba(5, 150, 105, 0.30); --cc-ink: #047857; }
-.cargo--earn { background: linear-gradient(140deg, #fde68a, #f59e0b 55%, #d97706); --cc-sh: rgba(245, 158, 11, 0.32); --cc-ink: #b45309; }
-.cargo--log  { background: linear-gradient(140deg, #c084fc, #8b5cf6 55%, #6d28d9); --cc-sh: rgba(139, 92, 246, 0.32); --cc-ink: #6d28d9; }
-.cargo-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.cargo-lbl {
-  font-size: 9.5px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  opacity: 0.95;
-}
-.cargo-ico {
-  width: 28px; height: 28px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  background: rgba(255, 255, 255, 0.24);
-  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.45);
-}
-.cargo-val {
-  font-size: 21px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  white-space: nowrap;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  margin: 6px 0 2px;
-}
-.cargo-meta { font-size: 9.5px; font-weight: 800; opacity: 0.95; }
-.cargo-foot {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 8px;
-}
-.cargo-act {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--cc-ink);
-  font-size: 10.5px;
-  font-weight: 900;
-  text-decoration: none;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), inset -1px -1px 2px rgba(0, 0, 0, 0.06);
-}
-.cargo-act:active { transform: scale(0.95); }
-.cargo-mini {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 8px;
-}
-.cargo-mini div {
-  padding: 5px 4px;
-  border-radius: 10px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.35);
-}
-.cargo-mini b { display: block; font-size: 14px; font-weight: 900; line-height: 1.1; }
-.cargo-mini span { font-size: 8.5px; font-weight: 800; opacity: 0.95; }
-
-/* ── 3. JENDELA MENU: tombol porthole bulat berbingkai kuningan ── */
-.porthole-menu {
-  border: 2px solid #ffffff;
-  border-radius: 22px;
-  padding: 14px 6px 10px;
-  background:
-    repeating-linear-gradient(180deg, transparent 0 25px, rgba(180, 83, 9, 0.07) 25px 27px),
-    linear-gradient(170deg, #fffaf3 0%, #fdebd3 100%);
-  box-shadow: var(--reef-clay-shadow);
-}
-.pm-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  row-gap: 14px;
-}
-.pm-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-}
-.pm-ring {
-  width: 50px;
-  height: 50px;
-  padding: 4px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #fef3c7 0%, #fbbf24 50%, #b45309 100%);
-  box-shadow: 0 5px 10px rgba(180, 83, 9, 0.25), inset 1px 1px 2px rgba(255, 255, 255, 0.7);
-  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.pm-item:active .pm-ring { transform: scale(0.9); }
-.pm-glass {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 19px;
-  color: #ffffff;
-  background: var(--pm);
-  box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.45), inset -2px -2px 5px rgba(0, 0, 0, 0.2);
-}
-.pm-glass::before {
-  content: '';
-  position: absolute;
-  top: 5px; left: 8px;
-  width: 12px; height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
-  transform: rotate(-30deg);
-}
-.pm--coral  { --pm: linear-gradient(145deg, #fda4af, #f43f5e); }
-.pm--green  { --pm: linear-gradient(145deg, #6ee7b7, #059669); }
-.pm--violet { --pm: linear-gradient(145deg, #c084fc, #7c3aed); }
-.pm--gold   { --pm: linear-gradient(145deg, #fde68a, #d97706); }
-.pm--lagoon { --pm: linear-gradient(145deg, #67e8f9, #0891b2); }
-.pm-lbl {
-  font-size: 9.5px;
-  font-weight: 900;
-  color: #44403c;
-  text-align: center;
-  line-height: 1.15;
-}
-
-/* ── 4. LACI KABIN: tombol pembuka bottom sheet ── */
-.drawer-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.drawer-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px;
-  border: 2px solid #ffffff;
-  border-radius: 16px;
-  background: var(--reef-card);
-  box-shadow: var(--reef-clay-shadow);
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.drawer-btn:active { transform: scale(0.96); }
-.drawer-btn strong { display: block; font-size: 11.5px; font-weight: 900; color: var(--reef-ink); }
-.drawer-btn small { display: block; font-size: 9px; font-weight: 700; color: var(--reef-muted); line-height: 1.25; }
-.dr-ico {
-  width: 30px; height: 30px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  color: #ffffff;
-  box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.14);
-}
-.dr-ico--doc  { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.dr-ico--lock { background: linear-gradient(145deg, #6ee7b7, #059669); }
-.dr-ico--help { background: linear-gradient(145deg, #c084fc, #7c3aed); }
-
-.cabin-exit {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: #fff1f2;
-  color: #e11d48;
-  font-size: 11.5px;
-  font-weight: 900;
-  text-decoration: none;
-  box-shadow: inset 2px 2px 4px #ffffff, inset -2px -2px 4px rgba(244, 63, 94, 0.14);
-}
-.cabin-exit:active { transform: scale(0.97); }
-
-/* ── BOTTOM SHEET ── */
-.sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: rgba(30, 27, 46, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
-.cabin-sheet {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  z-index: 10001;
-  width: 100%;
-  max-width: 440px;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding: 8px 16px calc(18px + env(safe-area-inset-bottom));
-  border-radius: 24px 24px 0 0;
-  background: var(--reef-card);
-  box-shadow: 0 -10px 30px rgba(30, 27, 46, 0.18), inset 0 2px 4px #ffffff;
-  transform: translate(-50%, 105%);
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  visibility: hidden;
-}
-.cabin-sheet.open { transform: translate(-50%, 0); visibility: visible; }
-.sheet-grab {
-  width: 40px; height: 5px;
-  margin: 0 auto 10px;
-  border-radius: 999px;
-  background: #fed7aa;
-}
-.sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.sheet-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 900;
-  color: var(--reef-ink);
-}
-.sheet-close {
-  width: 30px; height: 30px;
-  border: none;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: #ffffff;
-  color: var(--reef-muted);
-  font-size: 14px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), inset -1px -1px 2px rgba(251, 146, 60, 0.15);
-}
-
-/* Isi sheet: dokumen kru */
-.doc-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.doc-cell {
-  min-width: 0;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: inset 2px 2px 4px #ffffff, inset -2px -2px 4px rgba(251, 146, 60, 0.12);
-}
-.doc-cell--wide { grid-column: span 2; }
-.doc-k {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 8.5px;
-  font-weight: 900;
-  color: var(--reef-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.doc-k i { color: #b45309; font-size: 11px; }
-.doc-v {
-  margin-top: 2px;
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--reef-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Isi sheet: form kata sandi */
-.input-lbl {
-  display: block;
-  margin: 4px 0 4px 2px;
-  font-size: 10px;
-  font-weight: 900;
-  color: var(--reef-muted);
-}
-.prof-input-ctrl {
-  width: 100%;
-  height: 42px;
-  padding: 0 12px;
-  margin-bottom: 8px;
-  border: 2px solid #ffffff;
-  border-radius: 12px;
-  background: #fff7ed;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--reef-ink);
-  outline: none;
-  box-shadow: inset 2px 2px 5px rgba(251, 146, 60, 0.18), inset -2px -2px 4px #ffffff;
-}
-.prof-input-ctrl:focus { box-shadow: inset 2px 2px 5px rgba(251, 146, 60, 0.18), 0 0 0 3px rgba(251, 113, 133, 0.25); }
-.prof-submit-btn {
-  width: 100%;
-  height: 42px;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #34d399, #059669);
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 5px 12px rgba(5, 150, 105, 0.3), inset 2px 2px 3px rgba(255, 255, 255, 0.45), inset -2px -2px 4px rgba(6, 95, 70, 0.3);
-}
-.prof-submit-btn:active { transform: scale(0.98); }
-.cabin-sheet .cabin-flash { margin-bottom: 10px; }
-
-/* Isi sheet: bantuan */
+/* Bottom sheet */
+.sheet-backdrop { position: fixed; inset: 0; z-index: 10000; background: rgba(27, 42, 30, .5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
+.sheet-backdrop.open { opacity: 1; visibility: visible; }
+.cabin-sheet { position: fixed; left: 50%; bottom: 0; z-index: 10001; width: 100%; max-width: 440px; max-height: 86vh; overflow-y: auto; padding: 8px 16px calc(20px + env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 3px #f6e2b0, 0 -16px 40px rgba(0, 0, 0, .25); transform: translate(-50%, 105%); transition: transform .4s var(--pc-ease); }
+.cabin-sheet.open { transform: translate(-50%, 0); }
+.sheet-grab { width: 44px; height: 5px; margin: 0 auto 10px; border-radius: 999px; background: #e6d6ad; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.sheet-title { display: flex; align-items: center; gap: 8px; font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: var(--pc-ink); }
+.sheet-title img { width: 34px; height: 34px; object-fit: contain; }
+.sheet-close { width: 34px; height: 34px; border: 0; border-radius: 12px; cursor: pointer; display: grid; place-items: center; font-size: 15px; color: #fff; background: linear-gradient(180deg, #fb7185, #e11d48); box-shadow: 0 3px 0 #9f1239; }
+.sheet-close:active { transform: translateY(2px); box-shadow: 0 1px 0 #9f1239; }
+.doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.doc-cell { padding: 9px 11px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0; min-width: 0; }
+.doc-cell--wide { grid-column: 1 / -1; }
+.doc-k { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 900; color: var(--pc-muted); }
+.doc-v { margin-top: 2px; font-size: 13.5px; font-weight: 900; color: var(--pc-ink); word-break: break-word; }
+.cabin-flash { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 9px 11px; border-radius: 12px; font-size: 12.5px; font-weight: 800; }
+.cabin-flash.success { background: #dcfce7; color: #15803d; }
+.cabin-flash.error { background: #ffe4e6; color: #be123c; }
+.input-lbl { display: block; margin: 0 0 4px 2px; font-size: 11.5px; font-weight: 900; color: var(--pc-muted); }
+.prof-input-ctrl { width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 11px 13px; border: 0; border-radius: 13px; font: 800 14px var(--pc-font, inherit); color: var(--pc-ink); background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, inset 0 2px 4px rgba(120, 70, 10, .08); outline: none; }
+.prof-input-ctrl:focus { box-shadow: inset 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, .15); }
 .help-list { display: flex; flex-direction: column; gap: 8px; }
-.help-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  background: #ffffff;
-  text-decoration: none;
-  box-shadow: inset 2px 2px 4px #ffffff, inset -2px -2px 4px rgba(251, 146, 60, 0.12);
-}
-.help-row:active { transform: scale(0.98); }
-.ch-btn {
-  width: 36px; height: 36px;
-  flex-shrink: 0;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.45), inset -2px -2px 4px rgba(0, 0, 0, 0.15);
-}
-.ch-btn--wa   { background: linear-gradient(145deg, #4ade80, #16a34a); }
-.ch-btn--tele { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.ch-btn--ig   { background: linear-gradient(145deg, #fb7185, #c026d3); }
-.ch-btn--fb   { background: linear-gradient(145deg, #93c5fd, #2563eb); }
-.ch-btn--cs   { background: linear-gradient(145deg, #c084fc, #8b5cf6); }
-.help-name { flex: 1; font-size: 12px; font-weight: 900; color: var(--reef-ink); }
-.help-row > i { color: var(--reef-muted); }
-.ch-empty { font-size: 11px; font-weight: 700; color: var(--reef-muted); text-align: center; padding: 10px 0; }
-
-@media (max-width: 360px) {
-  .cabin-porthole { width: 70px; height: 70px; }
-  .cabin-id { padding-right: 72px; }
-  .cabin-name { font-size: 14.5px; }
-  .cargo-rail { grid-auto-columns: 82%; }
-  .pm-ring { width: 44px; height: 44px; }
-  .pm-glass { font-size: 17px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cabin-lantern, .porthole-fish, .porthole-bubble { animation: none !important; }
-  .cabin-sheet, .sheet-backdrop { transition: none; }
-}
+.help-row { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 14px; text-decoration: none; color: var(--pc-ink); background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
+.help-name { flex: 1; font-size: 13.5px; font-weight: 900; }
+.ch-btn { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: #fff; }
+.ch-btn--wa { background: linear-gradient(145deg, #4ade80, #16a34a); }
+.ch-btn--tele { background: linear-gradient(145deg, #38bdf8, #0284c7); }
+.ch-btn--ig { background: linear-gradient(145deg, #f472b6, #c026d3); }
+.ch-btn--fb { background: linear-gradient(145deg, #60a5fa, #1d4ed8); }
+.ch-btn--cs { background: linear-gradient(145deg, #fbbf24, #d97706); }
+.ch-empty { padding: 16px; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--pc-muted); }
 </style>
 
-<div class="cabin-stage">
-  <!-- ── 1. DINDING KABIN: IDENTITAS KAPTEN + JENDELA LAUT ── -->
-  <div class="cabin-hero">
-    <!-- Lentera gantung -->
-    <svg class="cabin-lantern" viewBox="0 0 22 40" fill="none" aria-hidden="true">
-      <line x1="11" y1="0" x2="11" y2="12" stroke="#92400e" stroke-width="1.5"/>
-      <circle cx="11" cy="27" r="11" fill="#fef08a" opacity="0.45"/>
-      <rect x="6" y="12" width="10" height="3" rx="1.5" fill="#b45309"/>
-      <rect x="5" y="15" width="12" height="15" rx="4" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
-      <rect x="8.5" y="19" width="5" height="7" rx="2.5" fill="#f59e0b"/>
-      <rect x="6" y="30" width="10" height="3" rx="1.5" fill="#b45309"/>
-    </svg>
+<div class="g-page">
 
-    <!-- Porthole: jendela bulat ke laut karang -->
-    <svg class="cabin-porthole" viewBox="0 0 90 90" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="phBrass" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#fef3c7"/>
-          <stop offset="45%" stop-color="#fbbf24"/>
-          <stop offset="100%" stop-color="#b45309"/>
-        </linearGradient>
-        <linearGradient id="phSea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#a5f3fc"/>
-          <stop offset="60%" stop-color="#22d3ee"/>
-          <stop offset="100%" stop-color="#0891b2"/>
-        </linearGradient>
-        <clipPath id="phGlass"><circle cx="45" cy="45" r="31"/></clipPath>
-      </defs>
-      <circle cx="45" cy="45" r="43" fill="url(#phBrass)"/>
-      <circle cx="45" cy="45" r="35" fill="#92400e" opacity="0.35"/>
-      <g fill="#92400e" opacity="0.55">
-        <circle cx="45" cy="6" r="2"/><circle cx="45" cy="84" r="2"/><circle cx="6" cy="45" r="2"/><circle cx="84" cy="45" r="2"/>
-        <circle cx="17.5" cy="17.5" r="2"/><circle cx="72.5" cy="17.5" r="2"/><circle cx="17.5" cy="72.5" r="2"/><circle cx="72.5" cy="72.5" r="2"/>
-      </g>
-      <g clip-path="url(#phGlass)">
-        <rect x="0" y="0" width="90" height="90" fill="url(#phSea)"/>
-        <path d="M28 10 L36 10 L24 80 L16 80 Z" fill="#ffffff" opacity="0.2"/>
-        <!-- dasar karang -->
-        <path d="M10 72 C25 64, 45 70, 60 66 C70 63, 80 66, 85 68 V90 H10 Z" fill="#fdba74"/>
-        <g stroke="#f43f5e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M58 72 V60 L52 52 M58 63 L64 54"/>
-        </g>
-        <g fill="#fda4af"><circle cx="52" cy="52" r="2"/><circle cx="64" cy="54" r="2"/></g>
-        <g stroke="#c084fc" stroke-width="2.4" stroke-linecap="round">
-          <path d="M30 70 C29 64, 26 61, 25 57"/><path d="M33 70 C33 63, 33 60, 34 56"/><path d="M36 70 C38 64, 40 62, 42 58"/>
-        </g>
-        <path d="M74 72 C70 64, 77 60, 72 52" stroke="#10b981" stroke-width="2.6" stroke-linecap="round"/>
-        <!-- ikan lewat -->
-        <g class="porthole-fish">
-          <g transform="translate(0 34)">
-            <path d="M-9 0 L-14 -4 L-14 4 Z" fill="#ea580c"/>
-            <ellipse cx="0" cy="0" rx="9" ry="5.5" fill="#fb923c"/>
-            <path d="M-3 -5.2 C-2 -2, -2 2, -3 5.2 L-0.5 5.4 C0 2, 0 -2, -0.5 -5.4 Z" fill="#ffffff"/>
-            <path d="M3.5 -4.6 C4.4 -2, 4.4 2, 3.5 4.6 L5.4 4 C6 2, 6 -2, 5.4 -4 Z" fill="#ffffff"/>
-            <circle cx="6.6" cy="-1.2" r="1.3" fill="#ffffff"/><circle cx="7" cy="-1.2" r="0.7" fill="#1e1b2e"/>
-          </g>
-        </g>
-        <g class="porthole-fish porthole-fish--b">
-          <g transform="translate(0 52) scale(0.75)">
-            <path d="M-8 0 L-13 -4 L-13 4 Z" fill="#eab308"/>
-            <ellipse cx="0" cy="0" rx="8" ry="6.5" fill="#fde047"/>
-            <circle cx="4.6" cy="-1.4" r="1.3" fill="#ffffff"/><circle cx="5" cy="-1.4" r="0.7" fill="#1e1b2e"/>
-          </g>
-        </g>
-        <g fill="#ffffff" opacity="0.85">
-          <circle class="porthole-bubble" cx="40" cy="60" r="1.8"/>
-          <circle class="porthole-bubble" cx="46" cy="64" r="1.2"/>
-          <circle class="porthole-bubble" cx="66" cy="58" r="1.5"/>
-        </g>
-      </g>
-      <circle cx="45" cy="45" r="31" stroke="#fef3c7" stroke-width="2.5"/>
-      <path d="M26 30 A24 24 0 0 1 44 20" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
-    </svg>
-
-    <div class="cabin-id">
-      <div class="cabin-avatar">
-        <span><?= strtoupper(substr($user['username'], 0, 1)) ?></span>
-        <span class="cabin-online"></span>
-      </div>
-      <div class="cabin-who">
-        <div class="cabin-eyebrow">Kabin Kapten</div>
-        <div class="cabin-name"><?= htmlspecialchars($user['username']) ?></div>
-        <div class="cabin-email"><?= htmlspecialchars($user['email']) ?></div>
-        <div class="cabin-pills">
-          <span class="cabin-pill cabin-pill--rank <?= $is_premium ? 'is-vip' : '' ?>">
-            <i class="ph-fill ph-crown-simple"></i> <?= htmlspecialchars($membership_name) ?>
-          </span>
-          <span class="cabin-pill cabin-pill--days" title="Bergabung <?= $member_since ?>">
-            <i class="ph-fill ph-anchor"></i> <?= number_format($days_member) ?> hari berlayar
-          </span>
+  <!-- Kartu pemain -->
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="pf-id">
+      <div class="pf-ava"><?= strtoupper(substr($user['username'], 0, 1)) ?><span class="on"></span><span class="lv">Lv <?= (int)$farm_lv['level'] ?></span></div>
+      <div class="pf-who">
+        <h1><?= htmlspecialchars($user['username']) ?></h1>
+        <div class="mail"><?= htmlspecialchars($user['email']) ?></div>
+        <div class="pf-chips">
+          <span class="g-chip <?= $is_premium ? 'vip' : '' ?>"><i class="ph-fill ph-crown-simple"></i><?= htmlspecialchars($membership_name) ?></span>
+          <span class="g-chip" title="Bergabung <?= $member_since ?>"><i class="ph-fill ph-plant"></i><?= number_format($days_member) ?> hari bertani</span>
         </div>
       </div>
     </div>
+    <div class="pf-xp">
+      <div class="pf-xp-top"><span>XP Sawah</span><span><?= number_format($farm_lv['xp'] - $farm_lv['xp_cur']) ?> / <?= number_format($xp_span) ?></span></div>
+      <div class="g-bar gold"><i style="width:<?= $xp_pct ?>%"></i></div>
+    </div>
+    <div class="pf-ticket">
+      <img src="/assets/img/icons3d/referral.png" alt="">
+      <div class="t"><small>KODE REFERRAL</small><b id="ref-code"><?= htmlspecialchars($user['referral_code']) ?></b></div>
+      <button class="g-btn sm" onclick="copyRef()" type="button"><i class="ph-bold ph-copy"></i>Salin</button>
+    </div>
+  </section>
 
-    <!-- Tiket kru: kode referral -->
-    <div class="cabin-ticket">
-      <div class="ticket-left">
-        <span class="ticket-ico"><i class="ph-fill ph-ticket"></i></span>
-        <div>
-          <div class="ticket-lbl">TIKET KRU · KODE REFERRAL</div>
-          <div class="ticket-code" id="ref-code"><?= htmlspecialchars($user['referral_code']) ?></div>
+  <!-- Inventaris saldo -->
+  <section data-rv style="--d:.05s">
+    <div class="g-sec"><span class="g-ribbon gold"><img src="/assets/img/icons3d/barn.png" alt="">Lumbung Saldo</span></div>
+    <div class="pf-inv">
+      <a href="/withdraw" class="pf-slot">
+        <span class="go">Tarik ›</span>
+        <span class="g-slot sm"><img src="/assets/img/icons3d/moneybag.png" alt=""></span>
+        <div><small>Saldo Tarik</small><b><?= format_rp((float)$user['balance_wd']) ?></b></div>
+        <span class="meta"><?= number_format($total_withdrawals) ?>x penarikan</span>
+      </a>
+      <a href="/deposit" class="pf-slot">
+        <span class="go">Top Up ›</span>
+        <span class="g-slot sm"><img src="/assets/img/icons3d/piggy.png" alt=""></span>
+        <div><small>Saldo Beli</small><b><?= format_rp((float)$user['balance_dep']) ?></b></div>
+        <span class="meta"><?= number_format($total_deposits) ?>x top up</span>
+      </a>
+      <a href="/history" class="pf-slot wide">
+        <span class="g-slot"><img src="/assets/img/icons3d/coins.png" alt=""></span>
+        <div style="flex:1;min-width:0"><small>Total Pendapatan</small><b><?= format_rp((float)$user['total_earned']) ?></b><span class="meta">Sejak <?= $member_since ?></span></div>
+        <i class="ph-bold ph-caret-right" style="color:#c9a560"></i>
+      </a>
+      <div class="pf-slot wide">
+        <div class="pf-mini">
+          <div><b><?= number_format($total_watches) ?></b><small>Video</small></div>
+          <div><b><?= number_format($refs) ?></b><small>Teman</small></div>
+          <div><b><?= number_format($active_investments) ?></b><small>Invest</small></div>
         </div>
       </div>
-      <button class="ticket-copy" onclick="copyRef()" type="button">
-        <i class="ph-bold ph-copy"></i> Salin
+    </div>
+  </section>
+
+  <!-- Menu -->
+  <section class="g-panel" data-rv style="--d:.1s">
+    <div class="g-sec"><span class="g-ribbon"><img src="/assets/img/icons3d/compass.png" alt="">Menu</span></div>
+    <div class="pf-menu">
+      <?php foreach ($PF_MENU as [$href, $ic, $lbl]): ?>
+        <a href="<?= $href ?>"><span class="g-slot"><img src="/assets/img/icons3d/<?= $ic ?>.png" alt=""></span><span class="l"><?= $lbl ?></span></a>
+      <?php endforeach; ?>
+    </div>
+  </section>
+
+  <!-- Pengaturan (bottom sheet) -->
+  <section data-rv style="--d:.15s">
+    <div class="g-sec"><span class="g-ribbon sky"><i class="ph-fill ph-gear-six"></i>Pengaturan</span></div>
+    <div class="pf-set">
+      <button type="button" class="pf-row" onclick="openCabinSheet('doc')">
+        <span class="g-slot sm"><img src="/assets/img/icons3d/receipt.png" alt=""></span>
+        <span class="t"><strong>Data Akun</strong><small>Akun &amp; rekening bank</small></span><i class="ph-bold ph-caret-right"></i>
+      </button>
+      <button type="button" class="pf-row" onclick="openCabinSheet('pass')">
+        <span class="g-slot sm"><img src="/assets/img/icons3d/lock.png" alt=""></span>
+        <span class="t"><strong>Kata Sandi</strong><small>Ganti password akun</small></span><i class="ph-bold ph-caret-right"></i>
+      </button>
+      <button type="button" class="pf-row" onclick="openCabinSheet('help')">
+        <span class="g-slot sm"><img src="/assets/img/icons3d/chat.png" alt=""></span>
+        <span class="t"><strong>Bantuan</strong><small>Kontak &amp; komunitas</small></span><i class="ph-bold ph-caret-right"></i>
       </button>
     </div>
-  </div>
+  </section>
 
-  <!-- ── 2. RAK KARGO: saldo & aktivitas (geser) ── -->
-  <div class="cabin-section-head">
-    <div class="csh-title"><i class="ph-fill ph-package"></i> Rak Kargo</div>
-    <span class="csh-hint">Geser <i class="ph-bold ph-arrows-left-right"></i></span>
-  </div>
-  <div class="cargo-rail">
-    <div class="cargo-card cargo--wd">
-      <div>
-        <div class="cargo-top">
-          <span class="cargo-lbl">Saldo Tarik</span>
-          <span class="cargo-ico"><i class="ph-fill ph-coins"></i></span>
-        </div>
-        <div class="cargo-val"><?= format_rp((float)$user['balance_wd']) ?></div>
-        <div class="cargo-meta"><?= number_format($total_withdrawals) ?>x penarikan berhasil</div>
-      </div>
-      <div class="cargo-foot">
-        <a href="/withdraw" class="cargo-act">Tarik <i class="ph-bold ph-arrow-up-right"></i></a>
-      </div>
-    </div>
-
-    <div class="cargo-card cargo--dep">
-      <div>
-        <div class="cargo-top">
-          <span class="cargo-lbl">Saldo Beli</span>
-          <span class="cargo-ico"><i class="ph-fill ph-wallet"></i></span>
-        </div>
-        <div class="cargo-val"><?= format_rp((float)$user['balance_dep']) ?></div>
-        <div class="cargo-meta"><?= number_format($total_deposits) ?>x top up disetujui</div>
-      </div>
-      <div class="cargo-foot">
-        <a href="/deposit" class="cargo-act">Top Up <i class="ph-bold ph-plus"></i></a>
-      </div>
-    </div>
-
-    <div class="cargo-card cargo--earn">
-      <div>
-        <div class="cargo-top">
-          <span class="cargo-lbl">Total Pendapatan</span>
-          <span class="cargo-ico"><i class="ph-fill ph-trophy"></i></span>
-        </div>
-        <div class="cargo-val"><?= format_rp((float)$user['total_earned']) ?></div>
-        <div class="cargo-meta">Hasil panen &amp; komisi sejak <?= $member_since ?></div>
-      </div>
-      <div class="cargo-foot">
-        <a href="/history" class="cargo-act">Riwayat <i class="ph-bold ph-receipt"></i></a>
-      </div>
-    </div>
-
-    <div class="cargo-card cargo--log">
-      <div class="cargo-top">
-        <span class="cargo-lbl">Catatan Pelayaran</span>
-        <span class="cargo-ico"><i class="ph-fill ph-book-bookmark"></i></span>
-      </div>
-      <div class="cargo-mini">
-        <div><b><?= number_format($total_watches) ?></b><span>Video</span></div>
-        <div><b><?= number_format($refs) ?></b><span>Kru</span></div>
-        <div><b><?= number_format($active_investments) ?></b><span>Invest</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 3. JENDELA MENU (porthole bulat) ── -->
-  <div class="cabin-section-head">
-    <div class="csh-title"><i class="ph-fill ph-steering-wheel"></i> Ruang Kemudi</div>
-  </div>
-  <div class="porthole-menu">
-    <div class="pm-grid">
-      <a href="/videos" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--violet"><i class="ph-fill ph-film-strip"></i></span></span>
-        <span class="pm-lbl">Tonton<br>Video</span>
-      </a>
-      <a href="/farm" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--green"><i class="ph-fill ph-plant"></i></span></span>
-        <span class="pm-lbl">Sawah<br>Cuan</span>
-      </a>
-      <a href="/missions" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--green"><i class="ph-fill ph-target"></i></span></span>
-        <span class="pm-lbl">Pusat<br>Misi</span>
-      </a>
-      <a href="/upgrade" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--gold"><i class="ph-fill ph-crown-simple"></i></span></span>
-        <span class="pm-lbl">Upgrade<br>Member</span>
-      </a>
-      <a href="/history" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--lagoon"><i class="ph-fill ph-chart-line-up"></i></span></span>
-        <span class="pm-lbl">Riwayat<br>Keuangan</span>
-      </a>
-      <a href="/edit-rekening" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--green"><i class="ph-fill ph-credit-card"></i></span></span>
-        <span class="pm-lbl">Rekening<br>Bank</span>
-      </a>
-      <a href="/referral" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--coral"><i class="ph-fill ph-users-three"></i></span></span>
-        <span class="pm-lbl">Ajak<br>Kru</span>
-      </a>
-      <a href="/panduan" class="pm-item">
-        <span class="pm-ring"><span class="pm-glass pm--violet"><i class="ph-fill ph-book-open"></i></span></span>
-        <span class="pm-lbl">Buku<br>Panduan</span>
-      </a>
-    </div>
-  </div>
-
-  <!-- ── 4. LACI KABIN (pengaturan via bottom sheet) ── -->
-  <div class="cabin-section-head">
-    <div class="csh-title"><i class="ph-fill ph-archive-box"></i> Laci Kabin</div>
-  </div>
-  <div class="drawer-row">
-    <button type="button" class="drawer-btn" onclick="openCabinSheet('doc')">
-      <span class="dr-ico dr-ico--doc"><i class="ph-fill ph-identification-card"></i></span>
-      <span><strong>Dokumen Kru</strong><small>Data akun &amp; bank</small></span>
-    </button>
-    <button type="button" class="drawer-btn" onclick="openCabinSheet('pass')">
-      <span class="dr-ico dr-ico--lock"><i class="ph-fill ph-lock-key"></i></span>
-      <span><strong>Kunci Kabin</strong><small>Ganti kata sandi</small></span>
-    </button>
-    <button type="button" class="drawer-btn" onclick="openCabinSheet('help')">
-      <span class="dr-ico dr-ico--help"><i class="ph-fill ph-lifebuoy"></i></span>
-      <span><strong>Bantuan</strong><small>Kontak &amp; komunitas</small></span>
-    </button>
-  </div>
-
-  <a href="/logout" class="cabin-exit">
-    <i class="ph-bold ph-sign-out"></i> Turun dari Kapal
-  </a>
+  <a href="/logout" class="g-btn red full" data-rv style="--d:.2s"><i class="ph-bold ph-sign-out"></i>Keluar</a>
 </div>
 
 <!-- ══════════ BOTTOM SHEETS ══════════ -->
 <div class="sheet-backdrop" id="cabin-sheet-backdrop" onclick="closeCabinSheet()"></div>
 
-<!-- Sheet: Dokumen Kru -->
+<!-- Sheet: Data Akun -->
 <div class="cabin-sheet" id="sheet-doc" role="dialog" aria-modal="true" aria-labelledby="sheet-doc-title">
   <div class="sheet-grab"></div>
   <div class="sheet-head">
-    <div class="sheet-title" id="sheet-doc-title"><span class="dr-ico dr-ico--doc"><i class="ph-fill ph-identification-card"></i></span> Dokumen Kru</div>
+    <div class="sheet-title" id="sheet-doc-title"><img src="/assets/img/icons3d/receipt.png" alt="">Data Akun</div>
     <button type="button" class="sheet-close" onclick="closeCabinSheet()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
   <div class="doc-grid">
@@ -1035,11 +313,11 @@ $_psvg = [
   </div>
 </div>
 
-<!-- Sheet: Kunci Kabin (ganti kata sandi) -->
+<!-- Sheet: Kata Sandi -->
 <div class="cabin-sheet" id="sheet-pass" role="dialog" aria-modal="true" aria-labelledby="sheet-pass-title">
   <div class="sheet-grab"></div>
   <div class="sheet-head">
-    <div class="sheet-title" id="sheet-pass-title"><span class="dr-ico dr-ico--lock"><i class="ph-fill ph-lock-key"></i></span> Kunci Kabin</div>
+    <div class="sheet-title" id="sheet-pass-title"><img src="/assets/img/icons3d/lock.png" alt="">Kata Sandi</div>
     <button type="button" class="sheet-close" onclick="closeCabinSheet()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
   <?php if ($flash): ?>
@@ -1055,10 +333,7 @@ $_psvg = [
     <input class="prof-input-ctrl" type="password" name="old_password" placeholder="Masukkan password saat ini" required minlength="6">
     <label class="input-lbl">Password Baru (Minimal 6 Karakter)</label>
     <input class="prof-input-ctrl" type="password" name="new_password" placeholder="Masukkan password baru" required minlength="6">
-    <button class="prof-submit-btn" type="submit">
-      <i class="ph-bold ph-key"></i>
-      <span>Perbarui Password</span>
-    </button>
+    <button class="g-btn full" type="submit"><i class="ph-bold ph-key"></i>Perbarui Password</button>
   </form>
 </div>
 
@@ -1066,7 +341,7 @@ $_psvg = [
 <div class="cabin-sheet" id="sheet-help" role="dialog" aria-modal="true" aria-labelledby="sheet-help-title">
   <div class="sheet-grab"></div>
   <div class="sheet-head">
-    <div class="sheet-title" id="sheet-help-title"><span class="dr-ico dr-ico--help"><i class="ph-fill ph-lifebuoy"></i></span> Pusat Bantuan</div>
+    <div class="sheet-title" id="sheet-help-title"><img src="/assets/img/icons3d/chat.png" alt="">Pusat Bantuan</div>
     <button type="button" class="sheet-close" onclick="closeCabinSheet()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
   <div class="help-list">

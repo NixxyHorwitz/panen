@@ -158,119 +158,111 @@ $pageTitle  = 'Misi Harian';
 $activePage = 'missions';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
+<?php
+$KIND_ICON = ['video' => 'watch', 'fish' => 'padi', 'mix' => 'flame', 'ref' => 'referral', 'wd' => 'moneybag', 'up' => 'upgrade'];
+$TAB_ICON  = ['daily' => 'checkin', 'weekly' => 'missions', 'lifetime' => 'star'];
+?>
 <style>
-/* ══════════════════════════════════════════════════════════
-   MISI — Living Coral Reef, ringkas & minimalis
-   Token warna & latar laut dari partials/header.php (--reef-*)
-   ══════════════════════════════════════════════════════════ */
-.ms-wrap { position: relative; z-index: 1; width: 100%; max-width: 440px; margin: 0 auto; padding: 6px 12px 96px; color: var(--reef-ink); display: flex; flex-direction: column; gap: 10px; }
-.ms-top-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px; }
-.ms-back-btn { width: 36px; height: 36px; border-radius: 12px; border: 1.5px solid #ffffff; background: #ffffff; display: inline-flex; align-items: center; justify-content: center; color: var(--reef-ink); font-size: 17px; text-decoration: none; box-shadow: 0 3px 8px rgba(30, 27, 46, 0.05), inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.95); transition: transform 0.12s ease; }
-.ms-back-btn:active { transform: scale(0.92); }
-.ms-nav-title { display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.92); border: 1.5px solid #ffffff; border-radius: 14px; padding: 6px 14px; font-size: 13px; font-weight: 900; color: var(--reef-ink); box-shadow: 0 2px 8px rgba(30, 27, 46, 0.04); }
-.ms-bounty-badge { background: linear-gradient(135deg, #fef08a 0%, #f59e0b 100%); border: 1.5px solid #ffffff; color: #78350f; font-weight: 900; font-size: 11px; padding: 6px 11px; border-radius: 14px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.22), inset 1px 1px 2px #ffffff; }
-.ms-sum { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 2px solid #fff; border-radius: 20px; color: #fff;
-  background: linear-gradient(150deg, #0e7490, #22d3ee); box-shadow: 0 10px 22px rgba(8, 145, 178, 0.24), inset 2px 2px 5px rgba(255, 255, 255, 0.3); }
-.ms-sum-ic { width: 42px; height: 42px; flex-shrink: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.6); }
-.ms-sum-tx { flex: 1; min-width: 0; }
-.ms-sum-tx small { display: block; font-size: 9.5px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.9; }
-.ms-sum-tx b { display: block; font-size: 20px; font-weight: 900; line-height: 1.15; }
-.ms-sum-pill { flex-shrink: 0; padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 900; background: #fff; color: #0e7490; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-.ms-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 0; padding: 4px; border: 2px solid #fff; border-radius: 16px; background: rgba(255, 255, 255, 0.7); box-shadow: 0 2px 8px rgba(30, 27, 46, 0.04); }
-.ms-tab { position: relative; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 4px; border: none; border-radius: 12px; background: none; cursor: pointer; font-family: inherit; font-size: 11.5px; font-weight: 900; color: var(--reef-muted); transition: all 0.15s ease; }
-.ms-tab i { font-size: 14px; }
-.ms-tab.on { color: #fff; background: linear-gradient(145deg, #fb7185, #e11d48); box-shadow: 0 5px 12px rgba(225, 29, 72, 0.28), inset 2px 2px 3px rgba(255, 255, 255, 0.4); }
-.ms-tab .dot { position: absolute; top: 4px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; border: 1.5px solid #fff; }
+/* ══ MISI — Papan Quest · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.ms-chest { position: relative; flex-shrink: 0; width: 84px; height: 84px; }
+.ms-chest img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 8px rgba(120, 70, 10, .3)); }
+.ms-chest.ready img { animation: msShake 2.4s ease-in-out infinite; }
+.ms-chest.ready::before { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 230, 120, .85), transparent 65%); animation: gGlow 2s ease-in-out infinite; }
+@keyframes msShake { 0%, 70%, 100% { transform: none; } 74% { transform: rotate(-8deg) scale(1.05); } 78% { transform: rotate(8deg) scale(1.05); } 82% { transform: rotate(-5deg); } 86% { transform: rotate(4deg); } }
+.ms-sum { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 18px; background: rgba(255, 255, 255, .75); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 8px 18px rgba(120, 70, 10, .12); }
+.ms-sum .t { flex: 1; min-width: 0; }
+.ms-sum small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
+.ms-sum b { display: block; font-family: var(--pc-font); font-size: 22px; font-weight: 700; line-height: 1.1; color: #15803d; }
+.ms-sum .g-chip { background: #fff3c4; color: #8a5a00; }
+
+.ms-tab { position: relative; min-width: 0; overflow: hidden; }
+@media (max-width: 350px) { .ms-tab img { display: none; } }
+.ms-tab img { width: 22px; height: 22px; object-fit: contain; margin: -4px 0; }
+.ms-tab .dot { position: absolute; top: 3px; right: 6px; width: 10px; height: 10px; border-radius: 50%; background: #f43f5e; box-shadow: 0 0 0 2px #fff; animation: gGlow 1.4s ease-in-out infinite; }
 .ms-panel { display: none; }
-.ms-panel.on { display: block; }
-.ms-note { margin: 0 4px 6px; font-size: 10px; font-weight: 800; color: var(--reef-muted); display: flex; align-items: center; gap: 4px; }
-.ms-card { border: 2px solid #fff; border-radius: 18px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); overflow: hidden; }
-.ms-row { display: flex; align-items: center; gap: 9px; padding: 10px 12px; }
-.ms-row + .ms-row { border-top: 1.5px dashed rgba(251, 146, 60, 0.22); }
-.ms-row.is-claimed { opacity: 0.55; }
-.ms-ic { width: 36px; height: 36px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; box-shadow: inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.5), inset -2px -2px 4px rgba(0, 0, 0, 0.14); }
-.ms-ic.k-video { background: linear-gradient(145deg, #c084fc, #7c3aed); }
-.ms-ic.k-fish { background: linear-gradient(145deg, #67e8f9, #0891b2); }
-.ms-ic.k-mix { background: linear-gradient(145deg, #6ee7b7, #059669); }
-.ms-ic.k-ref { background: linear-gradient(145deg, #fda4af, #e11d48); }
-.ms-ic.k-wd { background: linear-gradient(145deg, #fcd34d, #f59e0b); }
-.ms-ic.k-up { background: linear-gradient(145deg, #fde68a, #d97706); }
+.ms-panel.on { display: flex; flex-direction: column; gap: 9px; animation: msIn .4s var(--pc-out) both; }
+@keyframes msIn { from { opacity: 0; transform: translateY(10px); } }
+.ms-note { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 0 4px; font-size: 11.5px; font-weight: 800; color: var(--pc-muted); }
+.ms-note span { display: inline-flex; align-items: center; gap: 4px; }
+
+.ms-row { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 20px; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c, 0 10px 18px rgba(120, 70, 10, .07); animation: msIn .45s var(--pc-out) both; animation-delay: calc(var(--i) * .05s); }
+.ms-row.is-ready { background: linear-gradient(180deg, #fff7d1, #fffdf3); box-shadow: 0 0 0 2px #fcd34d, 0 4px 0 #e9b949, 0 10px 22px rgba(246, 183, 10, .2); }
+.ms-row.is-claimed { background: #f6f8f2; box-shadow: 0 0 0 2px #dfe8d3, 0 4px 0 #d3dec5; }
+.ms-row.is-claimed .g-slot img, .ms-row.is-claimed .ms-body { opacity: .55; }
 .ms-body { flex: 1; min-width: 0; }
-.ms-title { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; font-weight: 900; }
-.ms-title span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ms-title em { flex-shrink: 0; margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 900; color: #059669; }
-.ms-bar { height: 6px; margin: 4px 0 3px; border-radius: 999px; background: rgba(8, 145, 178, 0.13); overflow: hidden; }
-.ms-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22d3ee, #34d399); }
-.ms-meta { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; font-weight: 700; color: var(--reef-muted); }
-.ms-meta span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ms-meta b { flex-shrink: 0; font-weight: 900; color: #0e7490; }
-.ms-act { flex-shrink: 0; }
-.ms-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 64px; padding: 7px 11px; border: 2px solid #fff; border-radius: 999px; cursor: pointer; text-decoration: none; font-family: inherit; font-size: 11px; font-weight: 900; transition: transform 0.1s ease; }
-.ms-btn:active { transform: scale(0.95); }
-.ms-btn.claim { color: #fff; background: linear-gradient(145deg, #fcd34d, #f59e0b); box-shadow: 0 5px 12px rgba(245, 158, 11, 0.35), inset 2px 2px 3px rgba(255, 255, 255, 0.45); animation: msPulse 1.6s ease-in-out infinite; }
-.ms-btn.go { color: #0e7490; background: #fff; box-shadow: 0 3px 8px rgba(8, 145, 178, 0.12), inset 1.5px 1.5px 3px #fff; }
-.ms-btn.done { color: #059669; background: #d1fae5; cursor: default; }
-@keyframes msPulse { 50% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.18), inset 2px 2px 3px rgba(255, 255, 255, 0.45); } }
+.ms-title { font-size: 13px; font-weight: 900; line-height: 1.25; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-desc { margin-top: 1px; font-size: 11px; font-weight: 700; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-prog { display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+.ms-prog .g-bar { flex: 1; height: 9px; }
+.ms-prog b { flex-shrink: 0; font-size: 11px; font-weight: 900; color: #15803d; }
+.ms-side { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.ms-btn.g-btn { min-height: 32px; padding: 0 11px; font-size: 13px; border-radius: 11px; }
+.ms-btn.claim { animation: msBounce 1.4s var(--pc-ease) infinite; }
+@keyframes msBounce { 0%, 60%, 100% { transform: none; } 70% { transform: translateY(-4px) scale(1.04); } 80% { transform: none; } }
+.ms-btn.done { display: inline-flex; align-items: center; gap: 3px; font-family: var(--pc-font); font-size: 13px; font-weight: 700; color: #15803d; }
 @keyframes msSpin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .ms-btn.claim { animation: none; } }
+
+/* Hujan koin saat klaim */
+.ms-coin { position: fixed; z-index: 10002; width: 26px; height: 26px; pointer-events: none; animation: msCoin .9s var(--pc-out) forwards; }
+@keyframes msCoin { to { transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ms-btn.claim, .ms-chest.ready img, .ms-row, .ms-panel.on { animation: none; } }
 </style>
 
-<div class="ms-wrap">
+<div class="g-page">
 
-  <!-- ── COMPACT TOP NAVIGATOR ── -->
-  <div class="ms-top-nav">
-    <a href="/home" class="ms-back-btn" title="Kembali ke Beranda">
-      <i class="ph-bold ph-caret-left"></i>
-    </a>
-    <div class="ms-nav-title">
-      <i class="ph-fill ph-target" style="color:var(--reef-coral-500);"></i>
-      <span>Misi Samudra</span>
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Papan Quest</h1>
+        <p>Selesaikan quest, klaim peti hadiah ke Saldo Tarik.</p>
+      </div>
+      <div class="ms-chest <?= $ready_count > 0 ? 'ready' : '' ?>" id="ms-chest"><img src="/assets/img/icons3d/<?= $ready_count > 0 ? 'chest_open' : 'chest' ?>.png" alt=""></div>
     </div>
-    <div class="ms-bounty-badge">
-      <i class="ph-bold ph-coins"></i>
-      <span>Saldo Tarik</span>
+    <div class="ms-sum">
+      <span class="g-slot sm"><img src="/assets/img/icons3d/coins.png" alt=""></span>
+      <div class="t"><small>Hadiah siap diklaim</small><b id="ms-ready-amt"><?= format_rp($ready_total) ?></b></div>
+      <span class="g-chip" id="ms-ready-n"><?= $ready_count ?> misi</span>
     </div>
-  </div>
-
-  <section class="ms-sum">
-    <span class="ms-sum-ic"><i class="ph-fill ph-target"></i></span>
-    <span class="ms-sum-tx"><small>Siap diklaim</small><b id="ms-ready-amt"><?= format_rp($ready_total) ?></b></span>
-    <span class="ms-sum-pill" id="ms-ready-n"><?= $ready_count ?> misi</span>
   </section>
 
-  <div class="ms-tabs" role="tablist">
-    <?php foreach ($TABS as $cat => [$lbl, $ic]):
+  <div class="g-seg" role="tablist" data-rv style="--d:.05s">
+    <?php foreach ($TABS as $cat => [$lbl]):
       $hasReady = (bool)array_filter($groups[$cat], fn($m) => $m['done'] && !$m['claimed']); ?>
       <button type="button" class="ms-tab <?= $cat === $active_tab ? 'on' : '' ?>" data-tab="<?= $cat ?>" onclick="msTab('<?= $cat ?>')">
-        <i class="ph-bold <?= $ic ?>"></i><?= $lbl ?><?php if ($hasReady): ?><span class="dot"></span><?php endif; ?>
+        <img src="/assets/img/icons3d/<?= $TAB_ICON[$cat] ?>.png" alt=""><?= $lbl ?><?php if ($hasReady): ?><span class="dot"></span><?php endif; ?>
       </button>
     <?php endforeach; ?>
   </div>
 
-  <?php foreach ($TABS as $cat => [$lbl, $ic, $note]): ?>
+  <?php foreach ($TABS as $cat => [$lbl, $ic, $note]):
+    $n_claimed = count(array_filter($groups[$cat], fn($m) => $m['claimed'])); ?>
   <div class="ms-panel <?= $cat === $active_tab ? 'on' : '' ?>" id="ms-<?= $cat ?>">
-    <div class="ms-note"><i class="ph-bold ph-clock-counter-clockwise"></i> <?= $note ?></div>
-    <div class="ms-card">
-      <?php foreach ($groups[$cat] as $m): $pct = (int)round($m['progress'] / $m['target'] * 100); ?>
-      <div class="ms-row <?= $m['claimed'] ? 'is-claimed' : '' ?>" id="mr-<?= htmlspecialchars($m['slug']) ?>" data-reward="<?= (float)$m['reward'] ?>">
-        <span class="ms-ic k-<?= $m['kind'] ?>"><i class="ph-fill <?= htmlspecialchars($m['icon']) ?>"></i></span>
-        <div class="ms-body">
-          <div class="ms-title"><span><?= htmlspecialchars($m['title']) ?></span><em>+<?= format_rp($m['reward']) ?></em></div>
-          <div class="ms-bar"><i style="width:<?= $pct ?>%"></i></div>
-          <div class="ms-meta"><span><?= htmlspecialchars($m['desc']) ?></span><b><?= $m['progress'] ?>/<?= $m['target'] ?></b></div>
-        </div>
-        <div class="ms-act">
-          <?php if ($m['claimed']): ?>
-            <span class="ms-btn done"><i class="ph-bold ph-check"></i> Beres</span>
-          <?php elseif ($m['done']): ?>
-            <button type="button" class="ms-btn claim" onclick="claimMission('<?= htmlspecialchars($m['slug'], ENT_QUOTES) ?>', this)"><i class="ph-fill ph-gift"></i> Klaim</button>
-          <?php else: ?>
-            <a href="<?= $m['go'] ?>" class="ms-btn go">Mulai <i class="ph-bold ph-arrow-right"></i></a>
-          <?php endif; ?>
-        </div>
+    <div class="ms-note"><span><i class="ph-bold ph-clock-counter-clockwise"></i><?= $note ?></span><span class="g-chip"><?= $n_claimed ?>/<?= count($groups[$cat]) ?> beres</span></div>
+    <?php if (empty($groups[$cat])): ?>
+      <div class="g-panel g-empty"><img src="/assets/img/icons3d/missions.png" alt=""><b>Belum ada quest</b><p>Quest baru segera hadir.</p></div>
+    <?php endif; ?>
+    <?php foreach ($groups[$cat] as $i => $m): $pct = (int)round($m['progress'] / $m['target'] * 100);
+      $state = $m['claimed'] ? 'is-claimed' : ($m['done'] ? 'is-ready' : ''); ?>
+    <div class="ms-row <?= $state ?>" id="mr-<?= htmlspecialchars($m['slug']) ?>" data-reward="<?= (float)$m['reward'] ?>" style="--i:<?= $i ?>">
+      <span class="g-slot"><img src="/assets/img/icons3d/<?= $KIND_ICON[$m['kind']] ?? 'missions' ?>.png" alt=""><?php if ($m['claimed']): ?><span class="g-ok"><i class="ph-bold ph-check"></i></span><?php endif; ?></span>
+      <div class="ms-body">
+        <div class="ms-title"><?= htmlspecialchars($m['title']) ?></div>
+        <div class="ms-desc"><?= htmlspecialchars($m['desc']) ?></div>
+        <div class="ms-prog"><div class="g-bar <?= $m['done'] && !$m['claimed'] ? 'gold' : '' ?>"><i style="width:<?= $pct ?>%"></i></div><b><?= $m['progress'] ?>/<?= $m['target'] ?></b></div>
       </div>
-      <?php endforeach; ?>
+      <div class="ms-side">
+        <span class="g-coin"><img src="/assets/img/icons3d/coins.png" alt="">+<?= format_rp($m['reward']) ?></span>
+        <?php if ($m['claimed']): ?>
+          <span class="ms-btn done"><i class="ph-fill ph-check-circle"></i>Beres</span>
+        <?php elseif ($m['done']): ?>
+          <button type="button" class="ms-btn claim g-btn gold shine" onclick="claimMission('<?= htmlspecialchars($m['slug'], ENT_QUOTES) ?>', this)">Klaim</button>
+        <?php else: ?>
+          <a href="<?= $m['go'] ?>" class="ms-btn go g-btn">Mulai</a>
+        <?php endif; ?>
+      </div>
     </div>
+    <?php endforeach; ?>
   </div>
   <?php endforeach; ?>
 </div>
@@ -290,6 +282,22 @@ function msRefreshSummary() {
     const has = document.querySelector('#ms-' + t.dataset.tab + ' .ms-btn.claim');
     const dot = t.querySelector('.dot'); if (!has && dot) dot.remove();
   });
+  if (!n) {
+    const chest = document.getElementById('ms-chest');
+    if (chest) { chest.classList.remove('ready'); chest.querySelector('img').src = '/assets/img/icons3d/chest.png'; }
+  }
+}
+function msCoinBurst(el) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 12; i++) {
+    const c = document.createElement('img');
+    c.src = '/assets/img/icons3d/coins.png'; c.className = 'ms-coin';
+    c.style.left = (r.left + r.width / 2 - 13) + 'px'; c.style.top = (r.top + r.height / 2 - 13) + 'px';
+    const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 70;
+    c.style.setProperty('--x', Math.cos(a) * d + 'px'); c.style.setProperty('--y', (Math.sin(a) * d - 40) + 'px'); c.style.setProperty('--r', (Math.random() * 360) + 'deg');
+    document.body.appendChild(c); setTimeout(() => c.remove(), 950);
+  }
 }
 function claimMission(slug, btn) {
   btn.disabled = true;
@@ -301,19 +309,24 @@ function claimMission(slug, btn) {
     .then((data) => {
       if (data.ok) {
         const row = document.getElementById('mr-' + slug);
-        if (row) row.classList.add('is-claimed');
+        if (row) {
+          row.classList.remove('is-ready'); row.classList.add('is-claimed');
+          row.querySelector('.g-bar')?.classList.remove('gold');
+          row.querySelector('.g-slot')?.insertAdjacentHTML('beforeend', '<span class="g-ok"><i class="ph-bold ph-check"></i></span>');
+        }
+        msCoinBurst(btn);
         const done = document.createElement('span');
-        done.className = 'ms-btn done'; done.innerHTML = '<i class="ph-bold ph-check"></i> Beres';
+        done.className = 'ms-btn done'; done.innerHTML = '<i class="ph-fill ph-check-circle"></i>Beres';
         btn.replaceWith(done);
         msRefreshSummary();
         if (typeof nToast !== 'undefined') nToast(data.msg, 'success');
       } else {
-        btn.disabled = false; btn.innerHTML = '<i class="ph-fill ph-gift"></i> Klaim';
+        btn.disabled = false; btn.textContent = 'Klaim';
         if (typeof nToast !== 'undefined') nToast(data.msg, 'error');
       }
     })
     .catch(() => {
-      btn.disabled = false; btn.innerHTML = '<i class="ph-fill ph-gift"></i> Klaim';
+      btn.disabled = false; btn.textContent = 'Klaim';
       if (typeof nToast !== 'undefined') nToast('Koneksi terputus.', 'error');
     });
 }

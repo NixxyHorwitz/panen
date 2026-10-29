@@ -1,0 +1,128 @@
+/* ══════════════════════════════════════════════════════════
+   PANENCUAN · KOMPONEN GAME BERSAMA (Golden Hour Harvest)
+   Dipakai halaman user (Nonton, Misi, Check-in, Profil, dst.).
+   Token warna --pc-* dari partials/header.php. Lihat DESIGN.md.
+   ══════════════════════════════════════════════════════════ */
+
+.g-page { position: relative; z-index: 1; width: 100%; max-width: 440px; margin: 0 auto; padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 12px; }
+.g-page img { -webkit-user-drag: none; }
+
+/* Muncul bertahap (diaktifkan skrip global di footer) */
+[data-rv] { opacity: 0; transform: translateY(16px) scale(.97); transition: opacity .5s var(--pc-out), transform .65s var(--pc-ease); transition-delay: var(--d, 0s); }
+[data-rv].in { opacity: 1; transform: none; }
+
+/* ── Hero halaman: langit sore + bukit sawah ── */
+.g-hero {
+  position: relative; overflow: hidden; border-radius: 26px; padding: 16px 14px 14px; color: var(--pc-ink);
+  background:
+    radial-gradient(120% 70% at 50% 118%, #4f9f3a 0 38%, transparent 39%),
+    radial-gradient(90% 60% at 10% 112%, #7cc95a 0 40%, transparent 41%),
+    radial-gradient(90% 55% at 95% 110%, #b8e48c 0 42%, transparent 43%),
+    linear-gradient(180deg, #ffb46b 0%, #ffd59a 40%, #fff0cf 72%, #e7f6d5 100%);
+  box-shadow: 0 16px 34px rgba(120, 70, 10, .18);
+}
+.g-hero > * { position: relative; z-index: 2; }
+.g-hero .g-sun { position: absolute; z-index: 0; top: 14px; right: 22px; width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fff7c2, #ffd54f 60%, #f6b70a); box-shadow: 0 0 28px 10px rgba(255, 213, 79, .55); animation: gGlow 4s ease-in-out infinite; }
+@keyframes gGlow { 50% { box-shadow: 0 0 40px 14px rgba(255, 213, 79, .7); transform: scale(1.06); } }
+.g-hero .g-cloud { position: absolute; z-index: 0; height: 14px; border-radius: 999px; background: rgba(255, 255, 255, .8); animation: gCloud linear infinite; }
+.g-hero .g-cloud::before, .g-hero .g-cloud::after { content: ''; position: absolute; bottom: 4px; border-radius: 50%; background: inherit; }
+.g-hero .g-cloud::before { left: 8px; width: 18px; height: 18px; } .g-hero .g-cloud::after { left: 20px; width: 24px; height: 22px; }
+.g-hero .g-cloud.c1 { top: 16px; width: 56px; animation-duration: 30s; } .g-hero .g-cloud.c2 { top: 44px; width: 42px; animation-duration: 40s; animation-delay: -20s; opacity: .7; }
+@keyframes gCloud { from { transform: translateX(-90px); } to { transform: translateX(470px); } }
+.g-hero-row { display: flex; align-items: center; gap: 12px; }
+.g-hero h1 { margin: 0; font-family: var(--pc-font); font-size: 21px; font-weight: 700; line-height: 1.1; letter-spacing: -.2px; color: #4a2b00; text-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
+.g-hero p { margin: 3px 0 0; font-size: 12px; font-weight: 800; color: #7a4f00; line-height: 1.35; }
+.g-hero-art { position: relative; flex-shrink: 0; width: 76px; height: 76px; }
+.g-hero-art img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 8px rgba(120, 70, 10, .3)); animation: gBob 3s ease-in-out infinite; }
+@keyframes gBob { 50% { transform: translateY(-5px) rotate(-4deg); } }
+@keyframes gFloat { 50% { transform: translateY(-3px); } }
+
+/* ── Panel perkamen ── */
+.g-panel { position: relative; padding: 12px; border-radius: 22px; background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 10px 22px rgba(120, 70, 10, .1); }
+.g-panel.plain { background: #fff; box-shadow: var(--pc-sh); }
+
+/* ── Pita judul ── */
+.g-ribbon {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 4px 16px 5px 12px; margin-left: 8px;
+  font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  background: linear-gradient(180deg, #22c55e, #15803d); border-radius: 6px 10px 10px 6px; box-shadow: 0 3px 0 #11622f;
+}
+.g-ribbon::before { content: ''; position: absolute; left: -8px; top: 5px; bottom: -5px; width: 12px; z-index: -1; background: #0f5a2a; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 6px 50%); }
+.g-ribbon img { width: 24px; height: 24px; object-fit: contain; margin: -6px 0; }
+.g-ribbon.gold { background: linear-gradient(180deg, #ffd54f, #f6b70a); color: #4a3000; text-shadow: 0 1px 0 rgba(255, 255, 255, .5); box-shadow: 0 3px 0 #b07800; }
+.g-ribbon.gold::before { background: #a06c00; }
+.g-ribbon.sky { background: linear-gradient(180deg, #38bdf8, #0284c7); box-shadow: 0 3px 0 #075985; }
+.g-ribbon.sky::before { background: #064a6e; }
+.g-sec { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 -4px; }
+.g-sec small { font-size: 11.5px; font-weight: 900; color: #8a5a00; padding: 2px 9px; border-radius: 999px; background: #fff3c4; }
+
+/* ── Tombol game ── */
+.g-btn {
+  --c1: #22c55e; --c2: #15803d; --lip: #11622f; --sh: rgba(22, 163, 74, .35); --tx: #fff;
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 16px;
+  border: 0; border-radius: 14px; cursor: pointer; text-decoration: none; white-space: nowrap; font-family: var(--pc-font); font-size: 14.5px; font-weight: 600; color: var(--tx);
+  background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: 0 4px 0 var(--lip), 0 8px 14px var(--sh), inset 0 2px 0 rgba(255, 255, 255, .45);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .15); transition: transform .12s, box-shadow .12s;
+}
+.g-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--lip), 0 3px 6px var(--sh), inset 0 2px 0 rgba(255, 255, 255, .4); }
+.g-btn:disabled, .g-btn.off { filter: grayscale(.7); opacity: .65; cursor: not-allowed; }
+.g-btn img { width: 22px; height: 22px; object-fit: contain; }
+.g-btn.gold { --c1: #ffd54f; --c2: #f6b70a; --lip: #b07800; --sh: rgba(246, 183, 10, .4); --tx: #4a3000; text-shadow: 0 1px 0 rgba(255, 255, 255, .5); }
+.g-btn.sky { --c1: #38bdf8; --c2: #0284c7; --lip: #075985; --sh: rgba(2, 132, 199, .35); }
+.g-btn.red { --c1: #fb7185; --c2: #e11d48; --lip: #9f1239; --sh: rgba(225, 29, 72, .35); }
+.g-btn.violet { --c1: #a78bfa; --c2: #7c3aed; --lip: #5b21b6; --sh: rgba(124, 58, 237, .35); }
+.g-btn.soft { --c1: #fff; --c2: #f6f1e4; --lip: #e2d6b8; --sh: rgba(120, 70, 10, .08); --tx: #6b4f1d; text-shadow: none; }
+.g-btn.sm { min-height: 34px; padding: 0 12px; font-size: 13px; border-radius: 11px; }
+.g-btn.full { width: 100%; }
+.g-btn.shine::after { content: ''; position: absolute; top: 0; left: -70%; width: 45%; height: 100%; transform: skewX(-20deg); pointer-events: none; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent); animation: gShine 3s ease-in-out infinite; }
+@keyframes gShine { 0%, 50% { left: -70%; } 85%, 100% { left: 140%; } }
+
+/* ── Slot ikon 3D ── */
+.g-slot { position: relative; flex-shrink: 0; width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #fff 0%, #fff6dc 70%); box-shadow: inset 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
+.g-slot img { width: 80%; height: 80%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .2)); }
+.g-slot.lg { width: 60px; height: 60px; border-radius: 18px; }
+.g-slot.sm { width: 38px; height: 38px; border-radius: 12px; }
+.g-slot .g-ok { position: absolute; right: -4px; bottom: -4px; width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: #fff; background: #16a34a; box-shadow: 0 0 0 2px #fff; }
+
+/* ── Bar progres & cincin ── */
+.g-bar { height: 10px; border-radius: 999px; background: #edf2e6; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .08); }
+.g-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4ade80, #16a34a); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .1); transition: width 1s var(--pc-ease); }
+.g-bar.gold i { background: repeating-linear-gradient(-45deg, #ffd54f 0 6px, #f6b70a 6px 12px); background-size: 200% 100%; animation: gStripes 1.4s linear infinite; }
+@keyframes gStripes { to { background-position: -34px 0; } }
+.g-ring { position: relative; width: 74px; height: 74px; flex-shrink: 0; }
+.g-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.g-ring circle { fill: none; stroke-width: 8; }
+.g-ring .bg { stroke: rgba(255, 255, 255, .55); }
+.g-ring .fg { stroke: url(#gRingGrad); stroke-linecap: round; stroke-dasharray: 201; transition: stroke-dashoffset 1.2s var(--pc-ease) .2s; }
+.g-ring div { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.g-ring b { font-family: var(--pc-font); font-size: 20px; font-weight: 700; color: #4a2b00; }
+.g-ring small { font-size: 10px; font-weight: 900; color: #8a5a00; margin-top: 2px; }
+
+/* ── Chip, koin, stempel ── */
+.g-coin { display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px 2px 3px; border-radius: 999px; font-family: var(--pc-font); font-size: 12.5px; font-weight: 700; color: #6b4300; background: linear-gradient(180deg, #fff3c4, #ffe9a0); box-shadow: inset 0 0 0 1.5px rgba(246, 183, 10, .5); white-space: nowrap; }
+.g-coin img { width: 18px; height: 18px; object-fit: contain; }
+.g-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 900; background: #edf2e6; color: #3f5a33; white-space: nowrap; }
+.g-stamp { position: absolute; z-index: 3; padding: 2px 10px; border: 2.5px solid currentColor; border-radius: 8px; font-family: var(--pc-font); font-size: 13px; font-weight: 700; letter-spacing: 1px; transform: rotate(-14deg); color: #16a34a; background: rgba(255, 255, 255, .85); animation: gStamp .5s var(--pc-ease) both; }
+@keyframes gStamp { from { transform: rotate(-14deg) scale(2.2); opacity: 0; } }
+
+/* ── Tab segmen ala game ── */
+.g-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: #f2e6c8; box-shadow: inset 0 2px 3px rgba(120, 70, 10, .15); }
+.g-seg button, .g-seg a {
+  min-height: 38px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  font-family: var(--pc-font); font-size: 13.5px; font-weight: 600; color: #8a6a3a; transition: background .2s, color .2s, transform .15s var(--pc-ease);
+}
+.g-seg button:active, .g-seg a:active { transform: scale(.94); }
+.g-seg .active, .g-seg .on { color: #fff; background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
+.g-seg em { font-style: normal; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; font-weight: 900; background: rgba(0, 0, 0, .12); display: inline-grid; place-items: center; }
+.g-seg .active em, .g-seg .on em { background: #ffd54f; color: #4a3000; }
+
+/* ── Kosong ── */
+.g-empty { padding: 22px 16px; text-align: center; }
+.g-empty img { width: 72px; height: 72px; object-fit: contain; animation: gBob 3s ease-in-out infinite; }
+.g-empty b { display: block; margin-top: 6px; font-family: var(--pc-font); font-size: 16px; font-weight: 700; }
+.g-empty p { margin: 3px 0 0; font-size: 12px; font-weight: 700; color: var(--pc-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-rv] { opacity: 1; transform: none; transition: none; }
+  .g-hero .g-sun, .g-hero .g-cloud, .g-hero-art img, .g-btn.shine::after, .g-bar.gold i, .g-stamp, .g-empty img { animation: none !important; }
+}

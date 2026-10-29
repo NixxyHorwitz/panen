@@ -97,24 +97,26 @@ $render_vcard = static function (array $v) use ($watch_today, $watch_limit, $sav
     $resume  = (!$done && isset($saved_prog_map[$v['id']]) && (int)$v['watch_duration'] > 0)
         ? (int)round(($saved_prog_map[$v['id']]['seconds_watched'] / $v['watch_duration']) * 100) : null;
     ?>
-    <a href="<?= $href ?>" class="vcard vcard--<?= $status_class ?>" data-status="<?= $done ? 'done' : 'ready' ?>" <?= ($done || $blocked) ? 'style="pointer-events:none"' : '' ?>>
+    <a href="<?= $href ?>" class="vcard vcard--<?= $status_class ?>" data-status="<?= $done ? 'done' : 'ready' ?>" data-rv <?= ($done || $blocked) ? 'style="pointer-events:none"' : '' ?>>
       <div class="vcard__thumb">
         <img src="<?= yt_thumb($v['youtube_id']) ?>" alt="<?= htmlspecialchars($v['title']) ?>" loading="lazy" onerror="this.src='https://img.youtube.com/vi/<?= $v['youtube_id'] ?>/hqdefault.jpg'">
-        <span class="vcard__dur"><i class="ph-bold ph-clock"></i><?= (int)$v['watch_duration'] ?>s</span>
-        <?php if ($done): ?><span class="vcard__state ok"><i class="ph-bold ph-check"></i></span>
-        <?php elseif ($blocked): ?><span class="vcard__state lock"><i class="ph-fill ph-lock-simple"></i></span><?php endif; ?>
+        <span class="vcard__dur"><i class="ph-bold ph-timer"></i><?= (int)$v['watch_duration'] ?>s</span>
+        <?php if ($done): ?><span class="vcard__state ok"><span class="g-stamp">BERES</span></span>
+        <?php elseif ($blocked): ?><span class="vcard__state lock"><img src="/assets/img/icons3d/lock.png" alt=""></span>
+        <?php else: ?><span class="vcard__play"><i class="ph-fill ph-play"></i></span><?php endif; ?>
         <?php if ($resume !== null): ?><span class="vcard__resume"><i style="width:<?= max(4, min(100, $resume)) ?>%"></i></span><?php endif; ?>
       </div>
       <div class="vcard__body">
         <div class="vcard__title"><?= htmlspecialchars($v['title']) ?></div>
         <div class="vcard__stats">
-          <span><i class="ph-bold ph-eye"></i><?= number_format((int)$v['total_watches']) ?></span>
-          <span><i class="ph-bold ph-thumbs-up"></i><?= number_format((int)($v['total_likes'] ?? 0)) ?></span>
+          <span><i class="ph-fill ph-eye"></i><?= number_format((int)$v['total_watches']) ?></span>
+          <span><i class="ph-fill ph-heart"></i><?= number_format((int)($v['total_likes'] ?? 0)) ?></span>
         </div>
         <div class="vcard__foot">
-          <span class="vcard__rw <?= $done ? 'done' : '' ?>"><?= $done ? 'Selesai' : '+' . format_rp((float)$v['reward_amount']) ?></span>
+          <?php if ($done): ?><span class="vcard__rw done"><i class="ph-fill ph-check-circle"></i>Dipanen</span>
+          <?php else: ?><span class="vcard__rw g-coin"><img src="/assets/img/icons3d/coins.png" alt="">+<?= format_rp((float)$v['reward_amount']) ?></span><?php endif; ?>
           <?php if (!$done && !$blocked): ?>
-            <span class="vcard__go"><?= $resume !== null ? 'Lanjut ' . $resume . '%' : 'Tonton' ?><i class="ph-fill ph-play"></i></span>
+            <span class="vcard__go"><?= $resume !== null ? 'Lanjut ' . $resume . '%' : 'Tonton' ?></span>
           <?php endif; ?>
         </div>
       </div>
@@ -140,151 +142,126 @@ $left = max(0, $watch_limit - $watch_today);
 ?>
 
 <style>
-/* ══ VIDEOS — Bioskop Bawah Laut · living coral reef clay (seragam dengan /watch) ══ */
-.vh { width: 100%; max-width: 440px; margin: 0 auto; padding: 6px 12px 28px; display: flex; flex-direction: column; gap: 11px; }
-
-/* Panel kuota */
-.vh-hero { border: 2px solid #fff; border-radius: 24px; padding: 6px; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); }
-.vh-hero-in { position: relative; overflow: hidden; display: flex; align-items: center; gap: 13px; padding: 13px 14px; border-radius: 19px; color: #fff;
-  background: radial-gradient(circle at 92% 120%, rgba(254, 240, 138, .45) 0, transparent 45%), radial-gradient(circle at 0 0, rgba(165, 243, 252, .5) 0, transparent 50%),
-    linear-gradient(135deg, #0891b2 0%, #0e7490 50%, #155e75 100%);
-  box-shadow: inset 2px 2px 6px rgba(255, 255, 255, .3), inset -3px -4px 10px rgba(8, 51, 68, .3); }
-.vh-hero-in::before { content: ''; position: absolute; top: 5px; left: 14px; width: 40%; height: 9px; border-radius: 999px; background: linear-gradient(90deg, rgba(255, 255, 255, .3), transparent); }
-.vh-ring { position: relative; width: 76px; height: 76px; flex-shrink: 0; }
-.vh-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.vh-ring .tr { stroke: rgba(255, 255, 255, .2); }
-.vh-ring .fl { stroke: url(#vhGrad); stroke-linecap: round; transition: stroke-dashoffset .8s cubic-bezier(.34, 1.56, .64, 1); }
-.vh-ring div { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
-.vh-ring b { font-size: 20px; font-weight: 900; }
-.vh-ring small { font-size: 9px; font-weight: 800; opacity: .85; margin-top: 2px; }
-.vh-txt { position: relative; z-index: 1; flex: 1; min-width: 0; }
-.vh-txt small { font-size: 9.5px; font-weight: 900; letter-spacing: .6px; text-transform: uppercase; opacity: .85; }
-.vh-txt h1 { margin: 2px 0 3px; font-size: 18px; font-weight: 900; letter-spacing: -.4px; line-height: 1.1; text-shadow: 0 2px 6px rgba(8, 51, 68, .3); }
-.vh-txt p { margin: 0; font-size: 10.5px; font-weight: 800; opacity: .92; }
-.vh-up { display: inline-flex; align-items: center; gap: 4px; margin-top: 7px; padding: 5px 10px; border-radius: 10px; background: #fef08a; color: #78350f; font-size: 10.5px; font-weight: 900; text-decoration: none; box-shadow: 0 2px 0 #b45309; }
-.vh-fish { position: absolute; right: 8px; top: 10px; width: 30px; opacity: .9; animation: vhSwim 4s ease-in-out infinite; }
-@keyframes vhSwim { 50% { transform: translate(-6px, 4px) rotate(-6deg); } }
+/* ══ VIDEOS — Bioskop Sawah · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.vh-quota { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px; border-radius: 20px; background: rgba(255, 255, 255, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 0 0 2px rgba(255, 255, 255, .8), 0 8px 18px rgba(120, 70, 10, .12); }
+.vh-quota .t { flex: 1; min-width: 0; }
+.vh-quota .t b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #4a2b00; }
+.vh-quota .t span { display: block; margin: 2px 0 7px; font-size: 11.5px; font-weight: 800; color: #7a4f00; }
+.vh-pips { display: flex; gap: 3px; flex-wrap: wrap; }
+.vh-pips i { width: 12px; height: 12px; border-radius: 4px; background: #efe3c4; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .08); }
+.vh-pips i.on { background: linear-gradient(180deg, #4ade80, #16a34a); box-shadow: inset 0 -2px 0 #11622f; animation: vhPip .5s var(--pc-ease) both; animation-delay: calc(var(--i) * .06s); }
+@keyframes vhPip { from { transform: scale(0); } }
 
 /* Survei */
-.vh-survey { display: flex; align-items: center; gap: 9px; padding: 8px 10px 8px 8px; border-radius: 17px; border: 2px solid #fff; text-decoration: none; color: inherit;
-  background: linear-gradient(135deg, #fffbeb, #fef3c7); box-shadow: 0 6px 14px rgba(245, 158, 11, .14); }
-.vh-survey.done { background: linear-gradient(135deg, #ecfdf5, #d1fae5); box-shadow: 0 6px 14px rgba(16, 185, 129, .12); }
-.vh-ico { width: 32px; height: 32px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff;
-  box-shadow: 0 3px 6px var(--sh, rgba(0, 0, 0, .12)), inset 1.5px 1.5px 3px rgba(255, 255, 255, .55), inset -1.5px -1.5px 3px rgba(0, 0, 0, .15); }
-.vh-ico.sun { background: linear-gradient(145deg, #fde68a, #f59e0b); --sh: rgba(245, 158, 11, .3); }
-.vh-ico.kelp { background: linear-gradient(145deg, #6ee7b7, #059669); --sh: rgba(5, 150, 105, .3); }
-.vh-ico.lag { background: linear-gradient(145deg, #a5f3fc, #0891b2); --sh: rgba(8, 145, 178, .3); }
+.vh-survey { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; padding: 9px 10px; }
 .vh-survey .t { flex: 1; min-width: 0; line-height: 1.25; }
-.vh-survey b { display: block; font-size: 12px; font-weight: 900; color: var(--reef-ink); }
-.vh-survey span.s { display: block; font-size: 10px; font-weight: 800; color: #92400e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vh-survey.done span.s { color: #047857; }
-.vh-survey .amt { flex-shrink: 0; padding: 5px 9px; border-radius: 10px; background: #fff; color: #b45309; font-size: 10.5px; font-weight: 900; }
-.vh-survey.done .amt { color: #047857; }
+.vh-survey .t b { display: block; font-family: var(--pc-font); font-size: 14.5px; font-weight: 700; color: var(--pc-ink); }
+.vh-survey .t span { display: block; font-size: 11px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vh-survey.done { background: linear-gradient(180deg, #f0fdf4, #fff); box-shadow: 0 0 0 2px #bbf7d0, 0 10px 22px rgba(22, 163, 74, .1); }
 
 /* Lanjutkan (carousel) */
-.vh-sh { display: flex; align-items: center; gap: 7px; margin: 2px 2px 0; }
-.vh-sh h2 { flex: 1; margin: 0; font-size: 12.5px; font-weight: 900; color: var(--reef-ink); }
-.vh-sh span { font-size: 10px; font-weight: 900; color: #0e7490; background: #ecfeff; padding: 2px 8px; border-radius: 999px; }
-.vhub-continue-list { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: none; }
+.vhub-continue-list { display: flex; gap: 9px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 8px; margin: 0 -2px; scrollbar-width: none; }
 .vhub-continue-list::-webkit-scrollbar { display: none; }
-.vhub-continue-item { position: relative; flex: 0 0 74%; scroll-snap-align: start; border-radius: 17px; border: 2px solid #fff; background: #fff; overflow: hidden;
-  box-shadow: 0 6px 14px rgba(30, 27, 46, .07); transition: opacity .3s, transform .3s; }
+.vhub-continue-item { position: relative; flex: 0 0 76%; scroll-snap-align: start; border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 0 0 2px #cdeefd, 0 8px 16px rgba(2, 132, 199, .12); transition: opacity .3s, transform .3s; }
 .vhub-continue-list .vhub-continue-item:only-child { flex-basis: 100%; }
-.cw-thumb { position: relative; display: block; aspect-ratio: 16 / 7; background: #0b2530; }
-.cw-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .9; }
-.cw-thumb .pl { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: rgba(255, 255, 255, .92); color: #0891b2; font-size: 16px; box-shadow: 0 4px 10px rgba(8, 51, 68, .35); }
-.cw-thumb .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(8, 51, 68, .5); }
-.cw-thumb .bar i { display: block; height: 100%; background: linear-gradient(90deg, #22d3ee, #34d399); }
-.cw-del { position: absolute; top: 6px; right: 6px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(8, 51, 68, .55); color: #fff; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.cw-info { display: flex; align-items: center; gap: 8px; padding: 7px 9px; }
-.cw-info a { flex: 1; min-width: 0; text-decoration: none; color: var(--reef-ink); font-size: 11.5px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cw-info span { flex-shrink: 0; font-size: 10px; font-weight: 900; color: #0e7490; }
+.cw-thumb { position: relative; display: block; aspect-ratio: 16 / 7; background: #1b2a1e; }
+.cw-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cw-thumb .pl { position: absolute; left: 50%; top: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; color: #4a3000;
+  background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 3px 0 #b07800, 0 6px 14px rgba(0, 0, 0, .3); animation: vhPulse 2s ease-in-out infinite; }
+@keyframes vhPulse { 50% { transform: scale(1.1); } }
+.cw-thumb .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(0, 0, 0, .4); }
+.cw-thumb .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd54f, #4ade80); }
+.cw-del { position: absolute; top: 6px; right: 6px; z-index: 2; width: 28px; height: 28px; border-radius: 10px; border: 0; background: rgba(27, 42, 30, .6); color: #fff; font-size: 13px; cursor: pointer; display: grid; place-items: center; }
+.cw-info { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.cw-info a { flex: 1; min-width: 0; text-decoration: none; color: var(--pc-ink); font-size: 12px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cw-info span { flex-shrink: 0; font-size: 11px; font-weight: 900; color: #0369a1; }
 
-/* Filter segmented */
-.vh-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; border-radius: 14px; background: #ffedd5; box-shadow: inset 1px 1px 3px rgba(251, 146, 60, .2); }
-.vhub-chip { border: 0; border-radius: 11px; padding: 8px 4px; background: transparent; color: #9a3412; font: 900 11px/1 'Nunito', sans-serif; cursor: pointer; }
-.vhub-chip.active { background: #fff; color: var(--reef-ink); box-shadow: 0 2px 6px rgba(251, 146, 60, .25); }
-
-/* Daftar video (baris) */
-.vgrid { display: flex; flex-direction: column; gap: 8px; }
-.vcard { display: flex; gap: 10px; padding: 6px; border-radius: 18px; border: 2px solid #fff; background: #fff; text-decoration: none; color: inherit;
-  box-shadow: 0 5px 14px rgba(30, 27, 46, .06), inset -2px -2px 5px rgba(251, 146, 60, .08); transition: transform .14s cubic-bezier(.34, 1.56, .64, 1); }
-.vcard:active { transform: scale(.98); }
-.vcard--done { background: #f8fafc; opacity: .75; }
-.vcard--blocked { opacity: .6; }
-.vcard__thumb { position: relative; width: 136px; flex-shrink: 0; aspect-ratio: 16 / 10; border-radius: 13px; overflow: hidden; background: #0b2530; align-self: center; }
+/* Daftar video: kartu quest */
+.vgrid { display: flex; flex-direction: column; gap: 10px; }
+.vcard { position: relative; display: flex; gap: 10px; padding: 7px; border-radius: 20px; text-decoration: none; color: inherit; background: linear-gradient(180deg, #fffaf0, #fff);
+  box-shadow: 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c, 0 10px 18px rgba(120, 70, 10, .08); }
+.vcard[data-rv].in { transition: opacity .5s var(--pc-out), transform .2s var(--pc-ease); }
+.vcard:active { transform: translateY(3px); box-shadow: 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
+.vcard--done { background: #f6f8f2; box-shadow: 0 0 0 2px #dfe8d3, 0 4px 0 #d3dec5; }
+.vcard--done .vcard__thumb img { filter: saturate(.4); }
+.vcard--blocked { filter: grayscale(.6); opacity: .7; }
+.vcard__thumb { position: relative; width: 132px; flex-shrink: 0; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; background: #1b2a1e; align-self: center; box-shadow: 0 0 0 2px #fff; }
 .vcard__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.vcard__dur { position: absolute; left: 5px; bottom: 5px; display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: 7px; background: rgba(8, 51, 68, .78); color: #fff; font-size: 9px; font-weight: 900; }
-.vcard__state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; }
-.vcard__state.ok { background: rgba(16, 185, 129, .55); }
-.vcard__state.lock { background: rgba(15, 23, 42, .5); }
-.vcard__resume { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(8, 51, 68, .5); }
-.vcard__resume i { display: block; height: 100%; background: linear-gradient(90deg, #f59e0b, #fb923c); }
+.vcard__dur { position: absolute; left: 5px; bottom: 5px; display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: 7px; background: rgba(27, 42, 30, .8); color: #fff; font-size: 10px; font-weight: 900; }
+.vcard__play { position: absolute; right: 6px; top: 6px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.vcard__state { position: absolute; inset: 0; display: grid; place-items: center; }
+.vcard__state.ok { background: rgba(22, 163, 74, .25); }
+.vcard__state.ok .g-stamp { position: static; font-size: 12px; }
+.vcard__state.lock { background: rgba(27, 42, 30, .5); }
+.vcard__state.lock img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .4)); }
+.vcard__resume { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, .45); }
+.vcard__resume i { display: block; height: 100%; background: linear-gradient(90deg, #ffd54f, #f59e0b); }
 .vcard__body { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 2px 2px 1px 0; }
-.vcard__title { font-size: 12px; font-weight: 800; line-height: 1.3; color: var(--reef-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.vcard__stats { display: flex; gap: 9px; margin-top: 3px; font-size: 9.5px; font-weight: 800; color: var(--reef-muted); }
+.vcard__title { font-size: 12.5px; font-weight: 900; line-height: 1.3; color: var(--pc-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vcard__stats { display: flex; gap: 9px; margin-top: 3px; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
 .vcard__stats span { display: inline-flex; align-items: center; gap: 2px; }
+.vcard__stats .ph-heart { color: #f43f5e; }
 .vcard__foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.vcard__rw { padding: 3px 8px; border-radius: 999px; background: #ecfdf5; color: #047857; font-size: 10.5px; font-weight: 900; white-space: nowrap; }
-.vcard__rw.done { background: #e2e8f0; color: #64748b; }
-.vcard__go { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 10px; background: linear-gradient(135deg, #22d3ee, #0891b2); color: #fff; font-size: 10.5px; font-weight: 900;
-  box-shadow: 0 2px 0 #0e7490; white-space: nowrap; }
+.vcard__rw.done { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 900; color: #15803d; }
+.vcard__go { display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 10px; font-family: var(--pc-font); font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap;
+  background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f, inset 0 2px 0 rgba(255, 255, 255, .4); text-shadow: 0 1px 0 rgba(0, 0, 0, .15); }
 
-.vh-empty { padding: 26px 16px; text-align: center; border-radius: 20px; border: 2px solid #fff; background: var(--reef-card); box-shadow: var(--reef-clay-shadow); }
-.vh-empty .vh-ico { width: 48px; height: 48px; margin: 0 auto 8px; font-size: 24px; border-radius: 15px; }
-.vh-empty b { display: block; font-size: 13px; font-weight: 900; color: var(--reef-ink); }
-.vh-empty p { margin: 3px 0 0; font-size: 11px; font-weight: 700; color: var(--reef-muted); }
 #loader { text-align: center; padding: 12px; display: none; }
-#loader span { width: 34px; height: 34px; display: inline-block; border-radius: 50%; border: 4px solid #cffafe; border-top-color: #0891b2; animation: vhSpin .8s linear infinite; }
-@keyframes vhSpin { to { transform: rotate(360deg); } }
+#loader img { width: 40px; height: 40px; animation: vhSpin 1s var(--pc-ease) infinite; }
+@keyframes vhSpin { 50% { transform: translateY(-8px) rotate(180deg); } 100% { transform: rotate(360deg); } }
 </style>
 
-<div class="vh">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="gRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd54f"/><stop offset="1" stop-color="#16a34a"/></linearGradient></defs></svg>
 
-  <!-- Panel kuota -->
-  <section class="vh-hero">
-    <div class="vh-hero-in">
-      <div class="vh-ring">
-        <svg viewBox="0 0 80 80">
-          <defs><linearGradient id="vhGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fef08a"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>
-          <circle class="tr" cx="40" cy="40" r="33" fill="none" stroke-width="8"/>
-          <circle class="fl" cx="40" cy="40" r="33" fill="none" stroke-width="8" stroke-dasharray="207.3" stroke-dashoffset="<?= round(207.3 * (1 - $pct / 100), 1) ?>"/>
-        </svg>
+<div class="g-page">
+
+  <!-- Hero kuota -->
+  <section class="g-hero" data-rv>
+    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
+    <div class="g-hero-row">
+      <div style="flex:1;min-width:0">
+        <h1>Bioskop Sawah</h1>
+        <p>Tonton video, panen koin ke saldo kamu.</p>
+      </div>
+      <div class="g-hero-art"><img src="/assets/img/icons3d/watch.png" alt=""></div>
+    </div>
+    <div class="vh-quota">
+      <div class="g-ring">
+        <svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="32"/><circle class="fg" cx="40" cy="40" r="32" style="stroke-dashoffset:<?= round(201 * (1 - $pct / 100), 1) ?>"/></svg>
         <div><b><?= (int)$watch_today ?></b><small>/ <?= (int)$watch_limit ?></small></div>
       </div>
-      <div class="vh-txt">
-        <small>Bioskop Cuan</small>
-        <h1>Nonton &amp; panen saldo</h1>
+      <div class="t">
         <?php if ($watch_today >= $watch_limit): ?>
-          <p>Kuota hari ini habis · reset 00:00</p>
-          <a href="/upgrade" class="vh-up"><i class="ph-fill ph-crown"></i>Tambah kuota</a>
+          <b>Kuota hari ini habis!</b>
+          <span>Reset jam 00:00 · naikkan rank untuk kuota lebih</span>
+          <a href="/upgrade" class="g-btn gold sm shine"><img src="/assets/img/icons3d/upgrade.png" alt="">Tambah kuota</a>
         <?php else: ?>
-          <p>Sisa <b><?= $left ?></b> video hari ini · reset 00:00</p>
+          <b>Sisa <?= $left ?> tontonan</b>
+          <span>Kuota harian · reset 00:00</span>
+          <div class="vh-pips"><?php for ($i = 0; $i < min(20, (int)$watch_limit); $i++): ?><i class="<?= $i < $watch_today ? 'on' : '' ?>" style="--i:<?= $i ?>"></i><?php endfor; ?></div>
         <?php endif; ?>
       </div>
-      <img class="vh-fish" src="/assets/img/fish/bagus.png" alt="" aria-hidden="true">
     </div>
   </section>
 
   <!-- Survei berhadiah (bisa ditutup admin) -->
   <?php if (setting($pdo, 'survey_enabled', '1') === '1'): ?>
-  <a href="/survey" class="vh-survey <?= $user_has_surveyed ? 'done' : '' ?>">
-    <span class="vh-ico <?= $user_has_surveyed ? 'kelp' : 'sun' ?>"><i class="ph-bold <?= $user_has_surveyed ? 'ph-check-circle' : 'ph-clipboard-text' ?>"></i></span>
+  <a href="/survey" class="g-panel vh-survey <?= $user_has_surveyed ? 'done' : '' ?>" data-rv style="--d:.05s">
+    <span class="g-slot"><img src="/assets/img/icons3d/survey.png" alt=""><?php if ($user_has_surveyed): ?><span class="g-ok"><i class="ph-bold ph-check"></i></span><?php endif; ?></span>
     <span class="t">
-      <b><?= $user_has_surveyed ? 'Survei selesai' : 'Survei berhadiah' ?></b>
-      <span class="s"><?= $user_has_surveyed ? 'Terima kasih! Hadiah sudah masuk Saldo Tarik.' : 'Isi 2 menit, hadiah langsung ke Saldo Tarik' ?></span>
+      <b><?= $user_has_surveyed ? 'Survei selesai' : 'Quest: Survei berhadiah' ?></b>
+      <span><?= $user_has_surveyed ? 'Hadiah sudah masuk Saldo Tarik.' : 'Isi 2 menit, hadiah langsung ke Saldo Tarik' ?></span>
     </span>
-    <span class="amt"><?= $user_has_surveyed ? 'Lihat' : '+Rp 15.000' ?></span>
+    <?php if ($user_has_surveyed): ?><span class="g-chip">Lihat</span>
+    <?php else: ?><span class="g-coin"><img src="/assets/img/icons3d/coins.png" alt="">+15rb</span><?php endif; ?>
   </a>
   <?php endif; ?>
 
   <?php if (!empty($continue_watching)): ?>
   <!-- Lanjutkan menonton -->
-  <section id="continue-watching-box">
-    <div class="vh-sh"><span class="vh-ico lag" style="width:26px;height:26px;border-radius:9px;font-size:13px"><i class="ph-fill ph-clock-counter-clockwise"></i></span>
-      <h2>Lanjutkan menonton</h2><span id="continue-watching-count"><?= count($continue_watching) ?> / 3 Video</span></div>
-    <div class="vhub-continue-list" id="continue-watching-list">
+  <section id="continue-watching-box" data-rv style="--d:.08s">
+    <div class="g-sec"><span class="g-ribbon sky"><i class="ph-fill ph-clock-counter-clockwise"></i>Lanjutkan</span><small id="continue-watching-count"><?= count($continue_watching) ?> / 3 Video</small></div>
+    <div class="vhub-continue-list" id="continue-watching-list" style="margin-top:8px">
       <?php foreach ($continue_watching as $cw):
         $cw_pct = min(99, max(1, (int)round(($cw['seconds_watched'] / max(1, (int)$cw['watch_duration'])) * 100))); ?>
         <div class="vhub-continue-item" id="cw-item-<?= $cw['id'] ?>">
@@ -304,16 +281,17 @@ $left = max(0, $watch_limit - $watch_today);
   </section>
   <?php endif; ?>
 
-  <!-- Filter -->
-  <div class="vh-seg">
+  <!-- Daftar quest video -->
+  <div class="g-sec" data-rv style="--d:.1s"><span class="g-ribbon"><img src="/assets/img/icons3d/missions.png" alt="">Quest Nonton</span></div>
+  <div class="g-seg" data-rv style="--d:.12s">
     <button type="button" class="vhub-chip active" onclick="filterVideos('all', this)">Semua</button>
     <button type="button" class="vhub-chip" onclick="filterVideos('ready', this)">Belum</button>
     <button type="button" class="vhub-chip" onclick="filterVideos('done', this)">Selesai</button>
   </div>
 
   <?php if (empty($videos)): ?>
-    <div class="vh-empty">
-      <span class="vh-ico lag"><i class="ph-fill ph-video-camera-slash"></i></span>
+    <div class="g-panel g-empty" data-rv>
+      <img src="/assets/img/icons3d/watch.png" alt="">
       <b>Belum ada video</b>
       <p>Video baru segera hadir. Cek lagi nanti ya.</p>
     </div>
@@ -321,7 +299,7 @@ $left = max(0, $watch_limit - $watch_today);
     <div class="vgrid" id="vgrid">
       <?php foreach ($videos as $v) $render_vcard($v); ?>
     </div>
-    <div id="loader"><span></span></div>
+    <div id="loader"><img src="/assets/img/icons3d/coins.png" alt="Memuat"></div>
   <?php endif; ?>
 
 </div>
@@ -379,6 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.unobserve(sentinel);
       } else {
         grid.insertAdjacentHTML('beforeend', html);
+        requestAnimationFrame(() => grid.querySelectorAll('.vcard[data-rv]:not(.in)').forEach((el) => el.classList.add('in')));
       }
     } catch (e) {
       console.error('Error loading more videos:', e);
