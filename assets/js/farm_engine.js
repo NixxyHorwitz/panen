@@ -741,6 +741,171 @@
   }
 
   /* ══════════════════════════════════════════════════════════
+     IKON 3D UNTUK UI
+     Model low-poly dirender sekali ke gambar (data URL) lalu dipakai
+     <img> di kartu, dock & ikon terbang. Satu konteks WebGL kecil
+     terpisah yang langsung dibuang setelah semua ikon jadi.
+     ══════════════════════════════════════════════════════════ */
+  function buildSeedBag() {
+    const g = new Geo(31);
+    g.add(new THREE.SphereGeometry(0.55, 10, 8), '#d6a35c', { p: [0, 0.5, 0], s: [1, 1.05, 0.85], ol: 0.04 });
+    g.add(new THREE.CylinderGeometry(0.16, 0.3, 0.28, 9), '#c48a45', { p: [0, 1.1, 0], ol: 0.03 });
+    g.add(new THREE.TorusGeometry(0.19, 0.05, 6, 12), '#7c2d12', { p: [0, 1.0, 0], r: [Math.PI / 2, 0, 0], ol: false });
+    g.add(new THREE.SphereGeometry(0.2, 8, 6), '#e8c07d', { p: [0, 1.28, 0], s: [1.2, 0.6, 1.2], ol: 0.03 });
+    g.add(new THREE.CircleGeometry(0.22, 12), '#16a34a', { p: [0, 0.55, 0.47], ol: false });
+    [[-0.07, 0], [0.07, 0]].forEach(([x], i) => g.add(new THREE.SphereGeometry(0.1, 6, 4), '#4ade80', { p: [x * 1.6, 0.62, 0.49], s: [0.6, 1, 0.3], r: [0, 0, i ? -0.6 : 0.6], ol: false }));
+    for (let i = 0; i < 4; i++) g.add(new THREE.SphereGeometry(0.07, 6, 4), C.gold, { p: [-0.45 + i * 0.3, 0.06, 0.45], s: [1, 0.7, 1], ol: 0.015 });
+    return g.build();
+  }
+  function buildFertilizer() {
+    const g = new Geo(32);
+    g.add(new THREE.BoxGeometry(0.9, 1.1, 0.5), '#38bdf8', { p: [0, 0.6, 0], ol: 0.04 });
+    g.add(new THREE.BoxGeometry(0.92, 0.12, 0.52), '#0284c7', { p: [0, 1.18, 0], ol: 0.025 });
+    g.add(new THREE.BoxGeometry(0.62, 0.5, 0.02), '#ffffff', { p: [0, 0.62, 0.26], ol: false });
+    // petir
+    const bolt = new THREE.Shape();
+    bolt.moveTo(0.05, 0.22); bolt.lineTo(-0.12, -0.02); bolt.lineTo(0.0, -0.02); bolt.lineTo(-0.06, -0.22); bolt.lineTo(0.13, 0.04); bolt.lineTo(0.01, 0.04); bolt.closePath();
+    g.add(new THREE.ShapeGeometry(bolt), C.gold, { p: [0, 0.62, 0.28], ol: false });
+    for (let i = 0; i < 5; i++) g.add(new THREE.OctahedronGeometry(0.06, 0), i % 2 ? '#fde047' : '#ffffff', { p: [-0.5 + i * 0.25, 1.4 + (i % 2) * 0.12, 0.1], ol: false });
+    return g.build();
+  }
+  function buildSpray() {
+    const g = new Geo(33);
+    g.add(new THREE.CylinderGeometry(0.3, 0.34, 0.9, 10), '#22c55e', { p: [0, 0.45, 0], ol: 0.035 });
+    g.add(new THREE.CylinderGeometry(0.22, 0.24, 0.4, 10), '#ffffff', { p: [0, 0.48, 0.02], ol: false, s: [1.05, 1, 1.05] });
+    g.add(new THREE.CylinderGeometry(0.14, 0.18, 0.22, 8), '#15803d', { p: [0, 1.0, 0], ol: 0.025 });
+    g.add(new THREE.BoxGeometry(0.42, 0.14, 0.16), '#f43f5e', { p: [0.12, 1.15, 0], ol: 0.025 });
+    g.add(new THREE.BoxGeometry(0.08, 0.26, 0.1), '#be123c', { p: [0.05, 0.98, 0.1], r: [0, 0, 0.3], ol: 0.015 });
+    for (let i = 0; i < 6; i++) g.add(new THREE.SphereGeometry(0.06 + (i % 3) * 0.02, 6, 4), '#bbf7d0', { p: [0.45 + i * 0.09, 1.15 + Math.sin(i) * 0.12, (i % 2 ? 0.06 : -0.06)], ol: false });
+    return g.build();
+  }
+  function buildBarn() {
+    const g = new Geo(34);
+    g.add(new THREE.BoxGeometry(1.2, 0.85, 0.9), '#dc2626', { p: [0, 0.43, 0], ol: 0.04 });
+    const roof = new THREE.CylinderGeometry(0.75, 0.75, 1.0, 3, 1);
+    g.add(roof, '#7f1d1d', { p: [0, 1.02, 0], r: [Math.PI / 2, 0, Math.PI / 2], s: [1, 1, 0.55], ol: 0.04 });
+    g.add(new THREE.BoxGeometry(0.46, 0.56, 0.04), '#fef3c7', { p: [0, 0.3, 0.46], ol: 0.02 });
+    g.add(new THREE.BoxGeometry(0.06, 0.62, 0.05), '#dc2626', { p: [0, 0.3, 0.48], r: [0, 0, 0.7], ol: false });
+    g.add(new THREE.BoxGeometry(0.06, 0.62, 0.05), '#dc2626', { p: [0, 0.3, 0.48], r: [0, 0, -0.7], ol: false });
+    g.add(new THREE.BoxGeometry(0.26, 0.2, 0.04), '#fef3c7', { p: [0, 0.98, 0.42], ol: 0.015 });
+    g.add(new THREE.CylinderGeometry(0.2, 0.2, 0.9, 8), '#e5e7eb', { p: [0.82, 0.45, -0.1], ol: 0.03 });
+    g.add(new THREE.SphereGeometry(0.2, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), '#94a3b8', { p: [0.82, 0.9, -0.1], ol: 0.025 });
+    return g.build();
+  }
+  function buildStall() {
+    const g = new Geo(35);
+    g.add(new THREE.BoxGeometry(1.3, 0.5, 0.7), '#b45309', { p: [0, 0.25, 0], ol: 0.035 });
+    [[-0.6, -0.3], [0.6, -0.3], [-0.6, 0.3], [0.6, 0.3]].forEach(([x, z]) => g.add(new THREE.BoxGeometry(0.07, 0.75, 0.07), '#78350f', { p: [x, 0.85, z], ol: 0.015 }));
+    for (let i = 0; i < 6; i++) g.add(new THREE.BoxGeometry(0.24, 0.06, 0.95), i % 2 ? '#ffffff' : '#f43f5e', { p: [-0.6 + i * 0.24, 1.3 - Math.abs(i - 2.5) * 0.02, 0], r: [0.22, 0, 0], ol: 0.015 });
+    g.add(new THREE.SphereGeometry(0.15, 8, 6), '#ef4444', { p: [-0.35, 0.62, 0.15], ol: 0.02 });
+    g.add(new THREE.SphereGeometry(0.17, 8, 6), '#22c55e', { p: [0, 0.64, 0.1], s: [1.2, 1, 1], ol: 0.02 });
+    g.add(new THREE.SphereGeometry(0.13, 8, 6), C.gold, { p: [0.35, 0.6, 0.18], ol: 0.02 });
+    return g.build();
+  }
+  function buildCoins() {
+    const g = new Geo(36);
+    for (let i = 0; i < 5; i++) g.add(new THREE.CylinderGeometry(0.34, 0.34, 0.1, 14), i % 2 ? '#fbbf24' : '#facc15', { p: [-0.25 + (i % 2) * 0.02, 0.05 + i * 0.11, 0.05], ol: 0.025 });
+    for (let i = 0; i < 3; i++) g.add(new THREE.CylinderGeometry(0.34, 0.34, 0.1, 14), '#facc15', { p: [0.45, 0.05 + i * 0.11, -0.1], ol: 0.025 });
+    g.add(new THREE.CylinderGeometry(0.34, 0.34, 0.1, 14), '#fde047', { p: [0.25, 0.35, 0.45], r: [1.2, 0, 0.3], ol: 0.025 });
+    g.add(new THREE.TorusGeometry(0.2, 0.03, 4, 12), '#d97706', { p: [0.25, 0.35, 0.51], r: [1.2 - Math.PI / 2, 0, 0.3], ol: false });
+    return g.build();
+  }
+  function buildBasket() {
+    const g = new Geo(37);
+    g.add(new THREE.CylinderGeometry(0.62, 0.45, 0.5, 12, 1, true), '#c2843d', { p: [0, 0.25, 0], ol: 0.035 });
+    g.add(new THREE.CylinderGeometry(0.45, 0.45, 0.04, 12), '#a16207', { p: [0, 0.02, 0], ol: false });
+    g.add(new THREE.TorusGeometry(0.62, 0.05, 6, 16), '#92400e', { p: [0, 0.5, 0], r: [Math.PI / 2, 0, 0], ol: 0.02 });
+    g.add(new THREE.TorusGeometry(0.55, 0.04, 5, 14, Math.PI), '#92400e', { p: [0, 0.5, 0], ol: 0.02 });
+    g.add(new THREE.SphereGeometry(0.22, 8, 6), '#ef4444', { p: [-0.2, 0.55, 0.1], ol: 0.02 });
+    g.add(new THREE.SphereGeometry(0.25, 8, 6), '#22c55e', { p: [0.18, 0.58, -0.05], s: [1.2, 1, 1], ol: 0.02 });
+    g.add(new THREE.SphereGeometry(0.16, 8, 6), C.gold, { p: [0.05, 0.62, 0.28], s: [0.8, 1.4, 0.8], ol: 0.02 });
+    return g.build();
+  }
+  function buildStar() {
+    const g = new Geo(38), sh = new THREE.Shape();
+    for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + (i / 10) * Math.PI * 2, r = i % 2 ? 0.26 : 0.6; i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+    g.add(new THREE.ExtrudeGeometry(sh, { depth: 0.18, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 1 }), C.gold, { p: [0, 0.6, -0.09], ol: 0.03 });
+    return g.build();
+  }
+
+  /** Model hasil panen untuk ikon (bukan tanaman di petak): warna = warna khas bibit. */
+  function buildProduce(model, hex) {
+    const g = new Geo(40), col = new THREE.Color(hex), dark = col.clone().multiplyScalar(0.72);
+    if (model === 'chili') {
+      [[-0.32, 0.35, 0.5], [0.05, 0.45, 0.05], [0.38, 0.33, -0.45]].forEach(([x, y, rz], i) => {
+        g.add(new THREE.ConeGeometry(0.17, 1.05, 9), i === 1 ? col : dark, { p: [x, y, i * 0.08], r: [0, 0, Math.PI + rz], s: [1, 1, 0.9], ol: 0.03 });
+        g.add(new THREE.CylinderGeometry(0.06, 0.09, 0.22, 6), '#15803d', { p: [x - Math.sin(rz) * 0.55, y + 0.55, i * 0.08], r: [0, 0, rz], ol: 0.02 });
+      });
+    } else if (model === 'corn') {
+      g.add(new THREE.CylinderGeometry(0.26, 0.2, 1.2, 10), col, { p: [0, 0.65, 0], r: [0, 0, -0.35], ol: 0.03 });
+      for (let i = 0; i < 6; i++) g.add(new THREE.SphereGeometry(0.075, 5, 4), dark, { p: [-0.12 + i * 0.07 + 0.18, 0.35 + i * 0.16, 0.22], ol: false });
+      [-1, 1].forEach((sd) => g.add(new THREE.ConeGeometry(0.22, 1.0, 5), '#65a30d', { p: [sd * 0.18 - 0.15, 0.45, 0.05], r: [0, 0, -0.35 + sd * 0.4], s: [1, 1, 0.35], ol: 0.025 }));
+      g.add(new THREE.ConeGeometry(0.08, 0.3, 5), '#ca8a04', { p: [0.24, 1.32, 0], r: [0, 0, -0.35], ol: false });
+    } else if (model === 'watermelon') {
+      const stripe = new THREE.Color(), lite = new THREE.Color('#22c55e'), deep = new THREE.Color('#15803d');
+      g.add(new THREE.SphereGeometry(0.62, 14, 10), (l) => stripe.copy(Math.sin(Math.atan2(l.z, l.x) * 7) > 0.2 ? deep : lite).lerp(col, 0.25),
+        { p: [-0.15, 0.55, -0.1], s: [1.25, 0.95, 1], ol: 0.035, jitter: 0.02 });
+      g.add(new THREE.CylinderGeometry(0.5, 0.5, 0.16, 14, 1, false, 0, Math.PI), '#ef4444', { p: [0.55, 0.3, 0.45], r: [Math.PI / 2, 0, 0.2], ol: 0.025 });
+      g.add(new THREE.TorusGeometry(0.5, 0.05, 4, 14, Math.PI), '#16a34a', { p: [0.55, 0.3, 0.45], r: [0, 0, 0.2], ol: false });
+      for (let i = 0; i < 4; i++) g.add(new THREE.SphereGeometry(0.035, 4, 3), '#1f2937', { p: [0.4 + i * 0.1, 0.45 - (i % 2) * 0.1, 0.55], ol: false });
+    } else { // rice: ikatan padi emas
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2, tilt = 0.18 + (i % 3) * 0.06;
+        const dir = V(Math.cos(a) * Math.sin(tilt), Math.cos(tilt), Math.sin(a) * Math.sin(tilt));
+        g.stick(V(Math.cos(a) * 0.06, 0, Math.sin(a) * 0.06), dir, 1.1, 0.04, 0.03, '#a3a635', { ol: 0.015, seg: 4 });
+        const tip = V(Math.cos(a) * 0.06, 0, Math.sin(a) * 0.06).addScaledVector(dir, 1.1);
+        const droop = V(Math.cos(a), -0.4, Math.sin(a)).normalize();
+        const q = new THREE.Quaternion().setFromUnitVectors(_up, droop);
+        const c = tip.addScaledVector(droop, 0.16);
+        g.add(new THREE.IcosahedronGeometry(0.1, 0), col, { p: [c.x, c.y, c.z], q, s: [1, 2.6, 1], ol: 0.02 });
+      }
+      g.add(new THREE.TorusGeometry(0.14, 0.05, 5, 12), '#b45309', { p: [0, 0.45, 0], r: [Math.PI / 2, 0, 0], ol: 0.015 });
+    }
+    return g.build();
+  }
+
+  /** Render semua ikon 3D ke data URL (dipanggil sekali). */
+  function renderIcons(crops, models, plainMat) {
+    const size = 160, out = {};
+    let r;
+    try {
+      r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    } catch (e) { return out; }
+    r.setPixelRatio(1);
+    r.setSize(size, size, false);
+    r.setClearColor(0x000000, 0);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight('#ffffff', '#86efac', 0.75));
+    const sun = new THREE.DirectionalLight('#ffffff', 1.25);
+    sun.position.set(3, 6, 5);
+    scene.add(sun);
+    const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+    const shoot = (key, mesh, tilt = 0.55) => {
+      scene.add(mesh);
+      const box = new THREE.Box3().setFromObject(mesh), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+      const rad = Math.max(sz.x, sz.y, sz.z) * 0.62;
+      const dist = rad / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2));
+      cam.position.copy(c).add(new THREE.Vector3(0.62, tilt, 1).normalize().multiplyScalar(dist));
+      cam.lookAt(c);
+      r.render(scene, cam);
+      out[key] = r.domElement.toDataURL('image/png');
+      scene.remove(mesh);
+    };
+    // Hasil panen tiap bibit (warna khas bibit)
+    for (const c of crops) {
+      const geo = buildProduce(c.model, c.color);
+      shoot('crop:' + c.id, new THREE.Mesh(geo, plainMat || models.mat), 0.6);
+      geo.dispose();
+    }
+    const props = { seed: buildSeedBag(), speed: buildFertilizer(), cure: buildSpray(), barn: buildBarn(), shop: buildStall(),
+      coins: buildCoins(), basket: buildBasket(), star: buildStar(), lock: models.padlock, can: models.can };
+    if (plainMat) for (const [k, geo] of Object.entries(props)) if (geo) shoot(k, new THREE.Mesh(geo, plainMat));
+    r.dispose();
+    try { r.forceContextLoss(); } catch (e) { /* abaikan */ }
+    return out;
+  }
+
+  /* ══════════════════════════════════════════════════════════
      ENGINE
      ══════════════════════════════════════════════════════════ */
   const MODELS = ['rice', 'chili', 'corn', 'watermelon'];
@@ -784,6 +949,9 @@
       this._initScene();
       this._initControls();
       this._initLabels();
+      this.icons = {};
+      this._iconModels = { rice: this.cropMesh.rice.geometry, chili: this.cropMesh.chili.geometry, corn: this.cropMesh.corn.geometry,
+        watermelon: this.cropMesh.watermelon.geometry, padlock: this.m.padlock.geometry, can: this.can.geometry, mat: this.mat };
       this._bindEvents();
       this._fps = { acc: 0, n: 0 };
       this._loop = this._loop.bind(this);
@@ -1100,7 +1268,14 @@
     setCatalog(crops) {
       this.crops.clear();
       (crops || []).forEach((c) => this.crops.set(c.id, Object.assign({}, c, { model: MODELS.includes(c.model) ? c.model : 'rice' })));
+      // Ikon 3D: semua sekali di awal, lalu hanya bibit baru yang belum punya ikon
+      const first = !this.icons.seed;
+      const todo = [...this.crops.values()].filter((c) => !this.icons['crop:' + c.id]);
+      if (first || todo.length) Object.assign(this.icons, renderIcons(todo, this._iconModels, first ? this.mat : null));
     }
+
+    /** URL gambar ikon 3D (mis. 'crop:1', 'seed', 'barn'); kosong bila WebGL tidak tersedia. */
+    icon(key) { return this.icons[key] || ''; }
 
     /** Terapkan state dari server (get_state / respon aksi). */
     applyState(state) {
@@ -1495,7 +1670,7 @@
       this.floatText(V(c.x, 2.8, c.z), '+' + res.yield + ' ' + name + (res.pest ? ' (hama)' : ''));
       global.gsap.delayedCall(0.45, () => {
         const from = this.toScreen(V(c.x, 2.4, c.z));
-        this.flyIcons(from, this.barnEl, '<i class="ph-fill ' + cropIcon(gh.model) + '"></i>', Math.min(res.yield || 1, 6), (k, last) => {
+        this.flyIcons(from, this.barnEl, iconHtml(this.icon('crop:' + (res.crop_id || (crop && crop.id))), cropIcon(gh.model)), Math.min(res.yield || 1, 6), (k, last) => {
           this.audio.tone(880 + k * 90, 0.08, 'triangle', 0.15);
           if (last) this.audio.soundCoin(0.2);
         });
@@ -1577,6 +1752,10 @@
     if (n >= 1e3) return 'Rp ' + Math.round(n / 1e3) + 'rb';
     return 'Rp ' + Math.round(n);
   }
+  /** <img> ikon 3D, atau ikon Phosphor sebagai cadangan bila WebGL ikon gagal. */
+  function iconHtml(url, fallback) {
+    return url ? '<img src="' + url + '" alt="" draggable="false">' : '<i class="ph-fill ' + fallback + '"></i>';
+  }
   function cropIcon(model) {
     return { rice: 'ph-grains', chili: 'ph-pepper', corn: 'ph-plant', watermelon: 'ph-orange-slice' }[model] || 'ph-plant';
   }
@@ -1584,5 +1763,5 @@
   global.FarmEngine = FarmEngine;
   global.FarmAudio = FarmAudio;
   global.FarmAPI = FarmAPI;
-  global.FarmUtil = { fmtRp, fmtShort, fmtTime, cropIcon };
+  global.FarmUtil = { fmtRp, fmtShort, fmtTime, cropIcon, iconHtml };
 })(window);
