@@ -288,70 +288,104 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
 ?>
 
 <style>
-/* ══ WITHDRAW — Panen ke Dompet · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+/* ══ WITHDRAW — Kirim Panen: meteran saldo + penggeser · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.wx-top { display: flex; align-items: center; gap: 10px; }
+.wx-top .t { flex: 1; min-width: 0; }
+.wx-top h1 { margin: 0; font-family: var(--pc-font); font-size: 22px; font-weight: 700; line-height: 1.1; color: #4a2b00; }
+.wx-top p { margin: 1px 0 0; font-size: 11.5px; font-weight: 800; color: var(--pc-muted); }
+.wx-top .g-chip { background: #fff3c4; color: #6b4300; }
+
 .wx-note { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; line-height: 1.4; }
 .wx-note i { font-size: 17px; flex-shrink: 0; }
 .wx-note.err  { background: #ffe4e6; color: #9f1239; box-shadow: 0 0 0 2px #fecdd3; }
 .wx-note.warn { background: #fff3c4; color: #8a5a00; box-shadow: 0 0 0 2px #fcd34d; }
 .wx-note.ok   { background: #dcfce7; color: #15803d; box-shadow: 0 0 0 2px #86efac; }
 
-.wx-bal { margin-top: 12px; padding: 11px 12px; border-radius: 18px; background: rgba(255, 255, 255, .78); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 8px 18px rgba(120, 70, 10, .12); }
-.wx-bal small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
-.wx-bal b { display: block; margin: 1px 0 8px; font-family: var(--pc-font); font-size: 30px; font-weight: 700; line-height: 1.1; color: #15803d; text-shadow: 0 2px 0 #dcfce7; }
-.wx-bal b em { font-style: normal; font-size: 16px; margin-right: 3px; color: #16a34a; }
-.wx-lim { display: flex; gap: 5px; flex-wrap: wrap; }
-.wx-lim .g-chip { background: #fff3c4; color: #6b4300; }
+/* ── Meteran saldo ── */
+.wx-meter { position: relative; overflow: hidden; padding: 14px 14px 12px; border-radius: 26px; text-align: center;
+  background: radial-gradient(90% 60% at 50% 115%, #4f9f3a 0 40%, transparent 41%), radial-gradient(70% 45% at 8% 112%, #7cc95a 0 40%, transparent 41%), linear-gradient(180deg, #ffb46b 0%, #ffd59a 45%, #fff0cf 80%);
+  box-shadow: 0 16px 30px rgba(120, 70, 10, .18); }
+.wx-gauge { position: relative; width: 230px; max-width: 100%; margin: 0 auto; }
+.wx-gauge svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wx-gauge .trk { fill: none; stroke: rgba(255, 255, 255, .7); stroke-width: 16; stroke-linecap: round; }
+.wx-gauge .val { fill: none; stroke: url(#wxGrad); stroke-width: 16; stroke-linecap: round; stroke-dasharray: 0 999; transition: stroke-dasharray 1.4s var(--pc-ease) .2s; filter: drop-shadow(0 2px 4px rgba(120, 70, 10, .35)); }
+.wx-gauge .tick { stroke: #4a2b00; stroke-width: 3; stroke-linecap: round; }
+.wx-gauge-c { position: absolute; left: 0; right: 0; bottom: 2px; }
+.wx-gauge-c img { width: 50px; height: 50px; object-fit: contain; animation: gBob 3s ease-in-out infinite; filter: drop-shadow(0 6px 6px rgba(120, 70, 10, .3)); }
+.wx-gauge-c small { display: block; font-size: 11px; font-weight: 900; color: #7a4f00; }
+.wx-gauge-c b { display: block; font-family: var(--pc-font); font-size: 28px; font-weight: 700; line-height: 1.05; color: #15803d; text-shadow: 0 2px 0 #fff; }
+.wx-ends { display: flex; justify-content: space-between; width: 250px; max-width: 100%; margin: 4px auto 0; font-size: 10.5px; font-weight: 900; color: #4a2b00; }
+.wx-ends span { padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, .75); }
+.wx-mstat { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.wx-mstat div { min-width: 0; padding: 6px 4px; border-radius: 13px; background: rgba(255, 255, 255, .82); }
+.wx-mstat small { display: block; font-size: 9.5px; font-weight: 900; color: #7a4f00; }
+.wx-mstat b { display: block; font-size: 12px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Status antrian WD */
-.wx-lvl { display: flex; gap: 10px; padding: 10px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 2px var(--lb), 0 4px 0 var(--ll); }
+/* Status antrian */
+.wx-lvl { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 2px var(--lb), 0 3px 0 var(--ll); }
 .wx-lvl.s-normal   { --lc: #15803d; --lb: #bbf7d0; --ll: #86efac; }
 .wx-lvl.s-busy     { --lc: #b45309; --lb: #fde68a; --ll: #fcd34d; }
 .wx-lvl.s-overload { --lc: #be123c; --lb: #fecdd3; --ll: #fda4af; }
-.wx-lvl .g-slot img { width: 78%; }
+.wx-lvl .g-slot { width: 40px; height: 40px; }
 .wx-lvl.s-overload .g-slot { animation: gGlow 1.6s ease-in-out infinite; }
 .wx-lvl-tx { flex: 1; min-width: 0; }
-.wx-lvl-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.wx-lvl-top b { font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--lc); }
-.wx-lvl p { margin: 2px 0 4px; font-size: 11.5px; font-weight: 700; color: var(--pc-ink); line-height: 1.4; }
-.wx-lvl-meta { font-size: 11px; font-weight: 800; color: var(--pc-muted); display: inline-flex; align-items: center; gap: 3px; }
-.wx-lvl .g-bar { margin-top: 6px; height: 8px; }
-.wx-lvl.s-busy .g-bar i { background: linear-gradient(90deg, #fcd34d, #f59e0b); }
-.wx-lvl.s-overload .g-bar i { background: repeating-linear-gradient(-45deg, #fb7185 0 6px, #e11d48 6px 12px); background-size: 200% 100%; animation: gStripes 1.2s linear infinite; }
+.wx-lvl-tx b { font-family: var(--pc-font); font-size: 14.5px; font-weight: 700; color: var(--lc); }
+.wx-lvl-tx p { margin: 1px 0 0; font-size: 11px; font-weight: 700; color: var(--pc-ink); line-height: 1.35; }
+.wx-lvl-eta { flex-shrink: 0; padding: 3px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 900; color: var(--lc); background: color-mix(in srgb, var(--lc) 12%, #fff); }
 
-/* Rekening tujuan */
-.wx-dest { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+/* ── Pilih nominal: penggeser ── */
+.wx-pick { text-align: center; }
+.wx-pick small { display: block; font-size: 11px; font-weight: 900; color: var(--pc-muted); }
+.wx-pick-amt { font-family: var(--pc-font); font-size: 34px; font-weight: 700; line-height: 1.1; color: #15803d; transition: transform .2s var(--pc-ease); }
+.wx-pick-amt.pop { transform: scale(1.08); }
+.wx-pick-amt.none { color: #c9b48a; }
+.wx-left { margin-top: 1px; font-size: 11.5px; font-weight: 800; color: var(--pc-muted); }
+.wx-left b { color: var(--pc-ink); }
+.wx-slider { position: relative; margin: 12px 4px 4px; }
+.wx-range { -webkit-appearance: none; appearance: none; width: 100%; height: 34px; margin: 0; background: transparent; cursor: pointer; }
+.wx-range:disabled { cursor: not-allowed; opacity: .5; }
+.wx-range::-webkit-slider-runnable-track { height: 14px; border-radius: 999px; background: linear-gradient(90deg, #22c55e var(--p, 0%), #f2e6c8 var(--p, 0%)); box-shadow: inset 0 2px 3px rgba(120, 70, 10, .2); }
+.wx-range::-moz-range-track { height: 14px; border-radius: 999px; background: linear-gradient(90deg, #22c55e var(--p, 0%), #f2e6c8 var(--p, 0%)); }
+.wx-range::-webkit-slider-thumb { -webkit-appearance: none; width: 34px; height: 34px; margin-top: -10px; border: 0; border-radius: 50%;
+  background: url(/assets/img/icons3d/coins.png) center / 82% no-repeat, radial-gradient(circle at 40% 35%, #fff7c2, #ffd54f 60%, #f6b70a); box-shadow: 0 0 0 3px #fff, 0 3px 0 #b07800, 0 6px 12px rgba(120, 70, 10, .3); }
+.wx-range::-moz-range-thumb { width: 34px; height: 34px; border: 0; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff7c2, #ffd54f 60%, #f6b70a); box-shadow: 0 0 0 3px #fff, 0 3px 0 #b07800; }
+.wx-amts { display: flex; gap: 6px; overflow-x: auto; margin: 6px -12px 0; padding: 4px 12px 6px; scrollbar-width: none; }
+.wx-amts::-webkit-scrollbar { display: none; }
+.wx-amt { flex: 0 0 auto; min-height: 32px; padding: 0 11px; border: 0; border-radius: 10px; cursor: pointer; font-family: var(--pc-font); font-size: 13.5px; font-weight: 600; color: #6b4300; background: #fff; box-shadow: inset 0 0 0 2px #f1dfb4, 0 3px 0 #ecd59c; transition: transform .12s; }
+.wx-amt:active { transform: translateY(2px); }
+.wx-amt.active { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; }
+.wx-amt:disabled { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
+.wx-empty { padding: 10px; border-radius: 12px; background: #fff3c4; color: #8a5a00; font-size: 12px; font-weight: 800; text-align: center; }
+
+/* ── Label kiriman ── */
+.wx-label { position: relative; padding: 12px 12px 11px; border-radius: 18px; background: repeating-linear-gradient(135deg, #fff 0 10px, #fffaf0 10px 20px); box-shadow: 0 0 0 2px #e6c886, 0 4px 0 #d9b25a; }
+.wx-label::before { content: ''; position: absolute; inset: 6px; border-radius: 13px; border: 2px dashed #e6c886; pointer-events: none; }
+.wx-label-h { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; padding: 0 4px; }
+.wx-label-h span { font-size: 10.5px; font-weight: 900; letter-spacing: 1px; color: #a06c00; }
+.wx-stamp { padding: 1px 8px; border: 2px solid #16a34a; border-radius: 7px; font-family: var(--pc-font); font-size: 11.5px; font-weight: 700; color: #16a34a; transform: rotate(-6deg); }
+.wx-dest { position: relative; display: flex; align-items: center; gap: 10px; padding: 0 4px; text-decoration: none; color: inherit; }
 .wx-dest .g-slot img { width: 70%; height: 70%; }
 .wx-dest-tx { flex: 1; min-width: 0; line-height: 1.25; }
-.wx-dest-tx small { display: block; font-size: 10.5px; font-weight: 900; color: var(--pc-muted); }
-.wx-dest-tx b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wx-dest-tx span { display: block; font-size: 11.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wx-bankform { display: grid; gap: 6px; margin-top: 10px; }
-.wx-bankform label { font-size: 11px; font-weight: 900; color: var(--pc-muted); margin: 0 0 -2px 2px; }
-.wx-bankform input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 13px; font: 700 14px var(--pc-font); color: var(--pc-ink); background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, inset 0 2px 4px rgba(120, 70, 10, .08); outline: none; }
+.wx-dest-tx b { display: block; font-family: var(--pc-font); font-size: 16px; font-weight: 700; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-dest-tx span { display: block; font-size: 12px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-bankform { position: relative; display: grid; gap: 6px; padding: 0 4px; }
+.wx-bankform label { margin: 0 0 -2px 2px; font-size: 11px; font-weight: 900; color: var(--pc-muted); }
+.wx-bankform input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 13px; outline: none; font: 700 14px var(--pc-font); color: var(--pc-ink); background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0; }
 .wx-bankform input:focus { box-shadow: inset 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, .15); }
 .wx-bankform input[readonly] { background: #f6f8f2; }
 
-/* Pilihan nominal: koin */
-.wx-amts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
-.wx-amt { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 7px; border: 0; border-radius: 16px; cursor: pointer; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #6b4300;
-  background: linear-gradient(180deg, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .12s var(--pc-ease); }
-.wx-amt img { width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .2)); transition: transform .3s var(--pc-ease); }
-.wx-amt:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
-.wx-amt.active { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .5), 0 4px 0 #11622f, 0 8px 16px rgba(22, 163, 74, .35); }
-.wx-amt.active img { transform: scale(1.2) rotate(-12deg); }
-.wx-amt:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
-.wx-empty { grid-column: 1 / -1; padding: 10px; border-radius: 12px; background: #fff3c4; color: #8a5a00; font-size: 12px; font-weight: 800; text-align: center; }
-.wx-go.g-btn { min-height: 52px; font-size: 17px; border-radius: 17px; }
+.wx-go.g-btn { min-height: 54px; font-size: 17px; border-radius: 17px; }
 .wx-go:disabled { --c1: #e5e7eb; --c2: #d1d5db; --lip: #9ca3af; --sh: transparent; --tx: #6b7280; text-shadow: none; filter: none; opacity: 1; }
 
-/* Riwayat ringkas */
-.wx-hist { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
-.wx-row { display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; align-items: center; padding: 8px 10px 8px 8px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0; }
-.wx-row .g-slot { width: 36px; height: 36px; border-radius: 12px; }
+/* Jejak kiriman */
+.wx-hist { display: flex; flex-direction: column; margin-top: 8px; }
+.wx-row { position: relative; display: grid; grid-template-columns: 14px 1fr auto; column-gap: 10px; align-items: center; padding: 7px 0; }
+.wx-row + .wx-row { border-top: 1.5px dashed #f1dfb4; }
+.wx-row i.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 20%, #fff); }
 .wx-row b { font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--pc-ink); }
-.wx-row small { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.wx-row small { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wx-st { font-size: 11px; font-weight: 900; padding: 3px 9px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, #fff); }
-.wx-row p { grid-column: 2 / -1; margin: 4px 0 0; font-size: 11px; font-weight: 700; color: var(--pc-muted); line-height: 1.35; }
+.wx-row p { grid-column: 2 / -1; margin: 3px 0 0; font-size: 11px; font-weight: 700; color: var(--pc-muted); line-height: 1.35; }
 .t-ok { --c: #15803d; } .t-warn { --c: #b45309; } .t-err { --c: #e11d48; } .t-mute { --c: #64748b; } .t-info { --c: #0284c7; }
 .wx-row.t-err p { color: #be123c; }
 
@@ -368,27 +402,46 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
 .cg-to span:last-child { color: var(--pc-ink); text-align: right; }
 .cg-warn { padding: 8px 10px; border-radius: 12px; background: #ffe4e6; color: #9f1239; font-size: 11.5px; font-weight: 800; }
 .cg-modal-actions { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; margin-top: 14px; }
+@media (max-width: 350px) { .wx-gauge-c b { font-size: 23px; } .wx-pick-amt { font-size: 29px; } }
 </style>
 
+<?php
+// Meteran: saldo dibanding batas maks (atau nominal terbesar)
+$wx_cap = $max_withdraw > 0 ? $max_withdraw : (float)max($available_amounts ?: [max(1.0, (float)$user['balance_wd'])]);
+$wx_cap = max(1.0, $wx_cap);
+$wx_frac = min(1, (float)$user['balance_wd'] / $wx_cap);
+$wx_minf = min(1, $min_withdraw / $wx_cap);
+$wx_arc = 282.7; // panjang busur setengah lingkaran r=90
+$wx_mx = 110 - 90 * cos(M_PI * $wx_minf); $wx_my = 106 - 90 * sin(M_PI * $wx_minf);
+?>
 <div class="g-page">
 
-  <section class="g-hero" data-rv>
-    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
-    <div class="g-hero-row">
-      <div style="flex:1;min-width:0">
-        <h1>Withdraw</h1>
-        <p><i class="ph-fill ph-lightning"></i> Cair 1–10 menit ke rekeningmu.</p>
+  <div class="wx-top" data-rv>
+    <div class="t"><h1>Kirim Panen</h1><p><i class="ph-fill ph-lightning"></i> Cair 1–10 menit ke rekeningmu</p></div>
+    <?php if ($user_mem): ?><span class="g-chip"><i class="ph-fill ph-crown-simple"></i><?= htmlspecialchars($user_mem['name']) ?></span><?php endif; ?>
+  </div>
+
+  <section class="wx-meter" data-rv style="--d:.04s">
+    <div class="wx-gauge">
+      <svg viewBox="0 0 220 116" aria-hidden="true">
+        <defs><linearGradient id="wxGrad" x1="0" x2="1"><stop offset="0" stop-color="#4ade80"/><stop offset=".6" stop-color="#16a34a"/><stop offset="1" stop-color="#f6b70a"/></linearGradient></defs>
+        <path class="trk" d="M20 106 A90 90 0 0 1 200 106"/>
+        <path class="val" id="wx-arc" d="M20 106 A90 90 0 0 1 200 106" data-len="<?= round($wx_arc * $wx_frac, 1) ?>"/>
+        <?php if ($min_withdraw > 0 && $wx_minf < 1): ?>
+          <line class="tick" x1="<?= round(110 - 76 * cos(M_PI * $wx_minf), 1) ?>" y1="<?= round(106 - 76 * sin(M_PI * $wx_minf), 1) ?>" x2="<?= round($wx_mx + ($wx_mx - 110) * .12, 1) ?>" y2="<?= round($wx_my + ($wx_my - 106) * .12, 1) ?>"/>
+        <?php endif; ?>
+      </svg>
+      <div class="wx-gauge-c">
+        <img src="/assets/img/icons3d/moneybag.png" alt="">
+        <small>Saldo siap tarik</small>
+        <b>Rp <?= number_format((float)$user['balance_wd'], 0, ',', '.') ?></b>
       </div>
-      <div class="g-hero-art"><img src="/assets/img/icons3d/moneybag.png" alt=""></div>
     </div>
-    <div class="wx-bal">
-      <small>Saldo siap tarik</small>
-      <b><em>Rp</em><?= number_format((float)$user['balance_wd'], 0, ',', '.') ?></b>
-      <div class="wx-lim">
-        <span class="g-chip">Min <?= format_rp($min_withdraw) ?></span>
-        <?php if ($max_withdraw > 0): ?><span class="g-chip">Maks <?= format_rp($max_withdraw) ?></span><?php endif; ?>
-        <?php if ($user_mem): ?><span class="g-chip"><i class="ph-fill ph-crown-simple"></i><?= htmlspecialchars($user_mem['name']) ?></span><?php endif; ?>
-      </div>
+    <div class="wx-ends"><span>Rp 0</span><span><?= $max_withdraw > 0 ? 'Maks ' : '' ?><?= $wd_short($wx_cap) ?></span></div>
+    <div class="wx-mstat">
+      <div><small>Minimal</small><b><?= format_rp($min_withdraw) ?></b></div>
+      <div><small>Maksimal</small><b><?= $max_withdraw > 0 ? format_rp($max_withdraw) : 'Bebas' ?></b></div>
+      <div><small>Proses</small><b><?= $wd_lv ? htmlspecialchars($wd_lv['eta']) : '1–10 mnt' ?></b></div>
     </div>
   </section>
 
@@ -397,19 +450,10 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
   <?php endif; ?>
 
   <?php if ($wd_lv && $wd_lv['show']): ?>
-    <div class="wx-lvl s-<?= $wd_lv['state'] ?>" data-rv style="--d:.04s">
+    <div class="wx-lvl s-<?= $wd_lv['state'] ?>" data-rv>
       <span class="g-slot"><img src="/assets/img/icons3d/<?= $wd_lv['state'] === 'normal' ? 'speed' : 'bell' ?>.png" alt=""></span>
-      <div class="wx-lvl-tx">
-        <div class="wx-lvl-top">
-          <b><?= htmlspecialchars($wd_lv['label']) ?></b>
-          <span class="g-chip"><?= htmlspecialchars($user_mem['name']) ?></span>
-        </div>
-        <p><?= htmlspecialchars($wd_lv['message']) ?></p>
-        <span class="wx-lvl-meta"><i class="ph-bold ph-clock"></i> Estimasi <?= htmlspecialchars($wd_lv['eta']) ?></span>
-        <?php if ($wd_lv['state'] !== 'normal'): ?>
-          <div class="g-bar"><i style="width:<?= $wd_lv['state'] === 'overload' ? 100 : 62 ?>%"></i></div>
-        <?php endif; ?>
-      </div>
+      <div class="wx-lvl-tx"><b><?= htmlspecialchars($wd_lv['label']) ?></b><p><?= htmlspecialchars($wd_lv['message']) ?></p></div>
+      <span class="wx-lvl-eta"><?= htmlspecialchars($wd_lv['eta']) ?></span>
     </div>
   <?php endif; ?>
 
@@ -419,20 +463,37 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
     <input type="hidden" name="amount" id="selected-amount" value="" required>
 
     <section class="g-panel" data-rv style="--d:.06s">
+      <div class="wx-pick">
+        <small>Mau tarik berapa?</small>
+        <div class="wx-pick-amt none" id="wx-pick-amt">Rp 0</div>
+        <div class="wx-left">Sisa saldo <b id="wx-left">Rp <?= number_format((float)$user['balance_wd'], 0, ',', '.') ?></b></div>
+      </div>
+      <?php if ($available_amounts): ?>
+        <div class="wx-slider"><input type="range" class="wx-range" id="wx-range" min="0" max="<?= count($available_amounts) - 1 ?>" step="1" value="0" aria-label="Geser nominal withdraw"></div>
+      <?php endif; ?>
+      <div class="wx-amts">
+        <?php foreach ($available_amounts as $amt): ?>
+          <button type="button" class="wd-amt-btn wx-amt" data-value="<?= $amt ?>" title="<?= format_rp($amt) ?>"
+            onclick="selectWdAmount(this, <?= $amt ?>)" <?= !$level_blocked && $amt > (float)$user['balance_wd'] ? 'disabled' : '' ?>><?= $wd_short((float)$amt) ?></button>
+        <?php endforeach; ?>
+      </div>
+      <?php if (!$available_amounts): ?><div class="wx-empty">Belum ada nominal yang tersedia.</div><?php endif; ?>
+    </section>
+
+    <section class="wx-label" data-rv style="--d:.1s">
+      <div class="wx-label-h"><span>LABEL KIRIMAN</span><span class="wx-stamp">TUJUAN</span></div>
       <?php if ($has_bank): ?>
         <a href="/edit-rekening" class="wx-dest" title="Ganti rekening">
           <span class="g-slot">
             <?php if ($user_wl): ?><img src="/assets/banks/<?= htmlspecialchars($user_wl) ?>" alt="<?= htmlspecialchars($user['bank_name']) ?>"><?php else: ?><img src="/assets/img/icons3d/piggy.png" alt=""><?php endif; ?>
           </span>
           <span class="wx-dest-tx">
-            <small>Dikirim ke</small>
             <b><?= htmlspecialchars($user['bank_name']) ?> · <?= htmlspecialchars(mask_account($user['account_number'] ?? '')) ?></b>
-            <span><?= htmlspecialchars($user['account_name'] ?? '') ?></span>
+            <span>a.n. <?= htmlspecialchars($user['account_name'] ?? '') ?></span>
           </span>
           <span class="g-btn soft sm">Ubah</span>
         </a>
       <?php else: ?>
-        <div class="g-sec"><span class="g-ribbon sky"><img src="/assets/img/icons3d/piggy.png" alt="">Rekening Tujuan</span></div>
         <div class="wx-bankform">
           <label>Bank / E-Wallet</label>
           <input type="text" name="bank_name" value="<?= $is_free_level ? 'DANA' : '' ?>" <?= $is_free_level ? 'readonly' : 'placeholder="BCA, DANA, OVO, BRI..." required' ?>>
@@ -444,24 +505,13 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
       <?php endif; ?>
     </section>
 
-    <section class="g-panel" data-rv style="--d:.1s">
-      <div class="g-sec"><span class="g-ribbon gold"><img src="/assets/img/icons3d/coins.png" alt="">Pilih Nominal</span></div>
-      <div class="wx-amts">
-        <?php foreach ($available_amounts as $amt): ?>
-          <button type="button" class="wd-amt-btn wx-amt" data-value="<?= $amt ?>" title="<?= format_rp($amt) ?>"
-            onclick="selectWdAmount(this, <?= $amt ?>)" <?= !$level_blocked && $amt > (float)$user['balance_wd'] ? 'disabled' : '' ?>><img src="/assets/img/icons3d/coins.png" alt=""><?= $wd_short((float)$amt) ?></button>
-        <?php endforeach; ?>
-        <?php if (!$available_amounts): ?><div class="wx-empty">Belum ada nominal yang tersedia.</div><?php endif; ?>
-      </div>
-    </section>
-
     <div data-rv style="--d:.14s;display:flex;flex-direction:column;gap:10px">
       <?php if ($wd_btn[1]): ?>
-        <button type="submit" id="wd-submit-btn" class="wx-go g-btn full shine"><i class="ph-fill ph-paper-plane-tilt"></i><span>Withdraw Sekarang</span></button>
+        <button type="submit" id="wd-submit-btn" class="wx-go g-btn gold full shine"><img src="/assets/img/icons3d/moneybag.png" alt=""><span>Kirim ke rekening</span></button>
       <?php else: ?>
         <button type="button" class="wx-go g-btn full" disabled><i class="ph-fill ph-lock-simple"></i><?= htmlspecialchars($wd_btn[0]) ?></button>
         <?php if ($free_wd_limit_reached || ($wd_btn[0] === 'Butuh upgrade level')): ?>
-          <a href="/upgrade" class="g-btn gold full shine"><img src="/assets/img/icons3d/upgrade.png" alt="">Upgrade untuk buka penarikan</a>
+          <a href="/upgrade" class="g-btn gold full shine"><img src="/assets/img/icons3d/upgrade.png" alt="">Level Up untuk buka withdraw</a>
         <?php endif; ?>
       <?php endif; ?>
     </div>
@@ -469,14 +519,14 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
 
   <?php if (!empty($wds)): ?>
     <section class="g-panel" data-rv style="--d:.18s">
-      <div class="g-sec"><span class="g-ribbon"><img src="/assets/img/icons3d/receipt.png" alt="">Riwayat</span><a href="/history?tab=withdraw" class="g-chip" style="text-decoration:none">Semua ›</a></div>
+      <div class="g-sec"><span class="g-ribbon"><img src="/assets/img/icons3d/receipt.png" alt="">Jejak Kiriman</span><a href="/history?tab=withdraw" class="g-chip" style="text-decoration:none">Semua ›</a></div>
       <div class="wx-hist">
         <?php foreach ($wds as $w):
           $st = strtolower((string)$w['status']);
           [$stLabel, $tone] = $wd_status_map[$st] ?? [ucfirst($st), 'mute']; ?>
           <div class="wx-row t-<?= $tone ?>">
-            <span class="g-slot"><img src="/assets/img/icons3d/moneybag.png" alt=""></span>
-            <div><b><?= format_rp((float)$w['amount']) ?></b><small><?= htmlspecialchars($w['bank_name']) ?> · <?= date('d M, H:i', strtotime($w['created_at'])) ?></small></div>
+            <i class="dot"></i>
+            <div style="min-width:0"><b><?= format_rp((float)$w['amount']) ?></b><small><?= htmlspecialchars($w['bank_name']) ?> · <?= date('d M, H:i', strtotime($w['created_at'])) ?></small></div>
             <span class="wx-st"><?= $stLabel ?></span>
             <?php if (!empty($w['admin_note'])): ?><p><?= htmlspecialchars((string)$w['admin_note']) ?></p><?php endif; ?>
           </div>
@@ -505,6 +555,44 @@ $wd_lv = $user_mem ? wd_level_status($pdo, (int)$user_mem['id']) : null;
 </div>
 
 <script>
+/* Meteran & penggeser nominal (memakai tombol .wd-amt-btn yang sama) */
+document.addEventListener('DOMContentLoaded', function () {
+  const arc = document.getElementById('wx-arc');
+  if (arc) requestAnimationFrame(() => setTimeout(() => { arc.style.strokeDasharray = arc.dataset.len + ' 999'; }, 60));
+  const range = document.getElementById('wx-range');
+  const btns = [...document.querySelectorAll('.wd-amt-btn')];
+  const out = document.getElementById('wx-pick-amt'), left = document.getElementById('wx-left');
+  const BAL = <?= (float)$user['balance_wd'] ?>;
+  const fmt = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  const paint = (i) => { if (range) range.style.setProperty('--p', (btns.length > 1 ? i / (btns.length - 1) * 100 : 100) + '%'); };
+  window.wxShow = (val, i) => {
+    out.textContent = fmt(val); out.classList.toggle('none', !val);
+    out.classList.remove('pop'); void out.offsetWidth; out.classList.add('pop');
+    left.textContent = fmt(Math.max(0, BAL - val));
+    if (range && i >= 0) { range.value = i; paint(i); }
+    btns[i]?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  };
+  btns.forEach((b, i) => b.addEventListener('click', () => { if (!b.disabled) wxShow(+b.dataset.value, i); }));
+  const enabled = btns.map((b, i) => b.disabled ? -1 : i).filter((i) => i >= 0);
+  if (range) {
+    if (!enabled.length) range.disabled = true;
+    range.addEventListener('input', () => {
+      let i = +range.value;
+      const ok = enabled.filter((k) => k <= i);
+      i = ok.length ? ok[ok.length - 1] : (enabled[0] ?? -1);
+      if (i < 0) return;
+      range.value = i; paint(i);
+      selectWdAmount(btns[i], +btns[i].dataset.value);
+      wxShow(+btns[i].dataset.value, i);
+    });
+    // Mulai dari nominal terkecil yang bisa ditarik
+    if (enabled.length) { selectWdAmount(btns[enabled[0]], +btns[enabled[0]].dataset.value); wxShow(+btns[enabled[0]].dataset.value, enabled[0]); }
+    else paint(0);
+  }
+});
+</script>
+
+<script>
 function selectWdAmount(btn, val) {
   document.querySelectorAll('.wd-amt-btn').forEach(el => el.classList.remove('active'));
   btn.classList.add('active');
@@ -516,7 +604,7 @@ function selectWdAmount(btn, val) {
   const btn   = document.getElementById('wd-submit-btn');
   const minWd = <?= (int)$min_withdraw ?>;
   const maxWd = <?= (float)$max_available ?>;
-  const label = '<i class="ph-fill ph-paper-plane-tilt"></i><span>Withdraw Sekarang</span>';
+  const label = '<img src="/assets/img/icons3d/moneybag.png" alt=""><span>Kirim ke rekening</span>';
 
   if (!form) return;
 

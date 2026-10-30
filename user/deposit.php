@@ -175,63 +175,91 @@ require dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <style>
-/* ══ DEPOSIT — Isi Lumbung · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
-.dp-bal { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 18px; background: rgba(255, 255, 255, .78); box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 8px 18px rgba(120, 70, 10, .12); }
-.dp-bal .t { flex: 1; min-width: 0; }
-.dp-bal small { display: block; font-size: 11px; font-weight: 900; color: #8a5a00; }
-.dp-bal b { display: block; font-family: var(--pc-font); font-size: 24px; font-weight: 700; line-height: 1.1; color: #0369a1; }
-.dp-bal b em { font-style: normal; font-size: 14px; margin-right: 3px; }
-.dp-bal .g-chip { background: #fff3c4; color: #6b4300; }
+/* ══ DEPOSIT — Mesin Kasir Lumbung · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+.dp-top { display: flex; align-items: center; gap: 10px; }
+.dp-top .t { flex: 1; min-width: 0; }
+.dp-top h1 { margin: 0; font-family: var(--pc-font); font-size: 22px; font-weight: 700; line-height: 1.1; color: #4a2b00; }
+.dp-top p { margin: 1px 0 0; font-size: 11.5px; font-weight: 800; color: var(--pc-muted); }
+.dp-wallet { display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
+.dp-wallet img { width: 26px; height: 26px; object-fit: contain; }
+.dp-wallet small { display: block; font-size: 9.5px; font-weight: 900; color: var(--pc-muted); line-height: 1; }
+.dp-wallet b { display: block; font-family: var(--pc-font); font-size: 14px; font-weight: 700; color: #0369a1; line-height: 1.1; white-space: nowrap; }
+
+/* Langkah */
+.dp-steps { display: flex; align-items: center; gap: 6px; }
+.dp-steps span { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 900; color: #a3906a; }
+.dp-steps em { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; color: #fff; background: #d9c79c; }
+.dp-steps span.on { color: #15803d; } .dp-steps span.on em { background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 2px 0 #11622f; }
+.dp-steps i { flex: 1; height: 2px; border-radius: 2px; background: repeating-linear-gradient(90deg, #e6c886 0 5px, transparent 5px 9px); }
 
 .dp-flash { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; line-height: 1.4; }
 .dp-flash i { font-size: 17px; flex-shrink: 0; }
 .dp-flash.success { background: #dcfce7; color: #15803d; box-shadow: 0 0 0 2px #86efac; }
 .dp-flash.error { background: #ffe4e6; color: #9f1239; box-shadow: 0 0 0 2px #fecdd3; }
 
-/* Pilih metode */
-.dp-methods { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
-.depo-segment-btn { position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 10px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; font: inherit; color: var(--pc-ink);
-  background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .15s var(--pc-ease); }
-.depo-segment-btn:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
-.depo-segment-btn .ic { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0; }
-.depo-segment-btn .ic img { max-width: 80%; max-height: 80%; object-fit: contain; }
-.depo-segment-btn .t { min-width: 0; line-height: 1.2; }
-.depo-segment-btn b { display: block; font-family: var(--pc-font); font-size: 14.5px; font-weight: 700; }
-.depo-segment-btn small { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.depo-segment-btn.active { background: linear-gradient(180deg, #f0fdf4, #fff); box-shadow: inset 0 0 0 2.5px #22c55e, 0 4px 0 #16a34a, 0 8px 16px rgba(22, 163, 74, .2); }
-.depo-segment-btn.active::after { content: '\2713'; position: absolute; top: -6px; right: -4px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 900; color: #fff; background: #16a34a; box-shadow: 0 0 0 2px #fff; animation: gStamp .4s var(--pc-ease) both; }
-
-/* Nominal */
-.depo-capsule-input { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 4px 6px 4px 14px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0, inset 0 2px 5px rgba(120, 70, 10, .08); transition: box-shadow .2s; }
-.depo-capsule-input:focus-within { box-shadow: inset 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, .15); }
-.depo-prefix { font-family: var(--pc-font); font-size: 18px; font-weight: 700; color: #15803d; }
-.depo-amount-field { flex: 1; min-width: 0; height: 44px; border: 0; outline: none; background: transparent; font-family: var(--pc-font); font-size: 24px; font-weight: 700; color: var(--pc-ink); -moz-appearance: textfield; }
+/* ── Mesin kasir ── */
+.dp-reg { position: relative; padding: 12px 12px 14px; border-radius: 26px; background: linear-gradient(180deg, #c0813f 0%, #a0652a 45%, #8a5420 100%); box-shadow: 0 6px 0 #5a3412, 0 16px 28px rgba(90, 52, 18, .3), inset 0 2px 0 rgba(255, 255, 255, .3); }
+.dp-reg::before { content: ''; position: absolute; left: 50%; top: -9px; width: 74px; height: 14px; margin-left: -37px; border-radius: 10px 10px 4px 4px; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.dp-screen { position: relative; overflow: hidden; padding: 10px 12px 9px; border-radius: 16px; background: linear-gradient(180deg, #0f3d22, #14532d); box-shadow: inset 0 3px 8px rgba(0, 0, 0, .45), 0 0 0 3px #5a3412, 0 0 0 5px #d9a05b; }
+.dp-screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .04) 0 1px, transparent 1px 3px), linear-gradient(115deg, rgba(255, 255, 255, .12) 0 30%, transparent 30%); }
+.dp-screen-top { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; font-weight: 900; color: #86efac; letter-spacing: .4px; }
+.depo-capsule-input { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.depo-prefix { font-family: var(--pc-font); font-size: 20px; font-weight: 700; color: #4ade80; }
+.depo-amount-field { flex: 1; min-width: 0; height: 46px; padding: 0; border: 0; outline: none; background: transparent; text-align: right; caret-color: #ffd54f;
+  font-family: var(--pc-font); font-size: 34px; font-weight: 700; letter-spacing: .5px; color: #dcfce7; text-shadow: 0 0 10px rgba(74, 222, 128, .55); -moz-appearance: textfield; }
+.depo-amount-field::placeholder { color: rgba(220, 252, 231, .3); }
 .depo-amount-field::-webkit-outer-spin-button, .depo-amount-field::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.depo-clear-btn { display: none; width: 30px; height: 30px; border: 0; border-radius: 10px; cursor: pointer; place-items: center; color: #9f1239; background: #ffe4e6; }
+.depo-clear-btn { display: none; width: 30px; height: 30px; border: 0; border-radius: 10px; cursor: pointer; place-items: center; color: #fecdd3; background: rgba(255, 255, 255, .1); }
 .depo-clear-btn.show { display: grid; }
-#live-amount-preview { font-size: 11.5px; font-weight: 900; }
-.depo-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-.depo-quick-chip { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 9px 0; border-radius: 14px; cursor: pointer; user-select: none; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #6b4300;
-  background: linear-gradient(180deg, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0, 0 4px 0 #ecd59c; transition: transform .12s; }
-.depo-quick-chip img { width: 22px; height: 22px; object-fit: contain; transition: transform .3s var(--pc-ease); }
-.depo-quick-chip:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #f6e2b0, 0 1px 0 #ecd59c; }
-.depo-quick-chip.active { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .5), 0 4px 0 #11622f, 0 8px 16px rgba(22, 163, 74, .3); }
-.depo-quick-chip.active img { transform: scale(1.2) rotate(-12deg); }
-.depo-u-pill { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 11px; border-radius: 13px; font-size: 11.5px; font-weight: 800; color: #8a5a00; background: #fff3c4; box-shadow: inset 0 0 0 1.5px #fcd34d; }
-.depo-u-pill i { color: #f59e0b; font-size: 15px; }
+#live-amount-preview { font-size: 11px; font-weight: 900; }
+.dp-after { margin-top: 2px; text-align: right; font-size: 11px; font-weight: 800; color: #86efac; }
+.dp-after b { color: #ffd54f; }
 @keyframes depoShake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 
-/* Form per metode */
+/* Koin cepat */
+.depo-quick-grid { display: flex; gap: 6px; overflow-x: auto; margin: 12px -12px 0; padding: 2px 12px 5px; scrollbar-width: none; }
+.depo-quick-grid::-webkit-scrollbar { display: none; }
+.depo-quick-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 6px 11px 6px 6px; border-radius: 999px; cursor: pointer; user-select: none; font-family: var(--pc-font); font-size: 14px; font-weight: 700; color: #6b4300;
+  background: linear-gradient(180deg, #fff3c4, #ffe58a); box-shadow: 0 3px 0 #b07800; transition: transform .12s; }
+.depo-quick-chip img { width: 20px; height: 20px; object-fit: contain; }
+.depo-quick-chip:active { transform: translateY(2px); box-shadow: 0 1px 0 #b07800; }
+.depo-quick-chip.active { color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); background: linear-gradient(180deg, #4ade80, #16a34a); box-shadow: 0 3px 0 #11622f, 0 0 0 2px #fff; }
+
+/* Tombol angka */
+.dp-keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 10px; }
+.dp-key { min-height: 46px; border: 0; border-radius: 14px; cursor: pointer; font-family: var(--pc-font); font-size: 21px; font-weight: 700; color: #4a2b00;
+  background: linear-gradient(180deg, #fffaf0, #f3e2bd); box-shadow: 0 4px 0 #6b3f16, inset 0 2px 0 #fff; transition: transform .08s; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.dp-key:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b3f16, inset 0 2px 0 #fff; }
+.dp-key.fn { font-size: 16px; color: #fff; background: linear-gradient(180deg, #fb923c, #ea580c); box-shadow: 0 4px 0 #9a3412, inset 0 2px 0 rgba(255, 255, 255, .35); }
+.dp-key.fn:active { box-shadow: 0 1px 0 #9a3412; }
+
+/* Cara bayar */
+.dp-pay-h { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.dp-methods { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.depo-segment-btn { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px 9px 9px; border: 0; border-radius: 17px; cursor: pointer; text-align: left; font: inherit; color: var(--pc-ink);
+  background: #fff; box-shadow: inset 0 0 0 2px #f1dfb4; transition: box-shadow .2s, background .2s; }
+.depo-segment-btn .ic { width: 42px; height: 42px; flex-shrink: 0; border-radius: 13px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #fff, #fff6dc); box-shadow: inset 0 0 0 2px #f6e2b0; }
+.depo-segment-btn .ic img { max-width: 80%; max-height: 80%; object-fit: contain; }
+.depo-segment-btn .t { flex: 1; min-width: 0; line-height: 1.2; }
+.depo-segment-btn b { display: flex; align-items: center; gap: 6px; font-family: var(--pc-font); font-size: 15.5px; font-weight: 700; }
+.depo-segment-btn b em { padding: 0 7px; border-radius: 999px; font-style: normal; font-family: 'Nunito', sans-serif; font-size: 9.5px; font-weight: 900; color: #fff; background: #16a34a; }
+.depo-segment-btn small { display: block; font-size: 11px; font-weight: 800; color: var(--pc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.depo-segment-btn .radio { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; box-shadow: inset 0 0 0 2px #d9c79c; transition: box-shadow .2s; }
+.depo-segment-btn.active { background: #f0fdf4; box-shadow: inset 0 0 0 2.5px #22c55e; }
+.depo-segment-btn.active .radio { box-shadow: inset 0 0 0 7px #16a34a; }
+
 .depo-form-box { display: none; }
 .depo-form-box.active { display: block; animation: dpIn .35s var(--pc-out) both; }
 @keyframes dpIn { from { opacity: 0; transform: translateY(8px); } }
-.depo-action-btn.g-btn { width: 100%; min-height: 52px; margin-top: 12px; font-size: 16.5px; border-radius: 17px; }
+.depo-action-btn.g-btn { width: 100%; min-height: 54px; margin-top: 12px; font-size: 17px; border-radius: 17px; }
 .depo-action-btn .qris-logo { height: 18px; width: auto; padding: 3px 6px; border-radius: 6px; background: #fff; }
 .depo-wallets-subline { margin-top: 8px; text-align: center; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
-.depo-bank-box { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px; border-radius: 16px; background: linear-gradient(135deg, #e0f2fe, #fff); box-shadow: inset 0 0 0 2px #bae6fd; }
+.depo-u-pill { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 11px; border-radius: 13px; font-size: 11.5px; font-weight: 800; color: #8a5a00; background: #fff3c4; box-shadow: inset 0 0 0 1.5px #fcd34d; }
+.depo-u-pill i { color: #f59e0b; font-size: 15px; }
+.depo-bank-box { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; border-radius: 16px; background: linear-gradient(135deg, #e0f2fe, #fff); box-shadow: inset 0 0 0 2px #bae6fd; }
 .depo-bank-meta { flex: 1; min-width: 0; }
 .depo-bank-badge-title { font-size: 10.5px; font-weight: 900; color: #0369a1; }
-.depo-bank-num-clean { font-family: var(--pc-font); font-size: 20px; font-weight: 700; letter-spacing: 1px; color: var(--pc-ink); }
+.depo-bank-num-clean { font-family: var(--pc-font); font-size: 19px; font-weight: 700; letter-spacing: 1px; color: var(--pc-ink); overflow-wrap: anywhere; }
 .depo-bank-holder-txt { font-size: 11px; font-weight: 800; color: var(--pc-muted); }
 .depo-copy-btn-mini.copied { --c1: #4ade80; --c2: #16a34a; }
 .depo-upload-compact { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; border-radius: 16px; background: #fffaf0; border: 2px dashed #e6c886; cursor: pointer; }
@@ -243,37 +271,35 @@ require dirname(__DIR__) . '/partials/header.php';
 .depo-upload-main-txt { font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .depo-upload-sub-txt { font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
 
-/* Riwayat */
-.dp-hist { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
-.dp-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 2px #f6e2b0; }
-.dp-row .g-slot { width: 36px; height: 36px; border-radius: 12px; }
-.dp-row .t { flex: 1; min-width: 0; }
-.dp-row b { display: block; font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: var(--pc-ink); }
-.dp-row small { display: block; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
-.dp-row .r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.depo-badge-mini { font-size: 11px; font-weight: 900; padding: 3px 9px; border-radius: 999px; }
+/* Struk terakhir (geser) */
+.dp-hist { display: flex; gap: 8px; overflow-x: auto; margin: 10px -12px 0; padding: 4px 12px 8px; scrollbar-width: none; }
+.dp-hist::-webkit-scrollbar { display: none; }
+.dp-tk { position: relative; flex: 0 0 136px; padding: 10px 10px 9px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 2px #efe6cf, 0 3px 0 #e6dbbd;
+  -webkit-mask: radial-gradient(circle 6px at 0 58%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 6px at 100% 58%, transparent 98%, #000) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle 6px at 0 58%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 6px at 100% 58%, transparent 98%, #000) right / 51% 100% no-repeat; }
+.dp-tk-h { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.dp-tk-h img { height: 18px; max-width: 46px; object-fit: contain; }
+.dp-tk b { display: block; margin-top: 6px; font-family: var(--pc-font); font-size: 16px; font-weight: 700; color: var(--pc-ink); white-space: nowrap; }
+.dp-tk small { display: block; padding-bottom: 7px; border-bottom: 1.5px dashed #f1dfb4; font-size: 10.5px; font-weight: 800; color: var(--pc-muted); }
+.dp-tk .foot { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: 7px; min-height: 26px; }
+.dp-tk .g-btn { min-height: 26px; padding: 0 9px; font-size: 12px; border-radius: 9px; }
+.depo-badge-mini { font-size: 10.5px; font-weight: 900; padding: 2px 8px; border-radius: 999px; }
 .depo-badge-mini.pending { color: #b45309; background: #fef3c7; }
 .depo-badge-mini.confirmed { color: #15803d; background: #dcfce7; }
 .depo-badge-mini.rejected, .depo-badge-mini.error { color: #be123c; background: #ffe4e6; }
+@media (max-width: 350px) { .depo-amount-field { font-size: 28px; } .dp-key { min-height: 42px; font-size: 19px; } .dp-steps span b { display: none; } }
 </style>
 
 <div class="g-page">
 
-  <section class="g-hero" data-rv>
-    <span class="g-sun"></span><span class="g-cloud c1"></span><span class="g-cloud c2"></span>
-    <div class="g-hero-row">
-      <div style="flex:1;min-width:0">
-        <h1>Deposit</h1>
-        <p><i class="ph-fill ph-lightning"></i> QRIS masuk otomatis dalam hitungan detik.</p>
-      </div>
-      <div class="g-hero-art"><img src="/assets/img/icons3d/piggy.png" alt=""></div>
-    </div>
-    <div class="dp-bal">
-      <span class="g-slot sm"><img src="/assets/img/icons3d/coins.png" alt=""></span>
-      <div class="t"><small>Saldo Beli kamu</small><b><em>Rp</em><?= number_format((float)$user['balance_dep'], 0, ',', '.') ?></b></div>
-      <span class="g-chip">Min <?= format_rp($min_deposit) ?></span>
-    </div>
-  </section>
+  <div class="dp-top" data-rv>
+    <div class="t"><h1>Mesin Kasir</h1><p>Isi Saldo Beli, QRIS masuk otomatis.</p></div>
+    <div class="dp-wallet"><img src="/assets/img/icons3d/piggy.png" alt=""><span><small>Saldo Beli</small><b>Rp <?= number_format((float)$user['balance_dep'], 0, ',', '.') ?></b></span></div>
+  </div>
+
+  <div class="dp-steps" data-rv style="--d:.03s" aria-hidden="true">
+    <span class="on"><em>1</em><b>Nominal</b></span><i></i><span class="on" id="dp-step2"><em>2</em><b>Cara bayar</b></span><i></i><span><em>3</em><b>Bayar</b></span>
+  </div>
 
   <?php if ($flash): ?>
   <div class="dp-flash <?= $flashType === 'error' ? 'error' : 'success' ?>" data-rv>
@@ -290,30 +316,16 @@ require dirname(__DIR__) . '/partials/header.php';
   </div>
   <?php else: ?>
 
-  <!-- Metode -->
-  <div class="dp-methods" data-rv style="--d:.05s">
-    <?php if ($qris_enabled && !empty($qris_raw)): ?>
-    <button type="button" class="depo-segment-btn active" id="seg-btn-qris" onclick="switchMethod('qris')">
-      <span class="ic"><img src="/assets/qris.png?v=3" alt="QRIS"></span>
-      <span class="t"><b>QRIS</b><small>Otomatis · semua e-wallet</small></span>
-    </button>
-    <?php endif; ?>
-    <?php if ($bank_enabled): ?>
-    <button type="button" class="depo-segment-btn <?= (!$qris_enabled || empty($qris_raw)) ? 'active' : '' ?>" id="seg-btn-bank" onclick="switchMethod('bank')">
-      <span class="ic"><img src="/assets/img/icons3d/barn.png" alt=""></span>
-      <span class="t"><b>Transfer</b><small><?= htmlspecialchars($bankName) ?> · cek manual</small></span>
-    </button>
-    <?php endif; ?>
-  </div>
-
-  <!-- Nominal + form -->
-  <section class="g-panel" data-rv style="--d:.1s">
-    <div class="g-sec"><span class="g-ribbon gold"><img src="/assets/img/icons3d/coins.png" alt="">Nominal</span><span id="live-amount-preview" style="color:var(--pc-muted)">Pilih atau ketik nominal</span></div>
-
-    <div class="depo-capsule-input" id="master-amount-capsule">
-      <span class="depo-prefix">Rp</span>
-      <input type="number" id="master-amount-input" class="depo-amount-field" min="<?= $min_deposit ?>" step="any" placeholder="<?= number_format($min_deposit, 0, '', '') ?>" oninput="handleManualInput(this)" aria-label="Nominal isi saldo">
-      <button type="button" class="depo-clear-btn" id="master-amount-clear" onclick="clearAmount()" title="Hapus"><i class="ph-bold ph-x"></i></button>
+  <!-- Mesin kasir: layar + koin + tombol angka -->
+  <section class="dp-reg" data-rv style="--d:.06s">
+    <div class="dp-screen" id="master-amount-capsule">
+      <div class="dp-screen-top"><span>NOMINAL DEPOSIT</span><span id="live-amount-preview">Min <?= format_rp($min_deposit) ?></span></div>
+      <div class="depo-capsule-input">
+        <span class="depo-prefix">Rp</span>
+        <input type="number" id="master-amount-input" class="depo-amount-field" min="<?= $min_deposit ?>" step="any" inputmode="none" placeholder="0" oninput="handleManualInput(this)" aria-label="Nominal deposit">
+        <button type="button" class="depo-clear-btn" id="master-amount-clear" onclick="clearAmount()" title="Hapus"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div class="dp-after">Saldo Beli jadi <b id="dp-after">Rp <?= number_format((float)$user['balance_dep'], 0, ',', '.') ?></b></div>
     </div>
 
     <div class="depo-quick-grid">
@@ -326,12 +338,40 @@ require dirname(__DIR__) . '/partials/header.php';
       <?php endforeach; ?>
     </div>
 
-    <?php if ($u_enabled): ?>
-    <div class="depo-u-pill">
-      <i class="ph-fill ph-lightning"></i>
-      <span id="u-code-txt">Kode unik <strong>+Rp <?= $u_start ?></strong> ditambahkan otomatis (naik kalau sudah dipakai).</span>
+    <div class="dp-keys">
+      <?php foreach (['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0'] as $k): ?>
+        <button type="button" class="dp-key" onclick="depKey('<?= $k ?>')"><?= $k ?></button>
+      <?php endforeach; ?>
+      <button type="button" class="dp-key fn" onclick="depKey('del')" aria-label="Hapus angka"><i class="ph-bold ph-backspace"></i></button>
     </div>
-    <?php endif; ?>
+  </section>
+
+  <?php if ($u_enabled): ?>
+  <div class="depo-u-pill">
+    <i class="ph-fill ph-lightning"></i>
+    <span id="u-code-txt">Kode unik <strong>+Rp <?= $u_start ?></strong> ditambahkan otomatis (naik kalau sudah dipakai).</span>
+  </div>
+  <?php endif; ?>
+
+  <!-- Cara bayar + kirim -->
+  <section class="g-panel" data-rv style="--d:.1s">
+    <div class="dp-pay-h"><span class="g-ribbon"><img src="/assets/img/icons3d/shop.png" alt="">Cara Bayar</span></div>
+    <div class="dp-methods">
+      <?php if ($qris_enabled && !empty($qris_raw)): ?>
+      <button type="button" class="depo-segment-btn active" id="seg-btn-qris" onclick="switchMethod('qris')">
+        <span class="ic"><img src="/assets/qris.png?v=3" alt="QRIS"></span>
+        <span class="t"><b>QRIS <em>OTOMATIS</em></b><small>Semua e-wallet &amp; m-banking</small></span>
+        <span class="radio"></span>
+      </button>
+      <?php endif; ?>
+      <?php if ($bank_enabled): ?>
+      <button type="button" class="depo-segment-btn <?= (!$qris_enabled || empty($qris_raw)) ? 'active' : '' ?>" id="seg-btn-bank" onclick="switchMethod('bank')">
+        <span class="ic"><img src="/assets/img/icons3d/barn.png" alt=""></span>
+        <span class="t"><b>Transfer <?= htmlspecialchars($bankName) ?></b><small>Upload bukti · dicek admin</small></span>
+        <span class="radio"></span>
+      </button>
+      <?php endif; ?>
+    </div>
 
     <?php if ($qris_enabled && !empty($qris_raw)): ?>
     <div class="depo-form-box active" id="form-box-qris">
@@ -340,8 +380,8 @@ require dirname(__DIR__) . '/partials/header.php';
         <input type="hidden" name="form_token" value="<?= htmlspecialchars($_form_token) ?>">
         <input type="hidden" name="action" value="submit_qris">
         <input type="hidden" name="amount" id="qris-hidden-amount" value="<?= (int)$min_deposit ?>">
-        <button type="submit" class="depo-action-btn g-btn shine no-dbl-submit" id="btn-submit-qris">
-          <img src="/assets/qris.png?v=3" alt="QRIS" class="qris-logo"><span>Lanjut Bayar</span><i class="ph-bold ph-arrow-right"></i>
+        <button type="submit" class="depo-action-btn g-btn gold shine no-dbl-submit" id="btn-submit-qris">
+          <img src="/assets/qris.png?v=3" alt="QRIS" class="qris-logo"><span>Bayar sekarang</span><i class="ph-bold ph-arrow-right"></i>
         </button>
       </form>
       <div class="depo-wallets-subline">DANA · OVO · GoPay · ShopeePay · BCA · Mandiri · BRI · BNI</div>
@@ -374,30 +414,31 @@ require dirname(__DIR__) . '/partials/header.php';
             <div class="depo-upload-sub-txt" id="proof-label-sub">JPG, PNG, atau WEBP</div>
           </div>
         </div>
-        <button type="submit" class="depo-action-btn g-btn sky no-dbl-submit" id="btn-submit-bank"><i class="ph-bold ph-paper-plane-tilt"></i><span>Kirim Bukti Transfer</span></button>
+        <button type="submit" class="depo-action-btn g-btn sky no-dbl-submit" id="btn-submit-bank"><i class="ph-bold ph-paper-plane-tilt"></i><span>Kirim bukti transfer</span></button>
       </form>
     </div>
     <?php endif; ?>
   </section>
   <?php endif; ?>
 
-  <!-- Riwayat -->
+  <!-- Struk terakhir -->
   <?php if (!empty($deps)): ?>
-  <section class="g-panel" data-rv style="--d:.15s">
-    <div class="g-sec"><span class="g-ribbon"><img src="/assets/img/icons3d/receipt.png" alt="">Riwayat</span><a href="/history" class="g-chip" style="text-decoration:none">Semua ›</a></div>
+  <section data-rv style="--d:.15s">
+    <div class="g-sec"><span class="g-ribbon gold"><img src="/assets/img/icons3d/receipt.png" alt="">Struk Terakhir</span><a href="/history?tab=deposit" class="g-chip" style="text-decoration:none">Semua ›</a></div>
     <div class="dp-hist">
-      <?php foreach (array_slice($deps, 0, 4) as $d):
+      <?php foreach ($deps as $d):
         $st = strtolower($d['status'] ?? 'pending');
         $bclass = 'error';
         if ($st === 'pending') $bclass = 'pending';
         elseif ($st === 'confirmed' || $st === 'approved') $bclass = 'confirmed';
         elseif ($st === 'rejected') $bclass = 'rejected'; ?>
-        <div class="dp-row">
-          <span class="g-slot"><img src="<?= $d['method'] === 'qris' ? '/assets/qris.png?v=3' : '/assets/img/icons3d/barn.png' ?>" alt=""></span>
-          <div class="t"><b><?= format_rp((float)$d['amount']) ?></b><small><?= strtoupper($d['method']) ?> · <?= date('d M, H:i', strtotime($d['created_at'])) ?></small></div>
-          <div class="r">
-            <span class="depo-badge-mini <?= $bclass ?>"><?= ucfirst($d['status']) ?></span>
-            <?php if ($st === 'pending' && $d['method'] === 'qris'): ?><a href="/pay?id=<?= $d['id'] ?>" class="g-btn gold sm" style="min-height:28px;font-size:12px">Bayar</a><?php endif; ?>
+        <div class="dp-tk">
+          <div class="dp-tk-h"><img src="<?= $d['method'] === 'qris' ? '/assets/qris.png?v=3' : '/assets/img/icons3d/barn.png' ?>" alt=""><span class="depo-badge-mini <?= $bclass ?>"><?= ucfirst($d['status']) ?></span></div>
+          <b><?= format_rp((float)$d['amount']) ?></b>
+          <small><?= date('d M, H:i', strtotime($d['created_at'])) ?></small>
+          <div class="foot">
+            <span class="depo-badge-mini" style="padding:0;color:var(--pc-muted)">#<?= (int)$d['id'] ?></span>
+            <?php if ($st === 'pending' && $d['method'] === 'qris'): ?><a href="/pay?id=<?= $d['id'] ?>" class="g-btn gold">Bayar</a><?php endif; ?>
           </div>
         </div>
       <?php endforeach; ?>
@@ -406,6 +447,32 @@ require dirname(__DIR__) . '/partials/header.php';
   <?php endif; ?>
 
 </div>
+
+<script>
+/* Tombol angka mesin kasir + saldo setelah deposit */
+const DEP_BAL = <?= (float)$user['balance_dep'] ?>;
+function depKey(k) {
+  const input = document.getElementById('master-amount-input');
+  if (!input) return;
+  let v = String(input.value || '').replace(/\D/g, '');
+  if (k === 'del') v = v.slice(0, -1);
+  else if (v.length < 9) v = (v === '' || v === '0') ? (k === '000' ? '' : k) : (v + k).slice(0, 9);
+  input.value = v;
+  handleManualInput(input);
+  if (navigator.vibrate) navigator.vibrate(8);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const after = document.getElementById('dp-after');
+  const orig = window.updateLivePreview;
+  if (!after || typeof orig !== 'function') return;
+  window.updateLivePreview = function (val) {
+    orig(val);
+    after.textContent = 'Rp ' + Math.round(DEP_BAL + (val >= minDeposit ? val : 0)).toLocaleString('id-ID');
+  };
+  const cur = parseInt(document.getElementById('master-amount-input')?.value || '0') || 0;
+  window.updateLivePreview(cur);
+});
+</script>
 
 <script>
 let currentMethod = '<?= ($qris_enabled && !empty($qris_raw)) ? "qris" : "bank" ?>';
@@ -449,14 +516,14 @@ function updateLivePreview(val) {
   previewUniqueCode(val);
   if (!lbl) return;
   if (val >= minDeposit) {
-    lbl.style.color = '#059669';
+    lbl.style.color = '#ffd54f';
     lbl.textContent = formatRp(val);
   } else if (val > 0) {
-    lbl.style.color = '#dc2626';
+    lbl.style.color = '#fda4af';
     lbl.textContent = 'Min. ' + formatRp(minDeposit);
   } else {
-    lbl.style.color = 'var(--reef-muted)';
-    lbl.textContent = 'Pilih atau ketik nominal';
+    lbl.style.color = '';
+    lbl.textContent = 'Min. ' + formatRp(minDeposit);
   }
 }
 
