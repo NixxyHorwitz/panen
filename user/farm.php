@@ -31,7 +31,7 @@ $asset_v    = (string)(@filemtime(dirname(__DIR__) . '/assets/js/farm_engine.js'
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#8fd3ff">
+<meta name="theme-color" content="#4fb6f0">
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Sawah Panen Cuan — <?= htmlspecialchars($_site_name) ?></title>
@@ -69,7 +69,7 @@ $asset_v    = (string)(@filemtime(dirname(__DIR__) . '/assets/js/farm_engine.js'
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
   font-family: 'Nunito', sans-serif; font-weight: 700; color: var(--ink);
-  background: linear-gradient(180deg, #8fd3ff 0%, #c9ecff 45%, #dcefff 100%);
+  background: linear-gradient(180deg, #4fb6f0 0%, #9ad7f5 38%, #d9efe8 72%, #e6f1df 100%);
   -webkit-user-select: none; user-select: none;
 }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }

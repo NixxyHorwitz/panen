@@ -33,10 +33,14 @@
   const STREAM = { x0: -21, x1: 16.5, z0: 6.2, z1: 7.8, y: 0.07 };
   const POND = { x: 19.8, z: 7, r: 3.8 };
   const FALL_H = 5.5;                // tinggi air terjun di kaki gunung barat
-  const WINDMILL = new THREE.Vector3(-9.3, 0, -7.4);
+  const HUT = new THREE.Vector3(-9.8, 0, -7.8);        // saung (gubuk sawah)
+  const LUMBUNG = new THREE.Vector3(10.4, 0, -7.6);    // lumbung padi
+  const WHEEL = new THREE.Vector3(-12.6, 0, 7);        // kincir air di sungai
+  const WHEEL_Y = 1.15;
+  const FLAG = new THREE.Vector3(2.5, 0, 5.3);         // tiang bendera merah putih
   const SCARECROW = new THREE.Vector3(-8.3, 0, -3.6);
   const PAN_LIMIT = 6;
-  const SAIL_SPEED = 0.015;          // rad per frame @60fps
+  const SAIL_SPEED = 0.012;          // putaran kincir air, rad per frame @60fps
   const OUTLINE_SCALE = 0.6;         // ketebalan outline (1 = tebal ala kartun, 0.6 = halus)
 
   const C = {
@@ -411,154 +415,321 @@
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const PLANT_OFFSETS = [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]];
 
-  /** Lembah + pegunungan + sungai + kincir + orang-orangan + pagar + pohon (batang) → satu geometri. */
+  /* ══════════════════════════════════════════════════════════
+     TATA LETAK PEDESAAN (sawah Indonesia)
+     Arah "latar" = arah pandang kamera awal (−x, −z): di sana berdiri dua gunung
+     berapi dengan matahari di tengahnya — pemandangan khas gambar anak Indonesia.
+     ══════════════════════════════════════════════════════════ */
+  const BACK = V(-1, 0, -1).normalize(), SIDE = V(1, 0, -1).normalize();
+  const VOLCANOES = [
+    { p: BACK.clone().multiplyScalar(74).addScaledVector(SIDE, 24), r: 30, h: 31, top: 3.2 },
+    { p: BACK.clone().multiplyScalar(80).addScaledVector(SIDE, -26), r: 27, h: 26, top: 2.6 },
+  ];
+  const CRATER = V(VOLCANOES[0].p.x, VOLCANOES[0].h - 0.5, VOLCANOES[0].p.z);
+  const FIXED_TREES = [
+    { type: 'palm', x: -10.4, z: 2.4 }, { type: 'palm', x: 10.6, z: -3.6 }, { type: 'palm', x: -10.8, z: -1.6 },
+    { type: 'palm', x: 6.6, z: -9.6 }, { type: 'palm', x: -6.4, z: -10.2 }, { type: 'banana', x: -4.4, z: 9.7 },
+    { type: 'banana', x: -8.0, z: 9.6 },
+    { type: 'banana', x: 9.9, z: 3.9 }, { type: 'banana', x: -3.6, z: -9.2 }, { type: 'banana', x: -11.2, z: 5.0 },
+    { type: 'banana', x: 2.6, z: -9.6 }, { type: 'banana', x: 12.0, z: -0.9 },
+  ];
+  const BAMBOO = [{ x: -12.6, z: -4.4 }, { x: 12.8, z: 2.2 }, { x: -6.6, z: 11.6 }, { x: 13.4, z: -6.0 }];
+
+  /** Petak sawah tergenang di lembah (di luar pagar kebun). stage: <.3 baru tanam · <.75 hijau · selebihnya menguning. */
+  const PADDIES = (() => {
+    const out = [], R = rng(91), W = 3.3, D = 2.7;
+    const avoid = [HUT, LUMBUNG, SCARECROW, WHEEL, FLAG];
+    for (let gx = -8; gx <= 8; gx++) {
+      for (let gz = -10; gz <= 9; gz++) {
+        const x = gx * W + 0.35, z = gz * D + 0.2, d = Math.hypot(x, z);
+        if (d < 9.5 || d > 26) continue;
+        if (x > FENCE.x0 - 2.7 && x < FENCE.x1 + 2.7 && z > FENCE.z0 - 2.6 && z < STREAM.z1 + 2.2) continue; // kebun, jalan, sungai depan
+        if (z > STREAM.z0 - 2.0 && z < STREAM.z1 + 2.0) continue;                                            // sungai
+        if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 2.8) continue;                                       // kolam
+        if (Math.hypot(x - (STREAM.x0 - 2), z - 7) < 8) continue;                                              // tebing air terjun
+        if (avoid.some((p) => Math.hypot(p.x - x, p.z - z) < 3.6)) continue;
+        if (FIXED_TREES.some((t) => Math.abs(t.x - x) < W / 2 + 0.6 && Math.abs(t.z - z) < D / 2 + 0.6)) continue;
+        if (BAMBOO.some((b) => Math.hypot(b.x - x, b.z - z) < 3.2)) continue;
+        if (R() < 0.12) continue; // celah alami untuk pohon
+        out.push({ x, z, w: W - 0.24, d: D - 0.24, stage: R() });
+      }
+    }
+    return out;
+  })();
+  const inPaddy = (x, z, m = 0.3) => PADDIES.some((p) => Math.abs(p.x - x) < p.w / 2 + m && Math.abs(p.z - z) < p.d / 2 + m);
+
+  /** Warna dua-nada: atas (normal ke atas) vs sisi — untuk pematang & terasering. */
+  const topSide = (top, side) => { const a = new THREE.Color(top), b = new THREE.Color(side); return (l, w, n) => (n.y > 0.55 ? a : b); };
+  const BAMBOO_C = ['#c9b45a', '#b9a24a', '#d4c06a'];
+
+  /** Lembah sawah + gunung berapi + terasering + saung + lumbung + pagar bambu + kincir air (rangka) → satu geometri. */
   function buildStaticWorld() {
     const g = new Geo(11), R = g.rand;
     const tmp = new THREE.Color();
 
-    // Hamparan rumput lembah (luas, menghilang di kabut)
-    const g1 = new THREE.Color('#4a9e3a'), g2 = new THREE.Color('#5cae43'), g3 = new THREE.Color('#3d8233');
+    // Hamparan rumput lembah tropis (luas, menghilang di kabut)
+    const g1 = new THREE.Color('#4c9532'), g2 = new THREE.Color('#5ea33a'), g3 = new THREE.Color('#3a7a2e');
     g.add(new THREE.CircleGeometry(95, 64, 0, Math.PI * 2), (l, w) => {
       const n = Math.sin(w.x * 0.21) * Math.cos(w.z * 0.17) + Math.sin(w.x * 0.07 + w.z * 0.09);
       const far = clamp((Math.hypot(w.x, w.z) - 22) / 30, 0, 1);
       return tmp.copy(g1).lerp(g2, clamp(n * 0.25 + 0.25, 0, 0.5)).lerp(g3, far * 0.45);
     }, { r: [-Math.PI / 2, 0, 0], ol: false, jitter: 0.03 });
 
-    // Bukit kaki gunung (rendah, dekat) + pegunungan berpuncak salju (jauh)
-    const rock = new THREE.Color('#78716c'), snow = new THREE.Color('#f8fafc'), base = new THREE.Color('#4d7c0f'), hill = new THREE.Color('#3f9a45');
-    const peak = (h) => (l, w) => {
-      const t = clamp(w.y / h, 0, 1);
-      if (t > 0.78) return snow;
-      return tmp.copy(base).lerp(rock, clamp((t - 0.25) / 0.45, 0, 1));
-    };
+    // Dua gunung berapi (latar) — lereng hutan, alur lahar, kawah gelap
+    const vLow = new THREE.Color('#3f8f3a'), vMid = new THREE.Color('#2d6a3e'), vHigh = new THREE.Color('#7b7564'), vTop = new THREE.Color('#5d554c'), vGully = new THREE.Color('#25573a');
+    VOLCANOES.forEach((v, i) => {
+      g.add(new THREE.CylinderGeometry(v.top, v.r, v.h, 26, 7), (l, w, n) => {
+        if (n.y > 0.9 && w.y > v.h * 0.95) return tmp.set('#463d36');
+        const t = clamp(w.y / v.h, 0, 1), ang = Math.atan2(l.x, l.z);
+        tmp.copy(vLow).lerp(vMid, clamp(t / 0.45, 0, 1));
+        if (t > 0.45) tmp.lerp(vHigh, clamp((t - 0.45) / 0.35, 0, 1));
+        if (t > 0.82) tmp.lerp(vTop, clamp((t - 0.82) / 0.18, 0, 1));
+        if (Math.sin(ang * 13 + i) > 0.55 && t < 0.8) tmp.lerp(vGully, 0.5);
+        return tmp;
+      }, { p: [v.p.x, v.h / 2 - 0.4, v.p.z], ol: 0.22, jitter: 0.05 });
+      // Kaki gunung bergelombang
+      for (let k = 0; k < 5; k++) {
+        const a = R() * Math.PI * 2, rr = v.r * (0.85 + R() * 0.2);
+        g.add(new THREE.DodecahedronGeometry(6 + R() * 4, 1), (l, w) => tmp.copy(vLow).lerp(vMid, clamp(w.y / 6, 0, 1)),
+          { p: [v.p.x + Math.cos(a) * rr, -1, v.p.z + Math.sin(a) * rr], s: [1.5, 0.55, 1.3], ol: 0.12 });
+      }
+    });
+
+    // Barisan pegunungan hijau di sekeliling (tanpa salju, berkabut biru di kejauhan)
+    const mBase = new THREE.Color('#3d7d3a'), mTop = new THREE.Color('#5b8f63'), mFar = new THREE.Color('#7fa99a');
     for (let i = 0; i < 30; i++) {
-      const a = (i / 30) * Math.PI * 2 + R() * 0.15, r = 46 + R() * 12, h = 11 + R() * 13, br = 8 + R() * 5;
-      g.add(new THREE.ConeGeometry(br, h, 6 + Math.floor(R() * 2), 2), peak(h), { p: [Math.cos(a) * r, h / 2 - 0.5, Math.sin(a) * r], r: [0, R() * 3, 0], ol: 0.18, jitter: 0.06 });
+      const a = (i / 30) * Math.PI * 2 + R() * 0.15;
+      let da = Math.abs(((a - Math.atan2(BACK.z, BACK.x)) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI);
+      if (da < 0.62) continue; // beri ruang gunung berapi
+      const r = 48 + R() * 12, h = 9 + R() * 10, br = 9 + R() * 6;
+      g.add(new THREE.ConeGeometry(br, h, 7, 2), (l, w) => tmp.copy(mBase).lerp(mTop, clamp(w.y / h, 0, 1)).lerp(mFar, 0.25),
+        { p: [Math.cos(a) * r, h / 2 - 0.5, Math.sin(a) * r], r: [0, R() * 3, 0], ol: 0.16, jitter: 0.06 });
     }
-    for (let i = 0; i < 22; i++) {
-      const a = (i / 22) * Math.PI * 2 + R() * 0.2, r = 30 + R() * 5;
+
+    // Bukit terasering (subak) mengelilingi lembah
+    const tierTops = ['#86d052', '#a2df6a', '#9ad3cf', '#e0c556', '#79c447'];
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * Math.PI * 2 + R() * 0.2, r = 31 + R() * 6;
       const hx = Math.cos(a) * r, hz = Math.sin(a) * r;
-      if (Math.abs(hz - 7) < 4 && hx > 14) continue; // jangan tutup kolam di timur
-      g.add(new THREE.DodecahedronGeometry(3.5 + R() * 2.5, 1), (l, w) => tmp.copy(hill).lerp(base, clamp(w.y / 6, 0, 1)),
-        { p: [hx, -0.8, hz], s: [1.4, 0.65 + R() * 0.35, 1.2], r: [0, R() * 3, 0], ol: 0.1, jitter: 0.05 });
+      if (Math.abs(hz - 7) < 5 && hx > 13) continue; // kolam timur
+      const br = 6 + R() * 3, tiers = 4 + Math.floor(R() * 3), sx = 1.25 + R() * 0.3, rot = R() * 3;
+      for (let k = 0; k < tiers; k++) {
+        const rk = br * (1 - k * (0.8 / tiers));
+        g.add(new THREE.CylinderGeometry(rk, rk + 0.35, 0.72, 16), topSide(tierTops[Math.floor(R() * tierTops.length)], k % 2 ? '#6b7a34' : '#5f6d2e'),
+          { p: [hx, k * 0.72 - 0.2, hz], s: [sx, 1, 1], r: [0, rot, 0], ol: 0.06, jitter: 0.03 });
+      }
+      if (R() < 0.6) palmTrunk(g, hx + (R() - 0.5) * 3, hz + (R() - 0.5) * 3, tiers * 0.72 - 0.2, R, 0.8); // pohon kelapa di puncak
     }
-    // Tebing batu & air terjun sumber sungai (barat)
+
+    // Tebing batu & air terjun sumber sungai (barat), rimbun paku-pakuan
     const fx = STREAM.x0;
     g.add(new THREE.DodecahedronGeometry(4.2, 0), C.stoneDark, { p: [fx - 3.2, FALL_H * 0.42, 7], s: [1, 1.35, 1.3], r: [0.2, 0.5, 0], ol: 0.12 });
     g.add(new THREE.DodecahedronGeometry(2.4, 0), C.stone, { p: [fx - 1.6, FALL_H - 0.6, 4.8], r: [0.4, 0.2, 0.3], ol: 0.08 });
     g.add(new THREE.DodecahedronGeometry(2.2, 0), C.stone, { p: [fx - 1.4, FALL_H - 0.8, 9.3], r: [0.1, 0.9, 0.2], ol: 0.08 });
+    for (let i = 0; i < 9; i++) g.add(new THREE.IcosahedronGeometry(0.7 + R() * 0.5, 0), R() < 0.5 ? '#3f9a3a' : '#2f7d33', { p: [fx - 2 - R() * 3, FALL_H * (0.4 + R() * 0.7), 4.6 + R() * 5], s: [1.3, 0.7, 1.1], ol: 0.05 });
     for (let i = 0; i < 7; i++) {
       const a = Math.PI * 0.5 + (i / 6) * Math.PI;
       g.add(new THREE.DodecahedronGeometry(0.35 + R() * 0.2, 0), C.stoneDark, { p: [fx + 0.6 + Math.cos(a) * -0.5, 0.15, 7 + Math.sin(a) * 1.1], r: [R(), R(), R()], s: [1, 0.7, 1], ol: 0.03 });
     }
-    // Kolam (timur) dengan batu tepian
+    // Kolam (timur) dengan batu tepian & teratai
     for (let i = 0; i < 22; i++) {
       const a = (i / 22) * Math.PI * 2;
       if (Math.cos(a) < -0.85 && Math.abs(Math.sin(a)) < 0.3) continue; // celah masuk sungai
       g.add(new THREE.DodecahedronGeometry(0.32 + R() * 0.22, 0), R() < 0.5 ? C.stone : C.stoneDark,
         { p: [POND.x + Math.cos(a) * (POND.r + 0.15), 0.1, POND.z + Math.sin(a) * (POND.r + 0.15)], r: [R(), R(), R()], s: [1, 0.6, 1], ol: 0.03 });
     }
-
-    // Bingkai (rim) kayu di sekeliling setiap petak
-    for (let i = 1; i <= 12; i++) {
-      const c = plotCenter(i), h = PLOT / 2 + 0.08;
-      g.add(new THREE.BoxGeometry(PLOT + 0.32, 0.46, 0.16), C.rim, { p: [c.x, 0.23, c.z - h], ol: 0.035 });
-      g.add(new THREE.BoxGeometry(PLOT + 0.32, 0.46, 0.16), C.rim, { p: [c.x, 0.23, c.z + h], ol: 0.035 });
-      g.add(new THREE.BoxGeometry(0.16, 0.46, PLOT), C.rim, { p: [c.x - h, 0.23, c.z], ol: 0.035 });
-      g.add(new THREE.BoxGeometry(0.16, 0.46, PLOT), C.rim, { p: [c.x + h, 0.23, c.z], ol: 0.035 });
+    for (let i = 0; i < 6; i++) {
+      const a = R() * Math.PI * 2, rr = 1.6 + R() * 1.6, x = POND.x + Math.cos(a) * rr, z = POND.z + Math.sin(a) * rr;
+      g.add(new THREE.CylinderGeometry(0.42, 0.42, 0.03, 9, 1, false, 0.3, Math.PI * 1.8), '#3fae4a', { p: [x, STREAM.y + 0.04, z], ol: 0.02 });
+      if (i % 2) g.add(new THREE.ConeGeometry(0.13, 0.22, 6), '#f9a8d4', { p: [x + 0.1, STREAM.y + 0.16, z], ol: 0.015 });
     }
 
-    // Pagar kayu split-rail (dengan gerbang di depan)
+    // Sawah tergenang: air + pematang (padi di mesh terpisah yang bergoyang angin)
+    const water = [new THREE.Color('#4fa9b3'), new THREE.Color('#6cc2cf'), new THREE.Color('#3f8f86'), new THREE.Color('#8a7346'), new THREE.Color('#a8905c')];
+    PADDIES.forEach((p) => {
+      const mud = p.stage < 0.12, wc = mud ? water[3] : p.stage < 0.3 ? water[1] : water[0], wc2 = mud ? water[4] : water[2];
+      g.add(new THREE.BoxGeometry(p.w, 0.05, p.d), (l, w) => tmp.copy(wc).lerp(wc2, clamp(Math.sin(w.x * 1.3 + w.z * 0.7) * 0.35 + 0.25, 0, 0.6)), { p: [p.x, 0.025, p.z], ol: false, jitter: 0.06 });
+      const bund = topSide('#6fb23f', '#7a5a32');
+      g.add(new THREE.BoxGeometry(p.w + 0.24, 0.16, 0.22), bund, { p: [p.x, 0.08, p.z - p.d / 2], ol: false });
+      g.add(new THREE.BoxGeometry(p.w + 0.24, 0.16, 0.22), bund, { p: [p.x, 0.08, p.z + p.d / 2], ol: false });
+      g.add(new THREE.BoxGeometry(0.22, 0.16, p.d), bund, { p: [p.x - p.w / 2, 0.08, p.z], ol: false });
+      g.add(new THREE.BoxGeometry(0.22, 0.16, p.d), bund, { p: [p.x + p.w / 2, 0.08, p.z], ol: false });
+    });
+    // Kerbau membajak + petani bercaping di sawah yang baru diolah
+    const muddy = PADDIES.filter((p) => p.stage < 0.12).sort((a, b) => Math.hypot(a.x + 8, a.z + 12) - Math.hypot(b.x + 8, b.z + 12));
+    if (muddy[0]) buildKerbau(g, muddy[0].x - 0.4, muddy[0].z, 0.6);
+    if (muddy[0]) buildPetani(g, muddy[0].x + 1.1, muddy[0].z + 0.2, -0.9);
+    if (muddy[2]) buildPetani(g, muddy[2].x, muddy[2].z - 0.3, 2.2, true);
+    // Kuntul putih mencari makan di sawah
+    PADDIES.filter((p, i) => i % 7 === 3).forEach((p, i) => buildEgret(g, p.x + (R() - 0.5) * 1.6, p.z + (R() - 0.5) * 1.2, R() * 6, i % 2 === 0));
+
+    // Pematang di sekeliling petak kebun (tanah berumput)
+    const rim = topSide('#6db33f', '#7a5230');
+    for (let i = 1; i <= 12; i++) {
+      const c = plotCenter(i), h = PLOT / 2 + 0.08;
+      g.add(new THREE.BoxGeometry(PLOT + 0.32, 0.46, 0.18), rim, { p: [c.x, 0.23, c.z - h], ol: 0.035 });
+      g.add(new THREE.BoxGeometry(PLOT + 0.32, 0.46, 0.18), rim, { p: [c.x, 0.23, c.z + h], ol: 0.035 });
+      g.add(new THREE.BoxGeometry(0.18, 0.46, PLOT), rim, { p: [c.x - h, 0.23, c.z], ol: 0.035 });
+      g.add(new THREE.BoxGeometry(0.18, 0.46, PLOT), rim, { p: [c.x + h, 0.23, c.z], ol: 0.035 });
+    }
+
+    // Pagar bambu (gapura di depan)
     const fenceSide = (ax, az, bx, az2, gate) => {
-      const len = Math.hypot(bx - ax, az2 - az), n = Math.ceil(len / 1.45), ang = Math.atan2(az2 - az, bx - ax);
+      const len = Math.hypot(bx - ax, az2 - az), n = Math.ceil(len / 1.45);
       const pts = [];
       for (let i = 0; i <= n; i++) pts.push([lerp(ax, bx, i / n), lerp(az, az2, i / n)]);
-      pts.forEach(([x, z]) => g.add(new THREE.BoxGeometry(0.17, 0.95, 0.17), C.woodLight, { p: [x, 0.47, z], r: [0, R() * 0.3, 0], ol: 0.03 }));
+      pts.forEach(([x, z], i) => {
+        g.add(new THREE.CylinderGeometry(0.075, 0.085, 1.0, 6), BAMBOO_C[i % 3], { p: [x, 0.5, z], ol: 0.03 });
+        g.add(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 6), '#8f7a2e', { p: [x, 0.62, z], ol: false });
+      });
       for (let i = 0; i < n; i++) {
-        const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+        const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], mx = (x0 + x1) / 2;
         if (gate && Math.abs(mx) < FENCE.gate) continue;
-        const sl = Math.hypot(x1 - x0, z1 - z0);
-        [0.38, 0.7].forEach((y) => g.add(new THREE.BoxGeometry(sl, 0.09, 0.07), C.plank, { p: [mx, y, mz], r: [0, -ang, 0], ol: 0.025 }));
+        [0.36, 0.72].forEach((y) => g.stick(V(x0, y, z0), V(x1 - x0, 0, z1 - z0), Math.hypot(x1 - x0, z1 - z0), 0.045, 0.045, BAMBOO_C[(i + 1) % 3], { ol: 0.02, seg: 5 }));
+        g.stick(V(x0, 0.2, z0), V(x1 - x0, 0.62, z1 - z0), Math.hypot(Math.hypot(x1 - x0, z1 - z0), 0.62), 0.03, 0.03, '#a8913f', { ol: false, seg: 4 });
       }
     };
     fenceSide(FENCE.x0, FENCE.z0, FENCE.x1, FENCE.z0);
     fenceSide(FENCE.x1, FENCE.z0, FENCE.x1, FENCE.z1);
     fenceSide(FENCE.x0, FENCE.z1, FENCE.x0, FENCE.z0);
     fenceSide(FENCE.x0, FENCE.z1, FENCE.x1, FENCE.z1, true);
-    [-FENCE.gate, FENCE.gate].forEach((x) => g.add(new THREE.BoxGeometry(0.26, 1.25, 0.26), C.wood, { p: [x, 0.62, FENCE.z1], ol: 0.035 }));
+    // Gapura bambu beratap
+    [-FENCE.gate, FENCE.gate].forEach((x) => g.add(new THREE.CylinderGeometry(0.13, 0.15, 2.5, 7), '#b9a24a', { p: [x, 1.25, FENCE.z1], ol: 0.035 }));
+    g.stick(V(-FENCE.gate - 0.35, 2.35, FENCE.z1), V(1, 0, 0), FENCE.gate * 2 + 0.7, 0.1, 0.1, '#c9b45a', { ol: 0.03, seg: 6 });
+    g.add(new THREE.ConeGeometry(1.0, 0.55, 4), '#8a6a3a', { p: [0, 2.72, FENCE.z1], r: [0, Math.PI / 4, 0], s: [1.9, 1, 0.75], ol: 0.04 });
+    g.add(new THREE.BoxGeometry(1.3, 0.34, 0.06), '#fef3c7', { p: [0, 2.0, FENCE.z1 + 0.12], ol: 0.025 });
+    g.add(new THREE.BoxGeometry(1.1, 0.06, 0.03), '#b91c1c', { p: [0, 2.08, FENCE.z1 + 0.16], ol: false });
+    g.add(new THREE.BoxGeometry(0.8, 0.05, 0.03), '#15803d', { p: [0, 1.95, FENCE.z1 + 0.16], ol: false });
+    // Umbul-umbul segitiga merah putih sepanjang pagar depan
+    [[FENCE.x0 + 0.1, -FENCE.gate - 0.15], [FENCE.gate + 0.15, FENCE.x1 - 0.1]].forEach(([xa, xb]) => {
+      g.add(new THREE.BoxGeometry(xb - xa, 0.02, 0.02), '#5b4a2a', { p: [(xa + xb) / 2, 1.0, FENCE.z1 + 0.06], ol: false });
+      const n = Math.floor((xb - xa) / 0.34);
+      for (let k = 0; k < n; k++) {
+        const x = xa + 0.17 + k * 0.34, sag = Math.sin((k / Math.max(1, n - 1)) * Math.PI) * 0.06;
+        g.add(new THREE.CylinderGeometry(0.15, 0.15, 0.02, 3), k % 2 ? '#ffffff' : '#dc2626', { p: [x, 0.9 - sag, FENCE.z1 + 0.06], r: [Math.PI / 2, 0, 0], ol: 0.012 });
+      }
+    });
+    // Tiang bendera bambu
+    g.add(new THREE.CylinderGeometry(0.07, 0.1, 4.6, 7), '#c9b45a', { p: [FLAG.x, 2.3, FLAG.z], ol: 0.03 });
+    g.add(new THREE.SphereGeometry(0.12, 8, 6), C.gold, { p: [FLAG.x, 4.65, FLAG.z], ol: 0.02 });
+    g.add(new THREE.CylinderGeometry(0.35, 0.45, 0.25, 8), C.stone, { p: [FLAG.x, 0.12, FLAG.z], ol: 0.03 });
 
-    // Jalan setapak gerbang → jembatan, tepian sungai & jembatan kayu
-    g.add(new THREE.BoxGeometry(1.7, 0.06, STREAM.z0 - FENCE.z1 + 0.2), '#e7c89a', { p: [0, 0.03, (FENCE.z1 + STREAM.z0) / 2], ol: false, jitter: 0.08 });
+    // Jalan tanah gerbang → jembatan, tepian sungai batu kali & jembatan bambu
+    g.add(new THREE.BoxGeometry(1.7, 0.06, STREAM.z0 - FENCE.z1 + 0.2), '#d9b98a', { p: [0, 0.03, (FENCE.z1 + STREAM.z0) / 2], ol: false, jitter: 0.08 });
     const bankLen = STREAM.x1 - STREAM.x0 + 0.4;
     [STREAM.z0 - 0.08, STREAM.z1 + 0.08].forEach((z) => g.add(new THREE.BoxGeometry(bankLen, 0.18, 0.2), C.stone, { p: [(STREAM.x0 + STREAM.x1) / 2 - 0.05, 0.09, z], ol: 0.03 }));
     for (let i = 0; i < 26; i++) {
       const x = lerp(STREAM.x0, STREAM.x1 - 0.5, R()), z = R() < 0.5 ? STREAM.z0 - 0.3 - R() * 0.25 : STREAM.z1 + 0.3 + R() * 0.25;
       g.add(new THREE.DodecahedronGeometry(0.12 + R() * 0.12, 0), R() < 0.5 ? C.stone : C.stoneDark, { p: [x, 0.08, z], r: [R() * 3, R() * 3, 0], s: [1, 0.6, 1], ol: 0.025 });
     }
-    for (let i = 0; i < 7; i++) g.add(new THREE.BoxGeometry(2.1, 0.1, 0.3), i % 2 ? C.plank : C.woodLight, { p: [0, 0.32 + Math.sin((i / 6) * Math.PI) * 0.14, STREAM.z0 - 0.25 + i * 0.35], ol: 0.025 });
+    for (let i = 0; i < 9; i++) {
+      const z = STREAM.z0 - 0.3 + i * 0.27;
+      g.stick(V(-1.1, 0.32 + Math.sin((i / 8) * Math.PI) * 0.14, z), V(1, 0, 0), 2.2, 0.11, 0.11, BAMBOO_C[i % 3], { ol: 0.022, seg: 6 });
+    }
     [-1, 1].forEach((sx) => {
-      [STREAM.z0 - 0.3, STREAM.z1 + 0.3].forEach((z) => g.add(new THREE.BoxGeometry(0.14, 0.8, 0.14), C.wood, { p: [sx * 1.0, 0.45, z], ol: 0.025 }));
-      g.add(new THREE.BoxGeometry(0.08, 0.08, STREAM.z1 - STREAM.z0 + 0.6), C.woodLight, { p: [sx * 1.0, 0.78, 7], ol: 0.02 });
+      [STREAM.z0 - 0.3, STREAM.z1 + 0.3].forEach((z) => g.add(new THREE.CylinderGeometry(0.07, 0.08, 0.9, 6), '#b9a24a', { p: [sx * 1.0, 0.5, z], ol: 0.025 }));
+      g.stick(V(sx * 1.0, 0.82, STREAM.z0 - 0.3), V(0, 0, 1), STREAM.z1 - STREAM.z0 + 0.6, 0.045, 0.045, '#c9b45a', { ol: 0.02, seg: 5 });
     });
 
-    // Kincir angin (menara; baling-baling terpisah karena berputar)
-    const wm = WINDMILL;
-    g.add(new THREE.CylinderGeometry(1.4, 1.5, 0.35, 6), C.stoneDark, { p: [wm.x, 0.17, wm.z], ol: 0.05 });
-    g.add(new THREE.CylinderGeometry(0.78, 1.15, 4.0, 6), C.woodLight, { p: [wm.x, 2.3, wm.z], ol: 0.06 });
-    [1.2, 2.6, 3.9].forEach((y) => g.add(new THREE.CylinderGeometry(lerp(1.17, 0.8, (y - 0.3) / 4) + 0.04, lerp(1.17, 0.8, (y - 0.3) / 4) + 0.06, 0.14, 6), C.cream, { p: [wm.x, y, wm.z], ol: 0.03 }));
-    g.add(new THREE.ConeGeometry(1.08, 1.4, 6), '#991b1b', { p: [wm.x, 4.98, wm.z], ol: 0.06 });
-    const face = new THREE.Vector3(Math.SQRT1_2, 0, Math.SQRT1_2);
-    const door = wm.clone().addScaledVector(face, 1.05);
-    g.add(new THREE.BoxGeometry(0.62, 1.05, 0.12), C.dirtDeep, { p: [door.x, 0.85, door.z], r: [0, Math.PI / 4, 0], ol: 0.03 });
-    const win = wm.clone().addScaledVector(face, 0.9);
-    g.add(new THREE.BoxGeometry(0.42, 0.42, 0.1), C.straw, { p: [win.x, 3.1, win.z], r: [0, Math.PI / 4, 0], ol: 0.03 });
+    // Kincir air bambu: tiang & poros (roda berputar dibuat terpisah)
+    [WHEEL.z - 0.95, WHEEL.z + 0.95].forEach((z) => {
+      g.stick(V(WHEEL.x - 0.7, 0, z), V(0.7, WHEEL_Y, 0), Math.hypot(0.7, WHEEL_Y), 0.08, 0.07, '#9c8440', { ol: 0.025 });
+      g.stick(V(WHEEL.x + 0.7, 0, z), V(-0.7, WHEEL_Y, 0), Math.hypot(0.7, WHEEL_Y), 0.08, 0.07, '#9c8440', { ol: 0.025 });
+    });
+    g.stick(V(WHEEL.x, WHEEL_Y, WHEEL.z - 1.05), V(0, 0, 1), 2.1, 0.08, 0.08, '#6b4f1d', { ol: 0.02 });
+    // Talang bambu dari kincir ke sawah
+    g.stick(V(WHEEL.x + 0.2, WHEEL_Y + 1.2, WHEEL.z - 0.5), V(0.1, -0.35, -1), 4.4, 0.1, 0.1, '#a8913f', { ol: 0.025 });
+    [[-0.5, 1.35], [-2.0, 0.85], [-3.4, 0.4]].forEach(([dz, y]) => g.add(new THREE.CylinderGeometry(0.05, 0.05, y * 2, 5), '#8f7a2e', { p: [WHEEL.x + 0.25 - dz * 0.05, y, WHEEL.z - 0.5 + dz], ol: 0.015 }));
 
-    // Orang-orangan sawah chibi (menghadap kamera)
-    const sc = new THREE.Group(); // dipakai sebagai matriks bantu
+    // Saung (gubuk sawah) di atas panggung
+    const hx = HUT.x, hz = HUT.z;
+    [[-0.9, -0.8], [0.9, -0.8], [-0.9, 0.8], [0.9, 0.8]].forEach(([dx, dz]) => g.add(new THREE.CylinderGeometry(0.09, 0.1, 2.5, 6), '#b9a24a', { p: [hx + dx, 1.25, hz + dz], ol: 0.03 }));
+    g.add(new THREE.BoxGeometry(2.2, 0.14, 1.95), '#c8a86a', { p: [hx, 1.0, hz], ol: 0.035 });
+    for (let k = 0; k < 6; k++) g.add(new THREE.BoxGeometry(2.24, 0.02, 0.05), '#9c7f45', { p: [hx, 1.08, hz - 0.8 + k * 0.32], ol: false });
+    g.add(new THREE.ConeGeometry(1.95, 1.3, 4), '#a8844a', { p: [hx, 3.05, hz], r: [0, Math.PI / 4, 0], s: [1.15, 1, 1.05], ol: 0.05 });
+    g.add(new THREE.ConeGeometry(1.98, 0.25, 4), '#8a6a3a', { p: [hx, 2.48, hz], r: [0, Math.PI / 4, 0], s: [1.15, 1, 1.05], ol: 0.03 });
+    [-0.18, 0.18].forEach((dx) => g.stick(V(hx + 0.9 + dx, 0, hz + 1.5), V(0, 1, -0.5), 1.15, 0.04, 0.04, '#9c8440', { ol: 0.015 }));
+    for (let k = 0; k < 4; k++) g.add(new THREE.BoxGeometry(0.44, 0.04, 0.06), '#b9a24a', { p: [hx + 0.9, 0.18 + k * 0.24, hz + 1.42 - k * 0.12], ol: false });
+    g.add(new THREE.ConeGeometry(0.42, 0.2, 12), '#e3c27a', { p: [hx - 0.5, 1.2, hz + 0.3], ol: 0.02 }); // caping tergeletak
+    g.add(new THREE.CylinderGeometry(0.16, 0.12, 0.28, 8), '#7c5a2e', { p: [hx + 0.4, 1.21, hz - 0.3], ol: 0.02 });   // bakul
+
+    // Lumbung padi (panggung tinggi, atap curam)
+    const lx = LUMBUNG.x, lz = LUMBUNG.z;
+    [[-0.7, -0.6], [0.7, -0.6], [-0.7, 0.6], [0.7, 0.6]].forEach(([dx, dz]) => {
+      g.add(new THREE.CylinderGeometry(0.1, 0.12, 1.6, 6), '#7a4a1e', { p: [lx + dx, 0.8, lz + dz], ol: 0.03 });
+      g.add(new THREE.CylinderGeometry(0.28, 0.28, 0.07, 10), '#5b3612', { p: [lx + dx, 1.62, lz + dz], ol: 0.02 }); // penahan tikus
+    });
+    g.add(new THREE.BoxGeometry(1.85, 0.12, 1.6), '#8a5a2b', { p: [lx, 1.72, lz], ol: 0.03 });
+    g.add(new THREE.BoxGeometry(1.3, 1.0, 1.1), '#b07a3e', { p: [lx, 2.3, lz], ol: 0.035 });
+    g.add(new THREE.BoxGeometry(0.4, 0.5, 0.04), '#6b4220', { p: [lx, 2.3, lz + 0.57], ol: 0.015 });
+    g.add(new THREE.ConeGeometry(1.45, 2.4, 4), '#7a5a32', { p: [lx, 3.95, lz], r: [0, Math.PI / 4, 0], s: [1, 1, 0.82], ol: 0.05 });
+    g.add(new THREE.ConeGeometry(0.2, 0.5, 4), '#5b3f22', { p: [lx, 5.25, lz], r: [0, Math.PI / 4, 0], ol: 0.02 });
+    for (let k = 0; k < 5; k++) g.add(new THREE.ConeGeometry(0.1, 0.42, 5), '#e8c95a', { p: [lx - 0.6 + k * 0.3, 1.45, lz + 0.82], r: [Math.PI, 0, 0], ol: 0.012 }); // ikat padi digantung
+
+    // Orang-orangan sawah bercaping & berbaju lurik (menghadap kamera)
+    const sc = new THREE.Group();
     sc.position.copy(SCARECROW); sc.rotation.y = Math.PI / 4; sc.updateMatrixWorld();
     const scAdd = (geo, color, p, o = {}) => {
       const v = V(...p).applyMatrix4(sc.matrixWorld);
       const r = o.r || [0, 0, 0];
       g.add(geo, color, Object.assign({}, o, { p: [v.x, v.y, v.z], r: [r[0], r[1] + Math.PI / 4, r[2]] }));
     };
-    scAdd(new THREE.BoxGeometry(0.13, 2.0, 0.13), C.wood, [0, 1.0, -0.05], { ol: 0.03 });
-    scAdd(new THREE.BoxGeometry(1.5, 0.1, 0.1), C.wood, [0, 1.58, -0.05], { ol: 0.025 });
-    scAdd(new THREE.BoxGeometry(0.64, 0.72, 0.38), C.blue, [0, 1.42, 0], { ol: 0.035 });
-    scAdd(new THREE.BoxGeometry(0.22, 0.24, 0.16), '#f43f5e', [0.14, 1.3, 0.2], { ol: 0.02 });
+    const lurik = (l) => tmp.set(Math.sin(l.x * 40) > 0.2 ? '#7c2d12' : '#c2410c');
+    scAdd(new THREE.CylinderGeometry(0.06, 0.07, 2.0, 6), '#b9a24a', [0, 1.0, -0.05], { ol: 0.03 });
+    scAdd(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 6), '#b9a24a', [0, 1.58, -0.05], { r: [0, 0, Math.PI / 2], ol: 0.025 });
+    scAdd(new THREE.BoxGeometry(0.64, 0.72, 0.38), lurik, [0, 1.42, 0], { ol: 0.035 });
     [-1, 1].forEach((sx) => {
-      scAdd(new THREE.BoxGeometry(0.46, 0.24, 0.26), C.blue, [sx * 0.52, 1.58, 0], { ol: 0.03 });
+      scAdd(new THREE.BoxGeometry(0.46, 0.24, 0.26), lurik, [sx * 0.52, 1.58, 0], { ol: 0.03 });
       scAdd(new THREE.ConeGeometry(0.09, 0.26, 5), C.gold, [sx * 0.86, 1.58, 0], { r: [0, 0, -sx * Math.PI / 2], ol: 0.02 });
     });
-    scAdd(new THREE.BoxGeometry(0.66, 0.08, 0.4), '#a16207', [0, 1.1, 0], { ol: 0.02 });
-    scAdd(new THREE.ConeGeometry(0.18, 0.3, 5), C.gold, [0, 0.92, 0], { r: [Math.PI, 0, 0], ol: 0.02 });
-    scAdd(new THREE.SphereGeometry(0.36, 9, 7), C.straw, [0, 2.08, 0], { ol: 0.035 });
+    scAdd(new THREE.BoxGeometry(0.7, 0.3, 0.42), (l) => tmp.set((Math.floor(l.x * 12) + Math.floor(l.y * 12)) % 2 ? '#1e3a8a' : '#2563eb'), [0, 0.98, 0], { ol: 0.025 }); // sarung kotak
+    scAdd(new THREE.SphereGeometry(0.34, 9, 7), C.straw, [0, 2.06, 0], { ol: 0.035 });
     [-1, 1].forEach((sx) => {
-      scAdd(new THREE.BoxGeometry(0.07, 0.11, 0.05), C.ink, [sx * 0.13, 2.12, 0.33], { ol: false });
-      scAdd(new THREE.SphereGeometry(0.06, 6, 4), C.pink, [sx * 0.22, 2.0, 0.29], { s: [1, 0.6, 0.5], ol: false });
+      scAdd(new THREE.BoxGeometry(0.07, 0.11, 0.05), C.ink, [sx * 0.13, 2.1, 0.31], { ol: false });
+      scAdd(new THREE.SphereGeometry(0.06, 6, 4), C.pink, [sx * 0.22, 1.98, 0.27], { s: [1, 0.6, 0.5], ol: false });
     });
-    scAdd(new THREE.BoxGeometry(0.2, 0.035, 0.05), C.ink, [0, 1.95, 0.34], { ol: false });
-    scAdd(new THREE.CylinderGeometry(0.62, 0.62, 0.05, 12), C.gold, [0, 2.36, 0], { r: [0.12, 0, 0], ol: 0.03 });
-    scAdd(new THREE.CylinderGeometry(0.27, 0.32, 0.32, 9), C.gold, [0, 2.52, 0], { r: [0.12, 0, 0], ol: 0.03 });
-    scAdd(new THREE.CylinderGeometry(0.33, 0.33, 0.08, 9), C.red, [0, 2.42, 0], { r: [0.12, 0, 0], ol: false });
+    scAdd(new THREE.BoxGeometry(0.2, 0.035, 0.05), C.ink, [0, 1.93, 0.32], { ol: false });
+    scAdd(new THREE.ConeGeometry(0.78, 0.42, 16), '#e3c27a', [0, 2.5, 0], { ol: 0.035 });
+    scAdd(new THREE.TorusGeometry(0.3, 0.03, 4, 14), '#8a6a3a', [0, 2.36, 0], { r: [Math.PI / 2, 0, 0], ol: false });
+    // Tali kaleng pengusir burung
+    scAdd(new THREE.BoxGeometry(0.02, 0.5, 0.02), '#5b4a2a', [0.86, 1.32, 0], { ol: false });
+    scAdd(new THREE.CylinderGeometry(0.06, 0.06, 0.12, 7), C.silver, [0.86, 1.05, 0], { ol: 0.015 });
 
-    // Batang pohon (tajuk = InstancedMesh terpisah agar bisa bergoyang)
+    // Batang pohon kelapa & pisang (tajuk = InstancedMesh terpisah agar bisa bergoyang)
     TREES.forEach((t) => {
-      const h = t.type === 'pine' ? 0.9 : 1.5;
-      g.add(new THREE.CylinderGeometry(0.14, 0.2, h, 6), t.type === 'pine' ? C.wood : '#f5f5f4', { p: [t.x, h / 2, t.z], ol: 0.035 });
-      if (t.type === 'birch') [0.4, 0.8, 1.15].forEach((y) => g.add(new THREE.BoxGeometry(0.1, 0.04, 0.03), C.ink, { p: [t.x + 0.1, y, t.z + 0.13], r: [0, Math.PI / 4, 0], ol: false }));
+      if (t.type === 'palm') palmTrunk(g, t.x, t.z, 0, rng(Math.round(t.x * 97 + t.z * 31)), 1, t);
+      else g.add(new THREE.CylinderGeometry(0.14, 0.2, 1.3, 7), '#7d9a46', { p: [t.x, 0.65, t.z], ol: 0.035 });
+    });
+    // Rumpun bambu
+    BAMBOO.forEach((b, bi) => {
+      const r2 = rng(300 + bi);
+      for (let k = 0; k < 8; k++) {
+        const a = r2() * Math.PI * 2, d = r2() * 0.6, h = 4.2 + r2() * 1.8;
+        const base = V(b.x + Math.cos(a) * d, 0, b.z + Math.sin(a) * d), dir = V(Math.cos(a) * 0.18, 1, Math.sin(a) * 0.18);
+        g.stick(base, dir, h, 0.08, 0.06, k % 2 ? '#7fb04a' : '#9cbc3c', { ol: 0.02, seg: 5 });
+        const top = base.clone().addScaledVector(dir.clone().normalize(), h);
+        for (let j = 0; j < 4; j++) {
+          const f = 0.5 + j * 0.15, n0 = V(lerp(base.x, top.x, f), lerp(0, top.y, f), lerp(base.z, top.z, f));
+          for (let q = 0; q < 4; q++) {
+            const aa = r2() * Math.PI * 2;
+            g.stick(n0, V(Math.cos(aa), -0.25 - r2() * 0.3, Math.sin(aa)), 0.7 + r2() * 0.3, 0.07, 0.01, q % 2 ? '#5fae3a' : '#4a9a32', { ol: false, seg: 3 });
+          }
+        }
+      }
     });
 
-    // Rumput & bunga acak (hindari pagar, sungai, kincir)
+    // Rumput, kembang sepatu & bunga liar (hindari kebun, sungai, sawah)
     const blocked = (x, z) => (x > FENCE.x0 - 0.6 && x < FENCE.x1 + 0.6 && z > FENCE.z0 - 0.6 && z < FENCE.z1 + 0.5)
-      || (z > STREAM.z0 - 0.7 && z < STREAM.z1 + 0.7) || V(x, 0, z).distanceTo(WINDMILL) < 2 || V(x, 0, z).distanceTo(SCARECROW) < 1
+      || (z > STREAM.z0 - 0.7 && z < STREAM.z1 + 0.7) || V(x, 0, z).distanceTo(HUT) < 2.4 || V(x, 0, z).distanceTo(SCARECROW) < 1
+      || V(x, 0, z).distanceTo(LUMBUNG) < 2 || V(x, 0, z).distanceTo(WHEEL) < 2.2 || inPaddy(x, z, 0.2)
       || TREES.some((t) => Math.hypot(t.x - x, t.z - z) < 1.2) || Math.hypot(x, z) > 27 || Math.hypot(x - POND.x, z - POND.z) < POND.r + 0.8;
     let placed = 0;
-    for (let k = 0; k < 1200 && placed < 150; k++) {
+    for (let k = 0; k < 1500 && placed < 150; k++) {
       const x = (R() * 2 - 1) * 27, z = (R() * 2 - 1) * 27;
       if (blocked(x, z)) continue;
       placed++;
-      if (R() < 0.35) {
-        const col = ['#f43f5e', '#fde047', '#ffffff', '#a78bfa'][Math.floor(R() * 4)];
+      if (R() < 0.3) {
+        const col = ['#e11d48', '#fde047', '#ffffff', '#f97316'][Math.floor(R() * 4)];
         g.add(new THREE.CylinderGeometry(0.02, 0.02, 0.3, 3), C.leafDark, { p: [x, 0.15, z], ol: false });
         g.add(new THREE.IcosahedronGeometry(0.09, 0), col, { p: [x, 0.33, z], ol: 0.02 });
       } else {
@@ -568,36 +739,111 @@
     return g.build(0.05);
   }
 
+  /** Batang kelapa melengkung (4 ruas); mengisi t.top bila t diberikan. */
+  function palmTrunk(g, x, z, y0, R, s = 1, t = null) {
+    const lean = R() * Math.PI * 2, bend = 0.12 + R() * 0.12;
+    let p = V(x, y0, z);
+    for (let k = 0; k < 5; k++) {
+      const dir = V(Math.cos(lean) * bend * k, 1, Math.sin(lean) * bend * k).normalize();
+      g.stick(p, dir, 0.95 * s, (0.17 - k * 0.012) * s, (0.16 - k * 0.012) * s, k % 2 ? '#8b7355' : '#9c8466', { ol: 0.03, seg: 6 });
+      p = p.clone().addScaledVector(dir, 0.95 * s);
+    }
+    if (t) t.top = p;
+    else { // tajuk statis untuk kelapa jauh (terasering)
+      for (let k = 0; k < 7; k++) {
+        const a = (k / 7) * Math.PI * 2;
+        g.add(new THREE.BoxGeometry(1.5 * s, 0.04, 0.34 * s), k % 2 ? '#2f9e44' : '#3fb950', { p: [p.x + Math.cos(a) * 0.7 * s, p.y - 0.1, p.z + Math.sin(a) * 0.7 * s], r: [0, -a, -0.35], ol: 0.03 });
+      }
+    }
+    return p;
+  }
+
+  /** Kerbau berkubang (statis). */
+  function buildKerbau(g, x, z, ry) {
+    const grp = new THREE.Group(); grp.position.set(x, 0, z); grp.rotation.y = ry; grp.updateMatrixWorld();
+    const at = (geo, color, p, o = {}) => { const v = V(...p).applyMatrix4(grp.matrixWorld); const r = o.r || [0, 0, 0]; g.add(geo, color, Object.assign({}, o, { p: [v.x, v.y, v.z], r: [r[0], r[1] + ry, r[2]] })); };
+    const hide = '#4b4b55';
+    at(new THREE.SphereGeometry(0.55, 10, 7), hide, [0, 0.62, 0], { s: [1.6, 0.85, 0.9], ol: 0.04 });
+    [[-0.55, -0.28], [0.55, -0.28], [-0.55, 0.28], [0.55, 0.28]].forEach(([dx, dz]) => at(new THREE.CylinderGeometry(0.11, 0.1, 0.5, 6), hide, [dx, 0.22, dz], { ol: 0.025 }));
+    at(new THREE.SphereGeometry(0.3, 8, 6), hide, [0.95, 0.72, 0], { s: [1.2, 0.9, 0.9], ol: 0.035 });
+    at(new THREE.SphereGeometry(0.16, 7, 5), '#6b6b75', [1.22, 0.62, 0], { ol: 0.02 });
+    [-1, 1].forEach((sd) => at(new THREE.TorusGeometry(0.28, 0.05, 5, 10, Math.PI * 0.8), '#e7e5d8', [0.88, 0.95, sd * 0.2], { r: [0, sd * 0.4, Math.PI * 0.1], ol: 0.02 }));
+    at(new THREE.CylinderGeometry(0.03, 0.02, 0.6, 4), '#3f3f46', [-0.95, 0.55, 0], { r: [0, 0, 0.5], ol: false });
+    // Bajak kayu di belakang
+    at(new THREE.BoxGeometry(1.3, 0.08, 0.08), '#7a4a1e', [-1.3, 0.5, 0], { r: [0, 0, 0.25], ol: 0.02 });
+    at(new THREE.BoxGeometry(0.08, 0.6, 0.08), '#5b3612', [-1.85, 0.3, 0], { ol: 0.02 });
+  }
+
+  /** Petani bercaping (statis). */
+  function buildPetani(g, x, z, ry, bending = false) {
+    const grp = new THREE.Group(); grp.position.set(x, 0, z); grp.rotation.y = ry; grp.updateMatrixWorld();
+    const at = (geo, color, p, o = {}) => { const v = V(...p).applyMatrix4(grp.matrixWorld); const r = o.r || [0, 0, 0]; g.add(geo, color, Object.assign({}, o, { p: [v.x, v.y, v.z], r: [r[0], r[1] + ry, r[2]] })); };
+    const lean = bending ? 0.7 : 0;
+    [-0.09, 0.09].forEach((dz) => at(new THREE.CylinderGeometry(0.06, 0.06, 0.55, 6), '#1e293b', [0, 0.28, dz], { ol: 0.02 }));
+    at(new THREE.CylinderGeometry(0.17, 0.2, 0.62, 8), bending ? '#b45309' : '#0f766e', [lean * 0.25, 0.85, 0], { r: [0, 0, -lean], ol: 0.03 });
+    at(new THREE.SphereGeometry(0.13, 8, 6), '#c68a5c', [lean * 0.55, 1.25 - lean * 0.12, 0], { ol: 0.02 });
+    at(new THREE.ConeGeometry(0.36, 0.2, 14), '#e3c27a', [lean * 0.6, 1.4 - lean * 0.12, 0], { r: [0, 0, -lean * 0.6], ol: 0.025 });
+    [-1, 1].forEach((sd) => at(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 5), '#c68a5c', [lean * 0.45 + 0.08, 0.78 - lean * 0.1, sd * 0.2], { r: [sd * 0.25, 0, bending ? -1.3 : 0.2], ol: 0.015 }));
+  }
+
+  /** Burung kuntul berdiri (statis). */
+  function buildEgret(g, x, z, ry, pecking) {
+    const grp = new THREE.Group(); grp.position.set(x, 0.05, z); grp.rotation.y = ry; grp.updateMatrixWorld();
+    const at = (geo, color, p, o = {}) => { const v = V(...p).applyMatrix4(grp.matrixWorld); const r = o.r || [0, 0, 0]; g.add(geo, color, Object.assign({}, o, { p: [v.x, v.y, v.z], r: [r[0], r[1] + ry, r[2]] })); };
+    [-0.05, 0.05].forEach((dz) => at(new THREE.CylinderGeometry(0.015, 0.015, 0.4, 3), '#1f2937', [0, 0.2, dz], { ol: false }));
+    at(new THREE.SphereGeometry(0.14, 8, 6), '#ffffff', [0, 0.48, 0], { s: [1.6, 0.9, 0.9], ol: 0.02 });
+    at(new THREE.CylinderGeometry(0.03, 0.035, 0.32, 5), '#ffffff', [0.18, 0.62, 0], { r: [0, 0, pecking ? -1.0 : -0.3], ol: 0.012 });
+    const hx = pecking ? 0.34 : 0.24, hy = pecking ? 0.62 : 0.8;
+    at(new THREE.SphereGeometry(0.06, 6, 5), '#ffffff', [hx, hy, 0], { ol: 0.012 });
+    at(new THREE.ConeGeometry(0.02, 0.16, 4), '#facc15', [hx + 0.1, hy - (pecking ? 0.06 : 0), 0], { r: [0, 0, -Math.PI / 2 - (pecking ? 0.6 : 0)], ol: false });
+  }
+
   const TREES = (() => {
-    const list = [
-      { type: 'pine', x: 9.6, z: -7.6 }, { type: 'pine', x: 10.5, z: -4.3 }, { type: 'pine', x: -10.6, z: -1.8 },
-      { type: 'pine', x: 5.6, z: -8.6 }, { type: 'pine', x: 10.4, z: 9.1 }, { type: 'pine', x: -7.6, z: 9.1 },
-      { type: 'birch', x: 9.6, z: 0.4 }, { type: 'birch', x: -10.2, z: 2.6 }, { type: 'birch', x: -3.4, z: -8.7 },
-      { type: 'birch', x: 9.9, z: 3.9 }, { type: 'birch', x: -4.2, z: 9.2 }, { type: 'birch', x: 4.8, z: 9.2 },
-    ];
+    const list = FIXED_TREES.map((t) => Object.assign({}, t));
     const R = rng(77);
-    for (let k = 0; k < 400 && list.length < 60; k++) {
-      const a = R() * Math.PI * 2, r = 14 + R() * 13, x = Math.cos(a) * r, z = Math.sin(a) * r;
-      if (Math.abs(z - 7) < 2.2 && x > STREAM.x0 - 2 && x < STREAM.x1) continue;     // sungai
-      if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 1.5) continue;                 // kolam
-      if (Math.hypot(x - STREAM.x0 + 2, z - 7) < 6) continue;                          // tebing air terjun
-      if (Math.abs(x) < 2 && z > 4) continue;                                           // jalan & jembatan
+    for (let k = 0; k < 600 && list.length < 44; k++) {
+      const a = R() * Math.PI * 2, r = 13 + R() * 15, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (Math.abs(z - 7) < 2.2 && x > STREAM.x0 - 2 && x < STREAM.x1) continue;       // sungai
+      if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 1.5) continue;                   // kolam
+      if (Math.hypot(x - STREAM.x0 + 2, z - 7) < 6) continue;                            // tebing air terjun
+      if (Math.abs(x) < 2 && z > 4) continue;                                             // jalan & jembatan
+      if (inPaddy(x, z, 0.5)) continue;                                                   // sawah
+      if ([HUT, LUMBUNG, WHEEL, SCARECROW].some((p) => Math.hypot(p.x - x, p.z - z) < 2.6)) continue;
+      if (BAMBOO.some((b) => Math.hypot(b.x - x, b.z - z) < 2.4)) continue;
       if (list.some((t) => Math.hypot(t.x - x, t.z - z) < 2.2)) continue;
-      list.push({ type: R() < 0.6 ? 'pine' : 'birch', x, z });
+      const front = (x + z) * Math.SQRT1_2 > 4;   // sisi kamera: hanya tanaman pendek agar kebun tidak tertutup
+      if (front && R() < 0.6) continue;
+      list.push({ type: !front && R() < 0.75 ? 'palm' : 'banana', x, z });
     }
     return list;
   })();
 
-  function buildPineCanopy() {
+  /** Tajuk kelapa: pelepah melengkung + buah kelapa (titik asal = pucuk batang). */
+  function buildPalmCanopy() {
     const g = new Geo(3);
-    [[1.0, 1.1, 0.9], [0.8, 1.0, 1.55], [0.55, 0.85, 2.15]].forEach(([r, h, y], i) => g.add(new THREE.ConeGeometry(r, h, 7), i % 2 ? C.pineLight : C.pine, { p: [0, y, 0], r: [0, i * 0.4, 0] }));
+    for (let k = 0; k < 9; k++) {
+      const a = (k / 9) * Math.PI * 2 + (k % 2) * 0.2, up = k % 3 === 0 ? 0.35 : 0.1;
+      const c = k % 2 ? '#2f9e44' : '#3fb950';
+      g.add(new THREE.BoxGeometry(1.3, 0.04, 0.4), c, { p: [Math.cos(a) * 0.62, 0.12 + up * 0.5, Math.sin(a) * 0.62], r: [0, -a, up], ol: 0.03 });
+      g.add(new THREE.BoxGeometry(1.25, 0.04, 0.32), k % 2 ? '#3fb950' : '#58c45f', { p: [Math.cos(a) * 1.75, -0.12 + up * 0.6, Math.sin(a) * 1.75], r: [0, -a, -0.45 + up * 0.5], ol: 0.03 });
+      g.add(new THREE.BoxGeometry(0.8, 0.035, 0.22), c, { p: [Math.cos(a) * 2.6, -0.6 + up * 0.5, Math.sin(a) * 2.6], r: [0, -a, -0.9], ol: 0.025 });
+    }
+    [[0.18, 0], [-0.1, 0.16], [-0.06, -0.17], [0.05, 0.05]].forEach(([dx, dz], i) => g.add(new THREE.SphereGeometry(0.17, 7, 5), i % 2 ? '#6b8e23' : '#8a6a2e', { p: [dx, -0.22, dz], ol: 0.02 }));
     return g.build(0.05);
   }
-  function buildBirchCanopy() {
+  /** Tajuk pisang: daun lebar melengkung + tandan & jantung pisang. */
+  function buildBananaCanopy() {
     const g = new Geo(4);
-    g.add(new THREE.IcosahedronGeometry(0.85, 0), C.birch, { p: [0, 1.9, 0] });
-    g.add(new THREE.IcosahedronGeometry(0.6, 0), C.birch2, { p: [0.45, 2.4, 0.2], r: [0.4, 0.2, 0] });
-    g.add(new THREE.IcosahedronGeometry(0.55, 0), C.birch2, { p: [-0.4, 2.25, -0.25], r: [0.2, 0.7, 0] });
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + (k % 2) * 0.3, c = k % 2 ? '#5cb83a' : '#4aa02c';
+      g.stick(V(0, 0.1, 0), V(Math.cos(a) * 0.45, 1, Math.sin(a) * 0.45), 0.9, 0.035, 0.03, '#7d9a46', { ol: 0.012, seg: 4 });
+      g.add(new THREE.BoxGeometry(0.85, 0.025, 0.34), c, { p: [Math.cos(a) * 0.62, 1.02, Math.sin(a) * 0.62], r: [0, -a, 0.35], ol: 0.02 });
+      g.add(new THREE.BoxGeometry(0.75, 0.025, 0.3), k % 2 ? '#4aa02c' : '#6cc444', { p: [Math.cos(a) * 1.25, 0.95, Math.sin(a) * 1.25], r: [0, -a, -0.5], ol: 0.02 });
+      g.add(new THREE.BoxGeometry(0.45, 0.02, 0.2), c, { p: [Math.cos(a) * 1.62, 0.66, Math.sin(a) * 1.62], r: [0, -a, -1.05], ol: 0.015 });
+    }
+    g.add(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 5), '#7d9a46', { p: [0.28, 0.5, 0], r: [0, 0, 0.5], ol: 0.015 });
+    for (let k = 0; k < 6; k++) g.add(new THREE.CylinderGeometry(0.06, 0.05, 0.28, 5), '#b5c93a', { p: [0.42 + (k % 2) * 0.1, 0.25 - Math.floor(k / 2) * 0.13, (k % 3 - 1) * 0.1], r: [0, 0, -0.4], ol: 0.012 });
+    g.add(new THREE.ConeGeometry(0.11, 0.3, 6), '#7c2d4f', { p: [0.55, -0.2, 0], r: [Math.PI, 0, 0], ol: 0.015 });
     return g.build(0.05);
   }
   function buildCloud(seed) {
@@ -605,16 +851,97 @@
     for (let i = 0; i < 5; i++) g.add(new THREE.IcosahedronGeometry(0.9 + R() * 0.6, 1), C.white, { p: [(i - 2) * 0.95, R() * 0.4, (R() - 0.5) * 0.9], s: [1, 0.72, 0.9], jitter: 0.02 });
     return g.build(0.07);
   }
+  /** Kincir air bambu (roda di bidang XY, berputar pada sumbu Z). */
   function buildSails() {
-    const g = new Geo(5);
-    g.add(new THREE.CylinderGeometry(0.22, 0.22, 0.4, 8), C.wood, { r: [Math.PI / 2, 0, 0], ol: 0.03 });
-    for (let k = 0; k < 4; k++) {
-      const a = k * Math.PI / 2, rot = (x, y) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
-      const [sx, sy] = rot(0, 1.3), [bx, by] = rot(0.32, 1.5);
-      g.add(new THREE.BoxGeometry(0.1, 2.6, 0.08), C.dirtDeep, { p: [sx, sy, 0.12], r: [0, 0, a], ol: 0.025 });
-      g.add(new THREE.BoxGeometry(0.56, 1.9, 0.04), k % 2 ? C.cream : '#fca5a5', { p: [bx, by, 0.1], r: [0, 0, a], ol: 0.03 });
+    const g = new Geo(5), R_W = 1.25;
+    [-0.3, 0.3].forEach((z) => g.add(new THREE.TorusGeometry(R_W, 0.055, 5, 22), '#b9a24a', { p: [0, 0, z], ol: 0.025 }));
+    g.add(new THREE.CylinderGeometry(0.2, 0.2, 0.75, 8), '#6b4f1d', { r: [Math.PI / 2, 0, 0], ol: 0.025 });
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      [-0.3, 0.3].forEach((z) => g.add(new THREE.BoxGeometry(0.06, R_W * 2, 0.05), '#9c8440', { p: [0, 0, z], r: [0, 0, a], ol: 0.015 }));
+    }
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2, x = Math.cos(a) * (R_W + 0.1), y = Math.sin(a) * (R_W + 0.1);
+      g.add(new THREE.BoxGeometry(0.36, 0.06, 0.72), k % 2 ? '#c9b45a' : '#a8913f', { p: [x, y, 0], r: [0, 0, a], ol: 0.02 });
+      if (k % 3 === 0) g.add(new THREE.CylinderGeometry(0.07, 0.07, 0.3, 6), '#7fb04a', { p: [x * 0.92, y * 0.92, 0.42], r: [0, 0, a], ol: 0.012 }); // tabung bambu penimba
     }
     return g.build(0.04);
+  }
+
+  /** Padi di sawah tergenang: rumpun bilah (fruit=1 → ikut angin di shader). */
+  function buildPaddyRice() {
+    const g = new Geo(23), R = g.rand;
+    const young = ['#7cc84a', '#93d65a'], green = ['#3f9e3a', '#58b545'], gold = ['#d9b84a', '#c9a43a'];
+    PADDIES.forEach((p) => {
+      const st = p.stage;
+      if (st < 0.12) return; // sawah baru dibajak: masih lumpur
+      const h = st < 0.3 ? 0.3 : 0.58, cols = st < 0.3 ? young : st < 0.75 ? green : gold;
+      const nx = 6, nz = 4;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+        const x = p.x - p.w / 2 + (i + 0.5) * (p.w / nx) + (R() - 0.5) * 0.08, z = p.z - p.d / 2 + (j + 0.5) * (p.d / nz) + (R() - 0.5) * 0.08;
+        for (let b = 0; b < 4; b++) {
+          const a = (b / 4) * Math.PI * 2 + R(), tilt = 0.25 + R() * 0.2;
+          g.add(new THREE.ConeGeometry(0.075, h * (0.8 + R() * 0.4), 3), cols[b % 2], { p: [x + Math.cos(a) * 0.05, h * 0.5, z + Math.sin(a) * 0.05], r: [Math.sin(a) * tilt, 0, -Math.cos(a) * tilt], fruit: true, ol: false, jitter: 0.08 });
+        }
+        if (st >= 0.75 && (i + j) % 2 === 0) g.add(new THREE.IcosahedronGeometry(0.05, 0), '#f2d16b', { p: [x + 0.06, h * 0.95, z], s: [1, 2.2, 1], r: [0, 0, 0.8], fruit: true, ol: false });
+      }
+    });
+    return g.build();
+  }
+  /** Layang-layang (sayap diwarnai instanceColor) + ekor + tali menjulur ke bawah. */
+  function buildKite() {
+    const g = new Geo(41);
+    g.add(new THREE.CylinderGeometry(0.75, 0.75, 0.03, 4), C.white, { r: [Math.PI / 2, 0, 0], s: [0.8, 1, 1.1], fruit: true, ol: 0.03 });
+    g.add(new THREE.BoxGeometry(0.03, 1.65, 0.04), '#6b4f1d', { p: [0, 0, 0.03], ol: false });
+    g.add(new THREE.BoxGeometry(1.2, 0.03, 0.04), '#6b4f1d', { p: [0, 0.15, 0.03], ol: false });
+    for (let k = 0; k < 4; k++) g.add(new THREE.CylinderGeometry(0.1, 0.1, 0.02, 3), k % 2 ? '#ffffff' : '#fde047', { p: [Math.sin(k) * 0.12, -1.0 - k * 0.32, 0], r: [Math.PI / 2, 0, k * 0.6], ol: 0.01 });
+    g.stick(V(0, -0.3, 0.02), V(0.25, -1, 0.35), 16, 0.012, 0.012, '#f8fafc', { ol: false, seg: 3 });
+    return g.build();
+  }
+  /** Burung kuntul terbang (sayap fruit=1 → dikepakkan di shader). */
+  function buildFlyingEgret() {
+    const g = new Geo(42);
+    g.add(new THREE.SphereGeometry(0.18, 8, 6), '#ffffff', { s: [0.9, 0.8, 2.2], ol: 0.02 });
+    g.add(new THREE.SphereGeometry(0.09, 6, 5), '#ffffff', { p: [0, 0.06, 0.45], ol: 0.015 });
+    g.add(new THREE.ConeGeometry(0.03, 0.22, 4), '#facc15', { p: [0, 0.05, 0.6], r: [Math.PI / 2, 0, 0], ol: false });
+    g.add(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 3), '#1f2937', { p: [0, -0.03, -0.55], r: [Math.PI / 2, 0, 0], ol: false });
+    [-1, 1].forEach((sd) => g.add(new THREE.BoxGeometry(0.95, 0.03, 0.36), '#ffffff', { p: [sd * 0.55, 0.04, 0], r: [0, 0, sd * 0.08], fruit: true, ol: 0.015 }));
+    return g.build();
+  }
+  /** Bebek di kolam. */
+  function buildDuck() {
+    const g = new Geo(43);
+    g.add(new THREE.SphereGeometry(0.22, 8, 6), '#fafaf9', { p: [0, 0.12, 0], s: [1.5, 0.85, 1], ol: 0.02 });
+    g.add(new THREE.ConeGeometry(0.08, 0.2, 5), '#fafaf9', { p: [-0.34, 0.2, 0], r: [0, 0, 1.1], ol: 0.015 });
+    g.add(new THREE.SphereGeometry(0.12, 7, 5), '#fafaf9', { p: [0.26, 0.36, 0], ol: 0.015 });
+    g.add(new THREE.BoxGeometry(0.14, 0.04, 0.08), '#f59e0b', { p: [0.4, 0.34, 0], ol: 0.01 });
+    [-1, 1].forEach((sd) => g.add(new THREE.SphereGeometry(0.02, 4, 3), C.ink, { p: [0.33, 0.39, sd * 0.07], ol: false }));
+    return g.build();
+  }
+  /** Gumpalan asap kawah. */
+  function buildPuff() {
+    const g = new Geo(44);
+    g.add(new THREE.IcosahedronGeometry(1, 1), '#e7e5e4', { ol: 0.06, jitter: 0.04 });
+    g.add(new THREE.IcosahedronGeometry(0.7, 1), '#f5f5f4', { p: [0.6, 0.3, 0.2], ol: 0.05 });
+    return g.build();
+  }
+
+  /**
+   * Material toon dengan animasi vertex (atribut fruit=1):
+   *  mode 'wind' → bilah padi bergoyang (posisi dunia, mesh statis)
+   *  mode 'flap' → sayap burung mengepak (per instance, fase dari posisi)
+   */
+  function animMaterial(gradientMap, mode) {
+    const m = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap });
+    m.userData.uTime = { value: 0 };
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uTime = m.userData.uTime;
+      sh.vertexShader = 'attribute float fruit;\nuniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+        mode === 'wind'
+          ? '#include <begin_vertex>\n float sw = sin(uTime * 1.7 + position.x * 0.45 + position.z * 0.3) + 0.4 * sin(uTime * 3.1 + position.x * 1.3);\n transformed.x += sw * 0.06 * fruit * clamp(position.y / 0.5, 0.0, 1.0);\n transformed.z += sw * 0.03 * fruit * clamp(position.y / 0.5, 0.0, 1.0);'
+          : '#include <begin_vertex>\n float ph = 0.0;\n #ifdef USE_INSTANCING\n ph = instanceMatrix[3].x * 0.9 + instanceMatrix[3].z * 0.4;\n #endif\n transformed.y += sin(uTime * 8.0 + ph) * abs(transformed.x) * 0.75 * fruit;');
+    };
+    return m;
   }
 
   /* ── Petak ── */
@@ -980,7 +1307,7 @@
 
     _initScene() {
       const s = this.scene = new THREE.Scene();
-      s.fog = new THREE.Fog('#dcefff', 48, 120);
+      s.fog = new THREE.Fog('#e6f1df', 50, 125);
       const grad = this.gradient = toonGradient();
       // Material terpisah untuk mesh ber-instanceColor: three r128 tidak mengompilasi
       // ulang program bila satu material dipakai mesh instanced dengan & tanpa instanceColor.
@@ -989,8 +1316,8 @@
       this.glowMat = tintMaterial(grad, { emissive: new THREE.Color('#3d2b00') });
 
       // Lampu
-      s.add(new THREE.HemisphereLight('#ffffff', '#86efac', 0.7));
-      const sun = this.sun = new THREE.DirectionalLight('#ffffff', 1.4);
+      s.add(new THREE.HemisphereLight('#fffaf0', '#9bd27a', 0.72));
+      const sun = this.sun = new THREE.DirectionalLight('#fff3da', 1.4);
       sun.position.set(20, 35, 15);
       sun.castShadow = true;
       sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
@@ -1012,21 +1339,61 @@
       // 2) Sungai irigasi + air terjun (shader UV bergerak)
       world.add(this._buildWater());
 
-      // 3) Baling-baling kincir
-      const face = new THREE.Vector3(Math.SQRT1_2, 0, Math.SQRT1_2);
+      // 3) Roda kincir air (berputar mengikuti arus sungai)
       this.sailPivot = new THREE.Group();
-      this.sailPivot.position.copy(WINDMILL).addScaledVector(face, 1.12).setY(4.25);
-      this.sailPivot.rotation.y = Math.PI / 4;
+      this.sailPivot.position.set(WHEEL.x, WHEEL_Y, WHEEL.z);
       this.sails = new THREE.Mesh(buildSails(), this.mat);
       this.sails.castShadow = true;
       this.sailPivot.add(this.sails);
       world.add(this.sailPivot);
 
-      // 4) Tajuk pohon (instanced, bergoyang)
-      const pines = TREES.filter((t) => t.type === 'pine'), birches = TREES.filter((t) => t.type === 'birch');
-      this.pineMesh = this._inst(buildPineCanopy(), this.mat, pines.length);
-      this.birchMesh = this._inst(buildBirchCanopy(), this.mat, birches.length);
-      this.pineTrees = pines; this.birchTrees = birches;
+      // 4) Tajuk kelapa & pisang (instanced, bergoyang)
+      const palms = TREES.filter((t) => t.type === 'palm'), bananas = TREES.filter((t) => t.type === 'banana');
+      this.palmMesh = this._inst(buildPalmCanopy(), this.mat, palms.length);
+      this.bananaMesh = this._inst(buildBananaCanopy(), this.mat, bananas.length);
+      this.palmTrees = palms; this.bananaTrees = bananas;
+
+      // 4b) Padi di sawah tergenang (1 mesh, bergoyang angin di vertex shader)
+      this.windMat = animMaterial(grad, 'wind');
+      const paddy = new THREE.Mesh(buildPaddyRice(), this.windMat);
+      paddy.receiveShadow = true;
+      world.add(paddy);
+
+      // 4c) Kehidupan desa: layang-layang, kawanan kuntul, bebek, asap kawah, bendera, matahari
+      this.kites = [
+        { p: BACK.clone().multiplyScalar(17).addScaledVector(SIDE, -9).setY(12.5), c: '#ef4444' },
+        { p: BACK.clone().multiplyScalar(23).addScaledVector(SIDE, 11).setY(15), c: '#3b82f6' },
+      ];
+      this.kiteMesh = this._inst(buildKite(), this.tintMat, this.kites.length, { tint: true, shadow: false });
+      this.kites.forEach((k, i) => this.kiteMesh.setColorAt(i, new THREE.Color(k.c)));
+      this.birdMat = animMaterial(grad, 'flap');
+      this.flock = this._inst(buildFlyingEgret(), this.birdMat, 7, { shadow: false });
+      this.duckMesh = this._inst(buildDuck(), this.mat, 5);
+      this.puffMesh = this._inst(buildPuff(), this.mat, 7, { shadow: false });
+
+      // Bendera merah putih (vertex digerakkan di CPU; atas merah, bawah putih)
+      const fg = this.flagGeo = new THREE.PlaneGeometry(1.5, 1.0, 14, 2).toNonIndexed();
+      fg.translate(0.75, 0, 0);
+      const fpos = fg.attributes.position, fc = new Float32Array(fpos.count * 3), red = new THREE.Color('#dc2626'), wht = new THREE.Color('#ffffff');
+      for (let t3 = 0; t3 < fpos.count; t3 += 3) {
+        const cy = (fpos.getY(t3) + fpos.getY(t3 + 1) + fpos.getY(t3 + 2)) / 3;
+        for (let k = 0; k < 3; k++) (cy > 0 ? red : wht).toArray(fc, (t3 + k) * 3);
+      }
+      fg.setAttribute('color', new THREE.BufferAttribute(fc, 3));
+      this.flagBase = fpos.array.slice();
+      this.flag = new THREE.Mesh(fg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      this.flag.position.set(FLAG.x, 4.05, FLAG.z);
+      this.flag.rotation.y = Math.PI / 4;
+      world.add(this.flag);
+
+      // Matahari di antara dua gunung
+      this.sunDisc = new THREE.Group();
+      this.sunDisc.position.copy(BACK.clone().multiplyScalar(112).setY(27));
+      const halo = new THREE.Mesh(new THREE.CircleGeometry(13, 40), new THREE.MeshBasicMaterial({ color: '#fff6cf', transparent: true, opacity: 0.35, fog: false, depthWrite: false }));
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(7.5, 40), new THREE.MeshBasicMaterial({ color: '#ffe680', fog: false }));
+      disc.position.z = 0.1;
+      this.sunDisc.add(halo, disc);
+      world.add(this.sunDisc);
 
       // 5) Awan dekoratif + caster bayangan awan
       const cloudGeo = buildCloud(21);
@@ -1337,11 +1704,14 @@
       this.controls.update();
       this.waterMat.uniforms.uTime.value = t;
       this.sails.rotation.z += SAIL_SPEED * dt * 60;
+      this.windMat.userData.uTime.value = t;
+      this.birdMat.userData.uTime.value = t;
 
-      // Pohon bergoyang
-      this.pineTrees.forEach((tr, i) => this._setInst(this.pineMesh, i, tr.x, 0.15 + Math.sin(t * 1.4 + i) * 0.04, tr.z, Math.sin(t * 1.1 + i) * 0.025, i, 0, 1));
-      this.birchTrees.forEach((tr, i) => this._setInst(this.birchMesh, i, tr.x, Math.sin(t * 1.6 + i * 2) * 0.05, tr.z, 0, i * 1.3, Math.sin(t * 1.3 + i) * 0.03, 1 + Math.sin(t * 2 + i) * 0.015));
-      this.pineMesh.instanceMatrix.needsUpdate = this.birchMesh.instanceMatrix.needsUpdate = true;
+      // Pohon kelapa & pisang bergoyang
+      this.palmTrees.forEach((tr, i) => this._setInst(this.palmMesh, i, tr.top.x, tr.top.y, tr.top.z, Math.sin(t * 1.1 + i) * 0.05, i * 0.7 + Math.sin(t * 0.6 + i) * 0.06, Math.cos(t * 1.3 + i) * 0.05, 1));
+      this.bananaTrees.forEach((tr, i) => this._setInst(this.bananaMesh, i, tr.x, 1.2, tr.z, Math.sin(t * 1.5 + i * 2) * 0.04, i * 1.3, Math.sin(t * 1.2 + i) * 0.05, 0.85));
+      this.palmMesh.instanceMatrix.needsUpdate = this.bananaMesh.instanceMatrix.needsUpdate = true;
+      this._updateLife(t);
 
       // Awan
       this.clouds.forEach((c, i) => {
@@ -1362,6 +1732,45 @@
       this.particles.update(dt);
       this.renderer.render(this.scene, this.camera);
       this._updateLabels();
+    }
+
+    /** Animasi suasana desa: layang-layang, kuntul terbang, bebek, asap kawah, bendera, matahari. */
+    _updateLife(t) {
+      this.kites.forEach((k, i) => this._setInst(this.kiteMesh, i, k.p.x + Math.sin(t * 0.7 + i * 2) * 0.8, k.p.y + Math.sin(t * 1.1 + i) * 0.6, k.p.z, Math.sin(t * 1.3 + i) * 0.08, Math.PI / 4, Math.sin(t * 0.9 + i * 3) * 0.25, 1.15));
+      this.kiteMesh.instanceMatrix.needsUpdate = true;
+
+      // Kawanan kuntul formasi V melintas di depan gunung tiap 46 detik
+      const u = (t % 46) / 46, head = SIDE, perp = this._v.set(head.z, 0, -head.x);
+      const lead = BACK.clone().multiplyScalar(26).addScaledVector(SIDE, lerp(-48, 48, u)).setY(13 + Math.sin(u * Math.PI * 2) * 1.5);
+      const ry = Math.atan2(head.x, head.z);
+      for (let i = 0; i < 7; i++) {
+        const row = Math.ceil(i / 2), sd = i === 0 ? 0 : (i % 2 ? 1 : -1);
+        this._setInst(this.flock, i, lead.x - head.x * row * 1.3 + perp.x * sd * row * 1.0, lead.y - row * 0.15 + Math.sin(t * 2 + i) * 0.08,
+          lead.z - head.z * row * 1.3 + perp.z * sd * row * 1.0, 0, ry, 0, 0.9);
+      }
+      this.flock.instanceMatrix.needsUpdate = true;
+
+      for (let i = 0; i < 5; i++) {
+        const a = t * (0.22 + i * 0.02) + i * 1.25, r = 1.1 + (i % 3) * 0.75;
+        this._setInst(this.duckMesh, i, POND.x + Math.cos(a) * r, STREAM.y + Math.sin(t * 2.2 + i) * 0.02, POND.z + Math.sin(a) * r, 0, -(a + Math.PI / 2), Math.sin(t * 2 + i) * 0.05, 0.9);
+      }
+      this.duckMesh.instanceMatrix.needsUpdate = true;
+
+      for (let i = 0; i < 7; i++) {
+        const p = (t * 0.045 + i / 7) % 1, s = (1.2 + p * 4.2) * (p > 0.85 ? 1 - (p - 0.85) / 0.15 : Math.min(1, p * 8));
+        this._setInst(this.puffMesh, i, CRATER.x + p * 7 * SIDE.x, CRATER.y + p * 15, CRATER.z + p * 7 * SIDE.z, 0, i + p, 0, s);
+      }
+      this.puffMesh.instanceMatrix.needsUpdate = true;
+
+      const P = this.flagGeo.attributes.position, B = this.flagBase;
+      for (let i = 0; i < P.count; i++) {
+        const x = B[i * 3], k = x / 1.5;
+        P.array[i * 3 + 2] = Math.sin(x * 3.4 - t * 6) * 0.13 * k;
+        P.array[i * 3 + 1] = B[i * 3 + 1] - k * k * 0.08 + Math.sin(x * 2 - t * 4) * 0.03 * k;
+      }
+      P.needsUpdate = true;
+
+      this.sunDisc.quaternion.copy(this.camera.quaternion);
     }
 
     /** Turunkan pixel ratio bila FPS rata-rata < 45 (HP lemah). */
