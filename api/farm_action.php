@@ -57,6 +57,7 @@ $result = match ($action) {
     'cure'        => farm_cure($pdo, $uid, $plot, (int)($body['item_id'] ?? 0)),
     'harvest'     => farm_harvest($pdo, $uid, $plot),
     'sell_all'    => farm_sell_all($pdo, $uid),
+    'claim_gift'  => farm_claim_daily_gift($pdo, $uid),
     'unlock_plot' => farm_unlock_plot($pdo, $uid, $plot),
     'buy'         => farm_buy($pdo, $uid, (string)($body['kind'] ?? '') === 'seed' ? 'seed' : 'item', (int)($body['ref_id'] ?? 0), (int)($body['qty'] ?? 1)),
     default       => null,

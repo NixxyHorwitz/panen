@@ -26,7 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'farm_plot_cost_step' => (string)max(0, round((float)($_POST['farm_plot_cost_step'] ?? 5000))),
             'farm_pest_chance'    => (string)max(0, min(100, (int)($_POST['farm_pest_chance'] ?? 12))),
             'farm_barn_capacity'  => (string)max(5, min(10000, (int)($_POST['farm_barn_capacity'] ?? 30))),
+            'farm_daily_gift_enabled' => isset($_POST['farm_daily_gift_enabled']) ? '1' : '0',
+            'farm_daily_gift_min' => (string)max(1, min(50, (int)($_POST['farm_daily_gift_min'] ?? 1))),
         ];
+        $new['farm_daily_gift_max'] = (string)max((int)$new['farm_daily_gift_min'], min(50, (int)($_POST['farm_daily_gift_max'] ?? 3)));
         $old = farm_config($pdo);
         foreach ($new as $k => $v) setting_set($pdo, $k, $v);
         farm_admin_log($pdo, 'settings.save', ['from' => $old, 'to' => $new]);
@@ -155,7 +158,7 @@ $audit = $pdo->query("SELECT * FROM farm_admin_logs ORDER BY id DESC LIMIT 100")
 $cropName = array_column($crops, 'name', 'id');
 $itemName = array_column($items, 'name', 'id');
 $ACTION_LABEL = ['plant' => 'Tanam', 'harvest' => 'Panen', 'speed_up' => 'Pupuk Kilat', 'cure' => 'Pestisida', 'sell_all' => 'Jual Semua',
-                 'unlock_plot' => 'Buka Petak', 'buy_seed' => 'Beli Bibit', 'buy_item' => 'Beli Barang'];
+                 'unlock_plot' => 'Buka Petak', 'buy_seed' => 'Beli Bibit', 'buy_item' => 'Beli Barang', 'daily_gift' => 'Hadiah Bibit'];
 
 /** Ringkasan ekonomi satu bibit untuk kolom analisis. */
 function farm_console_econ(array $c): array {
@@ -266,6 +269,17 @@ section[id] { scroll-margin-top: 80px; }
       <div class="col-6 col-lg-2"><label class="c-label">Kapasitas lumbung awal</label>
         <input type="number" min="5" max="10000" class="c-form-control" name="farm_barn_capacity" value="<?= $cfg['barn_capacity'] ?>">
         <div class="fm-muted mt-1">Untuk petani baru.</div></div>
+      <?php $gcfg = farm_gift_config($pdo); ?>
+      <div class="col-12 col-lg-4"><label class="c-label">Hadiah bibit harian</label>
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="fm-gift" name="farm_daily_gift_enabled" <?= $gcfg['enabled'] ? 'checked' : '' ?>>
+          <label class="form-check-label text-white" for="fm-gift">Aktif (1x klaim per hari, reset 00:00)</label>
+        </div>
+        <div class="d-flex gap-2">
+          <input type="number" min="1" max="50" class="c-form-control" name="farm_daily_gift_min" value="<?= $gcfg['min'] ?>" title="Jumlah minimal">
+          <input type="number" min="1" max="50" class="c-form-control" name="farm_daily_gift_max" value="<?= $gcfg['max'] ?>" title="Jumlah maksimal">
+        </div>
+        <div class="fm-muted mt-1">Jumlah bibit acak min–maks. Bibit mahal keluar lebih jarang &amp; jumlahnya separuh.</div></div>
       <div class="col-12 col-lg-2 d-flex align-items-end"><button class="btn btn-primary w-100">Simpan</button></div>
       <div class="col-12 fm-muted" id="fm-plot-preview"></div>
     </form>

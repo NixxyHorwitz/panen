@@ -210,6 +210,48 @@ img { -webkit-user-drag: none; }
 }
 .fly-icon { position: absolute; left: 0; top: 0; width: 40px; height: 40px; display: grid; place-items: center; font-size: 26px; color: #f59e0b; z-index: 30; }
 
+/* ── HADIAH BIBIT HARIAN ── */
+.gift-btn { position: relative; width: 48px; height: 48px; flex-basis: 48px; padding: 0; overflow: visible;
+  background: radial-gradient(circle at 50% 30%, #fff6c9, #ffd43b 60%, #f2a50c); box-shadow: 0 4px 0 var(--y2), 0 6px 12px rgba(120, 70, 5, .35), inset 0 2px 0 rgba(255, 255, 255, .6); }
+.gift-btn img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .25)); }
+.gift-btn.ready img { animation: giftShake 2.2s ease-in-out infinite; }
+.gift-btn.ready::before { content: ''; position: absolute; inset: -6px; border-radius: 18px; background: radial-gradient(circle, rgba(255, 230, 120, .9), transparent 70%); animation: giftGlow 1.6s ease-in-out infinite; z-index: -1; }
+.gift-btn .dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--r1); box-shadow: 0 0 0 2px #fff; display: none; }
+.gift-btn.ready .dot { display: block; animation: giftDot 1.2s ease-in-out infinite; }
+.gift-btn .cd { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); white-space: nowrap; padding: 0 6px; border-radius: 999px; font-family: var(--font-game); font-size: 10.5px; font-weight: 600; color: #fff; background: rgba(59, 36, 20, .78); }
+.gift-btn:not(.ready) img { filter: grayscale(.55) drop-shadow(0 2px 2px rgba(0, 0, 0, .25)); opacity: .85; }
+@keyframes giftShake { 0%, 70%, 100% { transform: none; } 74% { transform: rotate(-12deg) scale(1.08); } 78% { transform: rotate(12deg) scale(1.08); } 82% { transform: rotate(-8deg); } 86% { transform: rotate(6deg); } }
+@keyframes giftGlow { 50% { opacity: .45; transform: scale(1.1); } }
+@keyframes giftDot { 50% { transform: scale(1.25); } }
+
+.gift-stage { position: relative; height: 168px; display: grid; place-items: center; margin: -4px 0 6px; }
+.gift-rays { position: absolute; width: 230px; height: 230px; border-radius: 50%; opacity: 0; transition: opacity .4s;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 214, 80, .55) 0 12deg, transparent 12deg 30deg); -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); mask: radial-gradient(circle, #000 30%, transparent 70%); animation: giftSpin 9s linear infinite; }
+.gift-stage.open .gift-rays, .gift-stage.idle .gift-rays { opacity: 1; }
+.gift-stage.idle .gift-rays { opacity: .45; }
+@keyframes giftSpin { to { transform: rotate(360deg); } }
+.gift-box { position: relative; width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(90, 50, 10, .35)); cursor: pointer; }
+.gift-stage.idle .gift-box { animation: giftBob 2.4s ease-in-out infinite; }
+.gift-stage.shake .gift-box { animation: giftOpen .9s ease-in-out both; }
+@keyframes giftBob { 50% { transform: translateY(-8px) rotate(-3deg); } }
+@keyframes giftOpen { 0% { transform: none; } 15% { transform: rotate(-10deg) scale(1.05); } 30% { transform: rotate(10deg) scale(1.08); } 45% { transform: rotate(-12deg) scale(1.1); } 60% { transform: rotate(12deg) scale(1.14); } 80% { transform: scale(1.25, .8); } 100% { transform: scale(1); } }
+.gift-prize { position: absolute; display: grid; place-items: center; width: 96px; height: 96px; border-radius: 26px; opacity: 0; transform: translateY(30px) scale(.3);
+  background: radial-gradient(circle at 50% 35%, #fff, var(--parch-2) 75%); box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--c, var(--y1)), 0 12px 26px rgba(90, 50, 10, .35); }
+.gift-prize img { width: 74px; height: 74px; object-fit: contain; }
+.gift-prize i { font-size: 52px; color: var(--c, var(--g2)); }
+.gift-prize em { position: absolute; right: -12px; bottom: -10px; padding: 1px 9px; border-radius: 999px; font-style: normal; font-family: var(--font-game); font-size: 20px; font-weight: 700; color: #fff; background: linear-gradient(180deg, var(--g1), var(--g2)); box-shadow: 0 3px 0 #2c6e18; }
+.gift-stage.open .gift-prize { animation: giftPrize .7s cubic-bezier(.34, 1.56, .64, 1) forwards; }
+.gift-stage.open .gift-box { opacity: 0; transform: scale(.4); transition: opacity .25s, transform .25s; }
+@keyframes giftPrize { to { opacity: 1; transform: translateY(-6px) scale(1); } }
+.gift-name { text-align: center; font-family: var(--font-game); font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.15; }
+.gift-rar { display: block; width: max-content; margin: 4px auto 0; padding: 1px 12px; border-radius: 999px; font-size: 12px; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; color: #fff; }
+.gift-rar.biasa { background: linear-gradient(180deg, var(--g1), var(--g2)); }
+.gift-rar.langka { background: linear-gradient(180deg, var(--b1), var(--b2)); }
+.gift-rar.super { background: linear-gradient(180deg, #c084fc, #7c3aed); animation: giftDot 1.2s ease-in-out infinite; }
+.gift-cd { text-align: center; font-family: var(--font-game); font-size: 26px; font-weight: 700; color: var(--wood-d); }
+.gift-cd small { display: block; font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 800; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .gift-btn img, .gift-btn.ready::before, .gift-rays, .gift-box, .gift-prize { animation: none !important; } }
+
 /* ── BACKDROP, SHEET & MODAL (panel kayu berisi perkamen) ── */
 .backdrop {
   position: fixed; inset: 0; z-index: 40; background: rgba(30, 18, 8, .5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
@@ -410,6 +452,7 @@ img { -webkit-user-drag: none; }
   <div class="top-left">
     <a class="icon-btn" href="/home" aria-label="Kembali ke Home"><i class="ph-bold ph-arrow-left"></i></a>
     <button class="icon-btn" id="btn-mute" type="button" aria-label="Suara"><i class="ph-bold ph-speaker-high"></i></button>
+    <button class="icon-btn gift-btn" id="btn-gift" type="button" aria-label="Hadiah bibit harian"><img src="/assets/img/icons3d/chest.png" alt="" draggable="false"><span class="dot"></span><span class="cd" id="gift-cd" hidden></span></button>
   </div>
   <div class="lvl">
     <span class="lvl-star" data-icon="star"><b id="lvl-num">1</b></span>
@@ -500,6 +543,17 @@ img { -webkit-user-drag: none; }
   <div class="sheet-body" id="plot-body"></div>
 </section>
 
+<!-- Modal: Hadiah bibit harian -->
+<section class="modal t-gold" id="modal-gift" aria-label="Hadiah Bibit Harian">
+  <div class="sheet-head">
+    <span class="hic" data-icon="seed"></span>
+    <h3 class="ribbon">Hadiah Harian</h3>
+    <p id="gift-sub">Bibit gratis setiap hari</p>
+    <button class="close" type="button" data-close aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
+  </div>
+  <div class="sheet-body" id="gift-body"></div>
+</section>
+
 <div id="toasts" aria-live="polite"></div>
 
 <script>window.FARM_BOOT = <?= json_encode($FARM_BOOT, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;</script>
@@ -564,6 +618,7 @@ img { -webkit-user-drag: none; }
     chip.textContent = S.barn_used + '/' + S.barn_capacity;
     chip.classList.toggle('full', S.barn_used >= S.barn_capacity);
     $('btn-mute').innerHTML = '<i class="ph-bold ' + (audio.muted ? 'ph-speaker-slash' : 'ph-speaker-high') + '"></i>';
+    if (typeof renderGiftBtn === 'function') renderGiftBtn();
   }
   function setState(st) {
     if (!st) return;
@@ -592,7 +647,7 @@ img { -webkit-user-drag: none; }
   }
 
   /* ── Sheet & modal ───────────────────────────────────── */
-  const layers = { seeds: 'sheet-seeds', shop: 'sheet-shop', barn: 'sheet-barn', market: 'sheet-market', unlock: 'modal-unlock', plot: 'modal-plot' };
+  const layers = { seeds: 'sheet-seeds', shop: 'sheet-shop', barn: 'sheet-barn', market: 'sheet-market', unlock: 'modal-unlock', plot: 'modal-plot', gift: 'modal-gift' };
   function openLayer(name) {
     closeLayer(true);
     const el = $(layers[name]);
@@ -606,12 +661,12 @@ img { -webkit-user-drag: none; }
     if (!openEl) return;
     openEl.classList.remove('open');
     openEl = null;
-    clearInterval(plotTimer); plotTimer = null; plotCardIdx = null;
+    clearInterval(plotTimer); plotTimer = null; plotCardIdx = null; giftResult = null;
     if (!silent) { $('backdrop').classList.remove('show'); engine.setFrozen(false); }
   }
   function rerenderOpen() {
     const n = openEl && openEl.dataset.name;
-    ({ seeds: renderSeeds, shop: renderShop, barn: renderBarn, market: renderMarket, unlock: renderUnlock, plot: renderPlotCard })[n]?.();
+    ({ seeds: renderSeeds, shop: renderShop, barn: renderBarn, market: renderMarket, unlock: renderUnlock, plot: renderPlotCard, gift: renderGift })[n]?.();
   }
   $('backdrop').addEventListener('click', () => closeLayer());
   document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeLayer()));
@@ -622,6 +677,7 @@ img { -webkit-user-drag: none; }
     openLayer(b.dataset.open);
   }));
   $('btn-mute').addEventListener('click', () => { audio.unlock(); audio.setMuted(!audio.muted); renderHUD(); });
+  $('btn-gift').addEventListener('click', () => { audio.unlock(); audio.soundTick(); openLayer('gift'); });
 
   /* ── Tap petak 3D ────────────────────────────────────── */
   function onPlotTap(plot) {
@@ -747,6 +803,77 @@ img { -webkit-user-drag: none; }
       ${enough ? `<button class="nb-btn green block" type="button" id="do-unlock">Buka Petak</button>`
         : `<a class="nb-btn yellow block" href="/deposit" style="text-decoration:none">Deposit Saldo Modal</a>`}`;
     if (enough) $('do-unlock').addEventListener('click', () => unlock(plotCardIdx));
+  }
+
+  /* ── Hadiah bibit harian ─────────────────────────────── */
+  var giftResult = null, giftBusy = false; // var: dipakai closeLayer yang dideklarasikan lebih awal
+  const RARITY = { biasa: 'Biasa', langka: 'Langka', super: 'Super Langka' };
+  function giftLeft() { return Math.max(0, ((S.daily_gift && S.daily_gift.next_at) || 0) - engine.serverNow()); }
+  function hms(sec) { sec = Math.floor(sec); return [Math.floor(sec / 3600), Math.floor(sec / 60) % 60, sec % 60].map((n) => String(n).padStart(2, '0')).join(':'); }
+  function renderGiftBtn() {
+    const g = S.daily_gift || {}, btn = $('btn-gift'), cd = $('gift-cd');
+    btn.hidden = !g.enabled;
+    btn.classList.toggle('ready', !!g.available);
+    cd.hidden = !!g.available || !g.enabled;
+    if (!g.available) {
+      const left = giftLeft();
+      cd.textContent = left >= 3600 ? Math.floor(left / 3600) + 'j ' + (Math.floor(left / 60) % 60) + 'm' : hms(left).slice(3);
+      if (left <= 0 && !giftBusy && g.enabled) { giftBusy = true; resync().finally(() => { giftBusy = false; }); }
+    }
+  }
+  function renderGift() {
+    const g = S.daily_gift || {}, body = $('gift-body');
+    if (giftResult) {
+      const c = cropById(giftResult.crop_id) || {};
+      $('gift-sub').textContent = 'Selamat! Bibit masuk kantong';
+      body.innerHTML = `
+        <div class="gift-stage open" style="--c:${esc(c.color || '#6dd047')}"><span class="gift-rays"></span>
+          <img class="gift-box" src="/assets/img/icons3d/chest_open.png" alt="">
+          <span class="gift-prize">${cropImg(c)}<em>×${giftResult.qty}</em></span></div>
+        <div class="gift-name">${giftResult.qty} Bibit ${esc(c.name || '')}</div>
+        <span class="gift-rar ${giftResult.rarity}">${RARITY[giftResult.rarity] || ''}</span>
+        <p class="note">Bibit gratis dipakai lebih dulu saat menanam. Kembali besok untuk hadiah berikutnya!</p>
+        <button class="nb-btn green block" type="button" id="gift-plant">Tanam Sekarang</button>`;
+      $('gift-plant').addEventListener('click', () => { giftResult = null; seedTarget = null; openLayer('seeds'); });
+      return;
+    }
+    if (g.available) {
+      $('gift-sub').textContent = 'Bibit gratis setiap hari';
+      body.innerHTML = `
+        <div class="gift-stage idle" id="gift-stage"><span class="gift-rays"></span>
+          <img class="gift-box" id="gift-box" src="/assets/img/icons3d/chest.png" alt="Peti hadiah"><span class="gift-prize"></span></div>
+        <p class="note" style="text-align:center">Buka peti untuk dapat bibit acak. Bisa dapat bibit langka!</p>
+        <button class="nb-btn yellow block" type="button" id="gift-open">Buka Hadiah</button>`;
+      $('gift-open').addEventListener('click', claimGift);
+      $('gift-box').addEventListener('click', claimGift);
+      return;
+    }
+    $('gift-sub').textContent = 'Sudah diambil hari ini';
+    body.innerHTML = `
+      <div class="gift-stage idle"><span class="gift-rays"></span><img class="gift-box" src="/assets/img/icons3d/chest_open.png" alt="" style="filter:grayscale(.5) drop-shadow(0 10px 10px rgba(90,50,10,.3))"></div>
+      <div class="gift-cd"><small>Hadiah berikutnya dalam</small><span id="gift-left">${hms(giftLeft())}</span></div>
+      <p class="note" style="text-align:center">Hadiah baru tersedia setiap hari mulai pukul 00:00.</p>
+      <button class="nb-btn green block" type="button" data-close-gift>Oke</button>`;
+    body.querySelector('[data-close-gift]').addEventListener('click', () => closeLayer());
+    clearInterval(plotTimer);
+    plotTimer = setInterval(() => { const el = $('gift-left'); if (el) el.textContent = hms(giftLeft()); }, 1000);
+  }
+  async function claimGift() {
+    if (giftBusy) return;
+    giftBusy = true;
+    const stage = $('gift-stage'), btn = $('gift-open');
+    if (btn) { btn.disabled = true; btn.textContent = 'Membuka...'; }
+    if (stage) { stage.classList.remove('idle'); stage.classList.add('shake'); }
+    audio.unlock(); audio.soundSwoosh();
+    const [res] = await Promise.all([api.call('claim_gift'), new Promise((r) => setTimeout(r, 900))]);
+    giftBusy = false;
+    if (!res.ok) { if (res.state) setState(res.state); renderGift(); return fail(res); }
+    giftResult = res.gift;
+    S = res.state; engine.applyState(res.state); renderHUD();
+    renderGift();
+    audio.soundUnlock(); setTimeout(() => audio.soundHarvest(), 350);
+    audio.vibrate([30, 40, 60]);
+    engine.celebrate();
   }
 
   /* ── Render: Kartu aksi petak (Pupuk Kilat / Pestisida) ─ */
@@ -893,6 +1020,10 @@ img { -webkit-user-drag: none; }
     resync();
   });
   setInterval(() => { if (document.visibilityState === 'visible' && !pending.size) resync(); }, 60000);
+
+  renderGiftBtn();
+  setInterval(renderGiftBtn, 1000);
+  if (S.daily_gift && S.daily_gift.available) setTimeout(() => { if (!openEl) openLayer('gift'); }, 1400);
 
   window.__farm = { engine, api, audio, get state() { return S; } };
 })();

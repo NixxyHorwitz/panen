@@ -201,6 +201,7 @@ function farm_state(PDO $pdo, int $uid): array {
         'next_plot_cost' => $unlocked < FARM_TOTAL_PLOTS ? farm_plot_cost($cfg, $unlocked) : 0,
         'barn_capacity'  => (int)$prof['barn_capacity'],
         'barn_used'      => array_sum((array)$inv['harvest']),
+        'daily_gift'     => farm_gift_status($pdo, $uid),
         'plots'          => $plots,
         'inventory'      => $inv,
         'crops'          => array_values(array_map(fn($c) => [
@@ -298,6 +299,67 @@ function farm_consume_or_buy(PDO $pdo, array $u, int $uid, string $kind, int $re
     }
     farm_charge_dep($pdo, $u, $uid, $price);
     return $price;
+}
+
+/* ───────────────────────── HADIAH BIBIT HARIAN ───────────────────────── */
+
+/** Pengaturan hadiah bibit harian (tabel settings). */
+function farm_gift_config(PDO $pdo): array {
+    $min = max(1, (int)setting($pdo, 'farm_daily_gift_min', '1'));
+    return [
+        'enabled' => setting($pdo, 'farm_daily_gift_enabled', '1') === '1',
+        'min'     => $min,
+        'max'     => max($min, (int)setting($pdo, 'farm_daily_gift_max', '3')),
+    ];
+}
+
+/** Sudah ambil hadiah hari ini? (hari = tanggal server database, reset 00:00). */
+function farm_gift_claimed_today(PDO $pdo, int $uid): bool {
+    $s = $pdo->prepare("SELECT 1 FROM farm_logs WHERE user_id = ? AND action = 'daily_gift' AND created_at >= CURDATE() LIMIT 1");
+    $s->execute([$uid]);
+    return (bool)$s->fetchColumn();
+}
+
+/** Status untuk klien: boleh klaim + kapan hadiah berikutnya (unix time). */
+function farm_gift_status(PDO $pdo, int $uid): array {
+    $cfg = farm_gift_config($pdo);
+    $next = (int)$pdo->query("SELECT UNIX_TIMESTAMP(CURDATE() + INTERVAL 1 DAY)")->fetchColumn();
+    return ['enabled' => $cfg['enabled'], 'available' => $cfg['enabled'] && !farm_gift_claimed_today($pdo, $uid), 'next_at' => $next];
+}
+
+/**
+ * Undi bibit hadiah dari bibit aktif yang sudah terbuka di level user.
+ * Bibit murah lebih sering keluar; bibit mahal jarang & jumlahnya sedikit.
+ * Mengembalikan [crop, qty, rarity] (rarity: biasa | langka | super).
+ */
+function farm_gift_roll(PDO $pdo, int $level, array $cfg): array {
+    $pool = array_values(array_filter(farm_crops($pdo), fn($c) => (int)$c['is_active'] && (int)$c['min_level'] <= $level));
+    if (!$pool) throw new FarmUserError('Belum ada bibit yang bisa dihadiahkan.', 'invalid');
+    usort($pool, fn($a, $b) => (float)$a['seed_price'] <=> (float)$b['seed_price']);
+    $cheap = max(1.0, (float)$pool[0]['seed_price']);
+    $weights = array_map(fn($c) => max(1, (int)round(100 * ($cheap / max(1.0, (float)$c['seed_price'])) ** 0.7)), $pool);
+    $roll = random_int(1, array_sum($weights));
+    foreach ($weights as $i => $w) { if (($roll -= $w) <= 0) break; }
+    $crop = $pool[$i];
+    $rank = count($pool) > 1 ? $i / (count($pool) - 1) : 0; // 0 = termurah, 1 = termahal
+    $qty = random_int($cfg['min'], $cfg['max']);
+    if ($rank >= 0.66) $qty = max(1, intdiv($qty + 1, 2));
+    return [$crop, $qty, $rank >= 0.66 ? 'super' : ($rank >= 0.33 ? 'langka' : 'biasa')];
+}
+
+/** Klaim hadiah bibit harian: sekali per hari, langsung masuk kantong bibit. */
+function farm_claim_daily_gift(PDO $pdo, int $uid): array {
+    return farm_tx($pdo, $uid, function (PDO $pdo) use ($uid) {
+        $cfg = farm_gift_config($pdo);
+        if (!$cfg['enabled']) throw new FarmUserError('Hadiah bibit harian sedang tidak tersedia.', 'gift_off');
+        // Baris user sudah dikunci farm_tx, jadi cek + catat ini aman dari klik ganda
+        if (farm_gift_claimed_today($pdo, $uid)) throw new FarmUserError('Hadiah hari ini sudah diambil. Datang lagi besok ya!', 'gift_claimed');
+        $prof = farm_profile($pdo, $uid);
+        [$crop, $qty, $rarity] = farm_gift_roll($pdo, farm_level((int)$prof['xp'])['level'], $cfg);
+        farm_inv_add($pdo, $uid, 'seed', (int)$crop['id'], $qty);
+        farm_log($pdo, $uid, 'daily_gift', null, (int)$crop['id'], $qty, 0, 'none');
+        return ['gift' => ['crop_id' => (int)$crop['id'], 'qty' => $qty, 'rarity' => $rarity]];
+    });
 }
 
 /* ───────────────────────── AKSI ───────────────────────── */
