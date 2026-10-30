@@ -9,7 +9,6 @@ $_hi_fav = (string)setting($pdo, 'favicon_path', '/assets/brand/panencuan-192.pn
 $_hi_fav = preg_match('~^https?://~', $_hi_fav) ? $_hi_fav : $_hi_v('/' . ltrim($_hi_fav, '/'));
 ?>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
-<link rel="icon" type="image/svg+xml" href="<?= $_hi_v('/assets/favicon.svg') ?>">
 <link rel="icon" type="image/png" sizes="32x32" href="<?= $_hi_v('/assets/favicon-32.png') ?>">
 <link rel="icon" type="image/png" sizes="16x16" href="<?= $_hi_v('/assets/favicon-16.png') ?>">
 <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($_hi_fav) ?>">

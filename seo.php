@@ -62,7 +62,6 @@ if ($f === 'manifest') {
             ['src' => '/assets/brand/panencuan-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
             ['src' => '/assets/brand/panencuan-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
             ['src' => '/assets/brand/panencuan-maskable-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
-            ['src' => '/assets/favicon.svg', 'sizes' => 'any', 'type' => 'image/svg+xml'],
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;
