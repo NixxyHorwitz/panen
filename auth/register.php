@@ -21,67 +21,146 @@ $ip_key = 'reg_' . md5($client_ip);
 $attempts = (int)($_SESSION[$ip_key . '_attempts'] ?? 0);
 $lock_until = (int)($_SESSION[$ip_key . '_lock'] ?? 0);
 
-// ── Captcha "Sawah Bersih": pilih semua ikan / semua sampah dari 6 kotak gambar ──
-// Jawaban disimpan di session (tidak pernah dikirim ke browser), gambar diacak ulang tiap permintaan.
-const REG_CAP_FISH = ['biasa', 'bagus', 'langka', 'super'];
-// Sampah yang jelas bukan ikan (kantong plastik dibuang karena mirip ikan/bawang)
-const REG_CAP_JUNK = ['junk-boot', 'junk-bottle', 'junk-can', 'junk-cup', 'junk-trashbag'];
-const REG_CAP_TTL  = 900;
+// ── Captcha "Geser ke Lumbung": seret keranjang panen sampai pas di cetakan depan lumbung ──
+// Posisi cetakan hanya ada di session; gambar dirender server (potongan latar acak + noise),
+// browser cuma tahu tinggi (y) keranjang. Lolos = token sekali pakai yang wajib ikut saat daftar.
+const REG_CAP_W   = 320;   // lebar adegan (unit logis)
+const REG_CAP_H   = 160;
+const REG_CAP_P   = 52;    // ukuran keranjang
+const REG_CAP_TOL = 6;     // toleransi meleset
+const REG_CAP_TRY = 3;     // salah 3x = soal diganti
+const REG_CAP_TTL = 900;
 
-/** Soal selalu sama: 1 ikan di antara 5 sampah, cukup ketuk ikannya. */
 function generate_captcha_challenge(): array {
-    $fish = REG_CAP_FISH; shuffle($fish);
-    $junk = REG_CAP_JUNK; shuffle($junk);
-    $tiles = array_merge([$fish[0]], $junk);
-    shuffle($tiles);
-
-    $ans = [];
-    foreach ($tiles as $i => $t) {
-        if (!str_starts_with($t, 'junk-')) $ans[] = $i;
-    }
-    $_SESSION['reg_cap'] = ['tiles' => $tiles, 'ans' => $ans, 'ts' => time(), 'v' => bin2hex(random_bytes(4))];
-
-    return [
-        'prompt' => 'Ketuk ikan di sawah',
-        'icon'   => 'ph-fish-simple',
-        'v'      => $_SESSION['reg_cap']['v'],
+    $_SESSION['reg_cap'] = [
+        'x'     => random_int(112, REG_CAP_W - REG_CAP_P - 8),
+        'y'     => random_int(46, REG_CAP_H - REG_CAP_P - 12),
+        'seed'  => random_int(1, 2147483647),
+        'ts'    => time(),
+        'tries' => 0,
+        'pass'  => '',
+        'v'     => bin2hex(random_bytes(4)),
     ];
+    return ['v' => $_SESSION['reg_cap']['v'], 'y' => $_SESSION['reg_cap']['y']];
 }
 
-/** Gambar satu kotak captcha: rotasi, skala, posisi & gelembung acak agar tidak bisa dicocokkan per-byte */
-function render_captcha_tile(int $i): void {
-    $cap = $_SESSION['reg_cap'] ?? null;
-    $name = $cap['tiles'][$i] ?? null;
-    header('Cache-Control: no-store, max-age=0');
-    $src = $name ? @imagecreatefrompng(dirname(__DIR__) . '/assets/img/fish/' . $name . '.png') : false;
-    if (!$src) { http_response_code(404); exit; }
-
-    $S = 96;
-    $im = imagecreatetruecolor($S, $S);
-    imagealphablending($im, true);
-    imagesavealpha($im, true);
-    $bgs = [[190, 232, 160], [168, 222, 140], [184, 228, 244], [255, 228, 168], [206, 234, 182], [192, 228, 214]];
-    [$r, $g, $b] = $bgs[random_int(0, count($bgs) - 1)];
-    imagefill($im, 0, 0, imagecolorallocate($im, $r + random_int(-6, 0), $g + random_int(-6, 0), $b + random_int(-6, 0)));
-    for ($k = random_int(3, 6); $k > 0; $k--) {
-        $d = random_int(4, 14);
-        imagefilledellipse($im, random_int(0, $S), random_int(0, $S), $d, $d, imagecolorallocatealpha($im, 255, 255, 255, random_int(40, 90)));
+/** Siluet $src (alpha dipertahankan) diwarnai satu warna dengan tingkat transparansi $op (0..1). */
+function reg_cap_silhouette($src, int $size, array $rgb, float $op) {
+    $sil = imagecreatetruecolor($size, $size);
+    imagealphablending($sil, false);
+    imagesavealpha($sil, true);
+    imagefill($sil, 0, 0, imagecolorallocatealpha($sil, 0, 0, 0, 127));
+    imagecopyresampled($sil, $src, 0, 0, 0, 0, $size, $size, imagesx($src), imagesy($src));
+    for ($py = 0; $py < $size; $py++) {
+        for ($px = 0; $px < $size; $px++) {
+            $a = (imagecolorat($sil, $px, $py) >> 24) & 0x7F;
+            if ($a >= 120) { imagesetpixel($sil, $px, $py, imagecolorallocatealpha($sil, 0, 0, 0, 127)); continue; }
+            $na = (int)round(127 - (127 - $a) * $op);
+            imagesetpixel($sil, $px, $py, imagecolorallocatealpha($sil, $rgb[0], $rgb[1], $rgb[2], $na));
+        }
     }
-    if (random_int(0, 1)) imageflip($src, IMG_FLIP_HORIZONTAL);
-    $rot = imagerotate($src, random_int(-28, 28), imagecolorallocatealpha($src, 0, 0, 0, 127));
-    imagesavealpha($rot, true);
-    $sz = random_int(62, 78);
-    $rw = imagesx($rot); $rh = imagesy($rot);
-    $dw = (int)round($sz * $rw / 128); $dh = (int)round($sz * $rh / 128);
-    imagecopyresampled($im, $rot, (int)(($S - $dw) / 2) + random_int(-6, 6), (int)(($S - $dh) / 2) + random_int(-6, 6), 0, 0, $dw, $dh, $rw, $rh);
-    header('Content-Type: image/png');
-    imagepng($im, null, 6);
+    imagealphablending($sil, true);
+    return $sil;
+}
+
+/** Gambar adegan 2x: potongan sawah acak + lumbung + cetakan keranjang di posisi rahasia. */
+function render_captcha_scene(): void {
+    header('Cache-Control: no-store, max-age=0');
+    $cap = $_SESSION['reg_cap'] ?? null;
+    $root = dirname(__DIR__) . '/assets/';
+    if (!$cap || !isset($cap['x'])) { http_response_code(404); exit; }
+    mt_srand((int)$cap['seed']);
+
+    $S = 2; $W = REG_CAP_W * $S; $H = REG_CAP_H * $S; $P = REG_CAP_P * $S;
+    $im = imagecreatetruecolor($W, $H);
+    imagealphablending($im, true);
+
+    // Latar: potongan acak dari lukisan sawah (fallback warna rumput)
+    $bg = @imagecreatefromjpeg($root . 'brand/auth-bg-wide.jpg');
+    if ($bg) {
+        $bw = imagesx($bg); $bh = imagesy($bg);
+        $cw = mt_rand((int)($bw * .38), (int)($bw * .58)); $ch = (int)($cw * REG_CAP_H / REG_CAP_W);
+        $x0 = mt_rand(0, $bw - $cw); $y0 = mt_rand((int)min($bh * .38, $bh - $ch), $bh - $ch);
+        imagecopyresampled($im, $bg, 0, 0, $x0, $y0, $W, $H, $cw, $ch);
+        if (mt_rand(0, 1)) imageflip($im, IMG_FLIP_HORIZONTAL);
+    } else {
+        imagefill($im, 0, 0, imagecolorallocate($im, 124, 200, 92));
+    }
+
+    $cx = (int)(($cap['x'] + REG_CAP_P / 2) * $S);
+    $sy = (int)($cap['y'] * $S);
+
+    // Lumbung berdiri di belakang cetakan
+    $barn = @imagecreatefrompng($root . 'img/icons3d/barn.png');
+    if ($barn) {
+        $bs = (int)($P * 1.62);
+        $bx = $cx - (int)($bs / 2) + mt_rand(-10, 10);
+        $by = $sy + $P + 8 - $bs;
+        imagecopyresampled($im, $barn, $bx, max(-20, $by), 0, 0, $bs, $bs, imagesx($barn), imagesy($barn));
+    }
+
+    // Cetakan keranjang: tepi terang + isi gelap
+    $sack = @imagecreatefrompng($root . 'img/icons3d/basket.png');
+    if ($sack) {
+        $rim = reg_cap_silhouette($sack, $P + 10, [255, 250, 225], .9);
+        imagecopy($im, $rim, $cx - (int)(($P + 10) / 2), $sy - 5, 0, 0, $P + 10, $P + 10);
+        $hole = reg_cap_silhouette($sack, $P, [28, 36, 18], .72);
+        imagecopy($im, $hole, $cx - (int)($P / 2), $sy, 0, 0, $P, $P);
+    }
+
+    // Noise: kilau & titik acak supaya tiap gambar beda per-byte
+    for ($k = mt_rand(14, 22); $k > 0; $k--) {
+        $d = mt_rand(3, 11);
+        imagefilledellipse($im, mt_rand(0, $W), mt_rand(0, $H), $d, $d, imagecolorallocatealpha($im, 255, 248, 200, mt_rand(55, 100)));
+    }
+    mt_srand();
+    for ($k = 0; $k < 60; $k++) {
+        imagesetpixel($im, random_int(0, $W - 1), random_int(0, $H - 1), imagecolorallocatealpha($im, random_int(0, 255), random_int(0, 255), random_int(0, 255), 90));
+    }
+
+    header('Content-Type: image/jpeg');
+    imagejpeg($im, null, 80);
     exit;
 }
 
-// Gambar kotak captcha
-if (isset($_GET['cap_tile'])) {
-    render_captcha_tile(max(0, min(5, (int)$_GET['cap_tile'])));
+if (isset($_GET['cap_img'])) {
+    render_captcha_scene();
+}
+
+// Periksa geseran (AJAX, POST + CSRF). Lolos → token yang dipakai saat submit daftar.
+if (isset($_GET['cap_check']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-store');
+    $cap = $_SESSION['reg_cap'] ?? null;
+    if (!$cap || !isset($cap['x']) || (time() - (int)$cap['ts']) > REG_CAP_TTL) {
+        echo json_encode(['ok' => false, 'reset' => true, 'msg' => 'Soal kedaluwarsa, ini soal baru.'] + generate_captcha_challenge());
+        exit;
+    }
+    if (!empty($cap['pass'])) {
+        echo json_encode(['ok' => true, 'token' => $cap['pass']]);
+        exit;
+    }
+    $x  = (float)($_POST['x'] ?? -999);
+    $tr = json_decode((string)($_POST['track'] ?? ''), true);
+    $dur   = (int)($tr['d'] ?? 0);
+    $moves = (int)($tr['n'] ?? 0);
+    // Geseran manusia: tidak instan, ada beberapa langkah gerak
+    $human = $dur >= 250 && $dur <= 120000 && $moves >= 5;
+
+    if ($human && abs($x - (float)$cap['x']) <= REG_CAP_TOL) {
+        $tok = bin2hex(random_bytes(12));
+        $_SESSION['reg_cap']['pass'] = $tok;
+        echo json_encode(['ok' => true, 'token' => $tok]);
+        exit;
+    }
+    $tries = (int)$cap['tries'] + 1;
+    $_SESSION['reg_cap']['tries'] = $tries;
+    if ($tries >= REG_CAP_TRY) {
+        echo json_encode(['ok' => false, 'reset' => true, 'msg' => 'Belum pas 3x, soalnya diganti ya.'] + generate_captcha_challenge());
+        exit;
+    }
+    echo json_encode(['ok' => false, 'left' => REG_CAP_TRY - $tries]);
+    exit;
 }
 
 // AJAX Refresh Captcha Endpoint
@@ -129,26 +208,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         goto end_reg;
     }
 
-    // ── 3. CAPTCHA VALIDATION (sekali pakai) ──
+    // ── 3. CAPTCHA VALIDATION (token geser ke lumbung, sekali pakai) ──
     $cap = $_SESSION['reg_cap'] ?? null;
     unset($_SESSION['reg_cap']);
-    $cap_pick = array_values(array_unique(array_map('intval', array_filter(explode(',', (string)($_POST['captcha_answer'] ?? '')), 'is_numeric'))));
-    sort($cap_pick);
+    $cap_tok = (string)($_POST['captcha_answer'] ?? '');
 
-    if (!$cap || !isset($cap['ans'], $cap['ts'])) {
-        $error = 'Sesi verifikasi kedaluwarsa. Silakan ulangi verifikasi gambar.';
+    if (!$cap || !isset($cap['ts'])) {
+        $error = 'Sesi verifikasi kedaluwarsa. Geser keranjang ke lumbung sekali lagi ya.';
         $error_fields[] = 'f_captcha';
         goto end_reg;
     }
 
     if ((time() - (int)$cap['ts']) > REG_CAP_TTL) {
-        $error = 'Waktu verifikasi habis. Silakan ulangi verifikasi gambar.';
+        $error = 'Waktu verifikasi habis. Geser keranjang ke lumbung sekali lagi ya.';
         $error_fields[] = 'f_captcha';
         goto end_reg;
     }
 
-    if (!$cap_pick || $cap_pick !== $cap['ans']) {
-        $error = 'Verifikasi gambar belum tepat. Coba lagi ya!';
+    if (empty($cap['pass']) || $cap_tok === '' || !hash_equals((string)$cap['pass'], $cap_tok)) {
+        $error = 'Keranjang panen belum masuk lumbung. Geser sampai pas dulu ya!';
         $error_fields[] = 'f_captcha';
         goto end_reg;
     }
@@ -658,17 +736,20 @@ $current_url = base_url('register' . (!empty($ref_from_url) ? '/' . urlencode($r
         <div class="sec-h"><span class="sec-ic"><img src="<?= $ic3d('star') ?>" alt=""></span><h2>Sawah Bersih</h2><span class="sec-n">3/3</span></div>
         <div class="cap" id="f_captcha" tabindex="-1">
           <div class="cap-top">
-            <div class="cap-q"><i class="ph-fill <?= $captcha['icon'] ?>" id="cap-icon"></i><span id="cap-prompt"><?= htmlspecialchars($captcha['prompt']) ?></span></div>
-            <button type="button" class="cap-re" id="cap-re" onclick="refreshCaptcha()" title="Ganti gambar" aria-label="Ganti gambar"><i class="ph-bold ph-arrows-clockwise"></i></button>
+            <div class="cap-q"><i class="ph-fill ph-hand-grabbing" id="cap-icon"></i><span id="cap-prompt">Geser keranjang panen ke lumbung</span></div>
+            <button type="button" class="cap-re" id="cap-re" onclick="refreshCaptcha()" title="Ganti soal" aria-label="Ganti soal"><i class="ph-bold ph-arrows-clockwise"></i></button>
           </div>
-          <div class="cap-grid" id="cap-grid">
-            <?php for ($i = 0; $i < 6; $i++): ?>
-              <button type="button" class="cap-t" data-i="<?= $i ?>" onclick="capPick(this)" aria-pressed="false" aria-label="Gambar <?= $i + 1 ?>">
-                <img src="/register?cap_tile=<?= $i ?>&v=<?= $captcha['v'] ?>" alt="" draggable="false"><span class="ok"><i class="ph-bold ph-check"></i></span>
-              </button>
-            <?php endfor; ?>
+          <div class="slz" id="slz">
+            <img class="slz-bg" id="slz-bg" src="/register?cap_img=1&amp;v=<?= $captcha['v'] ?>" alt="Sawah dengan lumbung" draggable="false">
+            <img class="slz-pc" id="slz-pc" src="/assets/img/icons3d/basket.png" alt="" draggable="false" style="top:<?= round($captcha['y'] / REG_CAP_H * 100, 3) ?>%">
+            <div class="slz-ok"><span><i class="ph-bold ph-check"></i>Keranjang masuk lumbung!</span></div>
           </div>
-          <div class="cap-hint" id="cap-hint">Ada 1 ikan nyasar di antara sampah sawah. Ketuk ikannya.</div>
+          <div class="slz-track" id="slz-track">
+            <i class="slz-fill" id="slz-fill"></i>
+            <span class="slz-tx">Geser ke kanan<i class="ph-bold ph-caret-double-right"></i></span>
+            <button type="button" class="slz-knob" id="slz-knob" role="slider" aria-label="Geser keranjang" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i class="ph-bold ph-arrows-left-right"></i></button>
+          </div>
+          <div class="cap-hint" id="cap-hint">Tarik tombol sampai keranjang pas di bayangan depan lumbung.</div>
         </div>
       </section>
 
@@ -728,46 +809,125 @@ function flagField(id) {
   el.addEventListener('click', clear, { once: true });
 }
 
-/* ── Captcha gambar ── */
-function capSync() {
-  const picked = [...document.querySelectorAll('.cap-t.on')].map(b => b.dataset.i);
-  document.getElementById('f_captcha_answer').value = picked.join(',');
+/* ── Captcha "Geser ke Lumbung" ── */
+const CAP = { W: <?= REG_CAP_W ?>, H: <?= REG_CAP_H ?>, P: <?= REG_CAP_P ?> };
+const cap = { k: 0, max: 1, drag: false, busy: false, done: false, sx: 0, sk: 0, t0: 0, n: 0 };
+const capEl = id => document.getElementById(id);
+
+function capMeasure() {
+  cap.max = Math.max(1, capEl('slz-track').clientWidth - capEl('slz-knob').offsetWidth - 8);
 }
-function capPick(btn) {
-  // Pilih satu saja: ketuk gambar lain = pindah pilihan
-  document.querySelectorAll('.cap-t').forEach(b => {
-    const on = b === btn;
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-  });
-  document.getElementById('f_captcha').classList.remove('bad');
-  const hint = document.getElementById('cap-hint');
-  if (hint) { hint.textContent = 'Sip! Gambar terpilih. Salah pilih? Ketuk gambar lain.'; hint.classList.add('ok'); }
-  capSync();
+function capSet(k, anim) {
+  cap.k = Math.max(0, Math.min(cap.max, k));
+  const r = cap.k / cap.max;
+  [capEl('slz-knob'), capEl('slz-pc'), capEl('slz-fill')].forEach(el => el.classList.toggle('anim', !!anim));
+  capEl('slz-knob').style.transform = 'translateX(' + cap.k + 'px)';
+  capEl('slz-fill').style.width = (cap.k + capEl('slz-knob').offsetWidth / 2 + 4) + 'px';
+  capEl('slz-pc').style.left = (r * (CAP.W - CAP.P) / CAP.W * 100) + '%';
+  capEl('slz-knob').setAttribute('aria-valuenow', Math.round(r * 100));
+}
+function capHint(msg, ok) {
+  const h = capEl('cap-hint');
+  h.textContent = msg; h.classList.toggle('ok', !!ok);
+}
+function capReset(data, msg) {
+  cap.done = false; cap.busy = false;
+  capEl('f_captcha_answer').value = '';
+  capEl('f_captcha').classList.remove('ok', 'miss');
+  if (data && data.v) {
+    capEl('slz-bg').src = '/register?cap_img=1&v=' + data.v;
+    capEl('slz-pc').style.top = (data.y / CAP.H * 100) + '%';
+  }
+  capMeasure(); capSet(0, true);
+  capHint(msg || 'Tarik tombol sampai keranjang pas di bayangan depan lumbung.');
+  if (typeof growUpdate === 'function') growUpdate();
+}
+function capStart(e) {
+  if (cap.done || cap.busy) return;
+  capMeasure();
+  cap.drag = true; cap.sx = e.clientX; cap.sk = cap.k; cap.t0 = performance.now(); cap.n = 0;
+  capEl('f_captcha').classList.remove('bad', 'miss');
+  capEl('slz-track').classList.add('on');
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+}
+function capMove(e) {
+  if (!cap.drag) return;
+  cap.n++;
+  capSet(cap.sk + (e.clientX - cap.sx));
+}
+function capEnd() {
+  if (!cap.drag) return;
+  cap.drag = false;
+  capEl('slz-track').classList.remove('on');
+  if (cap.k < 4) { capSet(0, true); return; }
+  capCheck(performance.now() - cap.t0, cap.n);
+}
+async function capCheck(dur, moves) {
+  cap.busy = true;
+  capHint('Memeriksa keranjang...');
+  const fd = new FormData();
+  fd.append('_csrf', document.querySelector('#reg-form input[name="_csrf"]').value);
+  fd.append('x', (cap.k / cap.max * (CAP.W - CAP.P)).toFixed(1));
+  fd.append('track', JSON.stringify({ d: Math.round(dur), n: moves }));
+  try {
+    const res = await fetch('/register?cap_check=1', { method: 'POST', body: fd, credentials: 'same-origin' });
+    const data = await res.json();
+    if (data.ok) {
+      cap.done = true; cap.busy = false;
+      capEl('f_captcha_answer').value = data.token;
+      capEl('f_captcha').classList.add('ok');
+      capHint('Mantap! Keranjang panen sudah aman di lumbung.', true);
+      if (typeof growUpdate === 'function') growUpdate();
+      return;
+    }
+    capEl('f_captcha').classList.add('miss');
+    if (data.reset) { setTimeout(() => capReset(data, data.msg), 450); return; }
+    setTimeout(() => {
+      cap.busy = false;
+      capEl('f_captcha').classList.remove('miss');
+      capSet(0, true);
+      capHint('Belum pas, geser lagi pelan-pelan (sisa ' + data.left + ' kali).');
+    }, 450);
+  } catch (err) {
+    cap.busy = false; capSet(0, true);
+    regToast('Gagal memeriksa, coba geser lagi.');
+  }
 }
 async function refreshCaptcha() {
-  const re = document.getElementById('cap-re');
+  const re = capEl('cap-re');
   re.style.transform = 'rotate(180deg)';
   try {
     const res = await fetch('/register?refresh_captcha=1', { credentials: 'same-origin' });
     const data = await res.json();
-    if (data.ok) {
-      document.getElementById('cap-prompt').textContent = data.prompt;
-      document.getElementById('cap-icon').className = 'ph-fill ' + data.icon;
-      document.querySelectorAll('.cap-t').forEach(b => {
-        b.classList.remove('on'); b.setAttribute('aria-pressed', 'false');
-        b.querySelector('img').src = '/register?cap_tile=' + b.dataset.i + '&v=' + data.v;
-      });
-      const hint = document.getElementById('cap-hint');
-      if (hint) { hint.textContent = 'Ada 1 ikan nyasar di antara sampah sawah. Ketuk ikannya.'; hint.classList.remove('ok'); }
-      capSync();
-    }
+    if (data.ok) capReset(data);
   } catch (err) {
-    regToast('Gagal memuat gambar, coba lagi.');
+    regToast('Gagal memuat soal, coba lagi.');
   } finally {
     setTimeout(() => re.style.transform = '', 300);
   }
 }
+(function () {
+  const knob = capEl('slz-knob');
+  knob.addEventListener('pointerdown', capStart);
+  knob.addEventListener('pointermove', capMove);
+  knob.addEventListener('pointerup', capEnd);
+  knob.addEventListener('pointercancel', capEnd);
+  // Keyboard: panah menggeser, Enter memeriksa
+  let kt0 = 0, kn = 0;
+  knob.addEventListener('keydown', e => {
+    if (cap.done || cap.busy) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault(); capMeasure();
+      if (!kn) kt0 = performance.now();
+      kn++; capSet(cap.k + (e.key === 'ArrowRight' ? 1 : -1) * cap.max / 60);
+    } else if (e.key === 'Enter' && kn) {
+      e.preventDefault(); capCheck(performance.now() - kt0, kn); kn = 0;
+    }
+  });
+  window.addEventListener('resize', () => { if (!cap.done) { const r = cap.k / cap.max; capMeasure(); capSet(r * cap.max); } });
+  capMeasure(); capSet(0);
+})();
 
 function handleBankTypeChange() {
   const sel     = document.getElementById('f_bank_name');
@@ -859,7 +1019,6 @@ function growUpdate() {
 }
 document.getElementById('reg-form').addEventListener('input', growUpdate);
 document.getElementById('reg-form').addEventListener('change', growUpdate);
-document.getElementById('cap-grid').addEventListener('click', () => setTimeout(growUpdate, 0));
 document.addEventListener('DOMContentLoaded', growUpdate);
 
 function validateReg(e) {
@@ -888,7 +1047,7 @@ function validateReg(e) {
   if (cap === '') {
     document.getElementById('f_captcha').classList.add('bad');
     document.getElementById('f_captcha').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    regToast(document.getElementById('cap-prompt').textContent + ' dulu ya.');
+    regToast('Geser keranjang panen ke lumbung dulu ya.');
     return false;
   }
 
