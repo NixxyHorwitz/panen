@@ -88,6 +88,7 @@ public class MainActivity extends Activity {
         scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setClipToPadding(false);
+        scroll.setVerticalScrollBarEnabled(false);
         FrameLayout center = new FrameLayout(this);
         page = ui.vcol();
         page.setPadding(ui.dp(16), ui.dp(6), ui.dp(16), ui.dp(24));
@@ -153,17 +154,15 @@ public class MainActivity extends Activity {
 
     private LinearLayout buildNav() {
         LinearLayout n = ui.hrow();
-        n.setBackgroundColor(Ui.CARD);
+        // garis atas tebal khas neobrutalism; padding diatur sesudahnya karena setBackground ikut mengubah padding
+        n.setBackground(new android.graphics.drawable.LayerDrawable(new Drawable[]{
+                new ColorDrawable(Ui.INK), insetTop(new ColorDrawable(Ui.CARD), ui.dp(2.5f))}));
         n.setPadding(ui.dp(10), ui.dp(8), ui.dp(10), ui.dp(8));
-        n.setElevation(0);
         return n;
     }
 
     private void renderNav() {
         nav.removeAllViews();
-        // garis atas tebal khas neobrutalism
-        nav.setBackground(new android.graphics.drawable.LayerDrawable(new Drawable[]{
-                new ColorDrawable(Ui.INK), insetTop(new ColorDrawable(Ui.CARD), ui.dp(2.5f))}));
         for (int i = 0; i < NAV_LABEL.length; i++) {
             final int idx = i;
             boolean on = i == current;
@@ -176,9 +175,10 @@ public class MainActivity extends Activity {
             ic.setGravity(Gravity.CENTER);
             ic.addView(ui.icon(NAV_ICON[i], 21, on ? Ui.INK : Ui.MUTED));
             item.addView(ic, new LinearLayout.LayoutParams(ui.dp(54), ui.dp(30)));
-            TextView t = ui.text(NAV_LABEL[i], 11, on ? Ui.INK : Ui.MUTED, on ? Ui.BLACK : Ui.BOLD);
+            TextView t = ui.oneLine(ui.text(NAV_LABEL[i], 11, on ? Ui.INK : Ui.MUTED, on ? Ui.BLACK : Ui.BOLD));
+            t.setGravity(Gravity.CENTER);
             t.setPadding(0, ui.dp(4), 0, 0);
-            item.addView(t);
+            item.addView(t, new LinearLayout.LayoutParams(-1, -2));
             nav.addView(item, Ui.weight(1));
         }
     }
@@ -278,7 +278,7 @@ public class MainActivity extends Activity {
         desc.setPadding(0, ui.dp(12), 0, 0);
         power.addView(desc);
         if (missing > 0) {
-            Ui.Box fix = ui.button("Selesaikan pengaturan", R.drawable.ic_chevron, Ui.CARD, v -> show(P_SET));
+            Ui.Box fix = ui.button("Selesaikan pengaturan", R.drawable.ic_settings, Ui.CARD, v -> show(P_SET));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, ui.dp(44));
             lp.topMargin = ui.dp(12);
             power.addView(fix, lp);
@@ -354,15 +354,17 @@ public class MainActivity extends Activity {
 
     private View statTile(int icon, int color, String value, String label) {
         Ui.Box t = new Ui.Box(this, Ui.CARD, ui.dp(14), ui.dp(2.5f), ui.dp(4));
-        t.setOrientation(LinearLayout.VERTICAL);
-        t.pad(ui.dp(12), ui.dp(12), ui.dp(12), ui.dp(12));
-        t.addView(ui.tile(icon, color, 32, 18, Ui.INK));
-        TextView v = ui.oneLine(ui.text(value, 22, Ui.INK, Ui.BLACK));
-        v.setPadding(0, ui.dp(10), 0, 0);
-        t.addView(v);
-        TextView l = ui.oneLine(ui.text(label, 12, Ui.MUTED, Ui.BOLD));
+        t.setOrientation(LinearLayout.HORIZONTAL);
+        t.setGravity(Gravity.CENTER_VERTICAL);
+        t.pad(ui.dp(11), ui.dp(11), ui.dp(11), ui.dp(11));
+        t.addView(ui.tile(icon, color, 36, 20, Ui.INK));
+        LinearLayout col = ui.vcol();
+        col.setPadding(ui.dp(10), 0, 0, 0);
+        col.addView(ui.oneLine(ui.text(value, 19, Ui.INK, Ui.BLACK)));
+        TextView l = ui.oneLine(ui.text(label, 11.5f, Ui.MUTED, Ui.BOLD));
         l.setPadding(0, ui.dp(3), 0, 0);
-        t.addView(l);
+        col.addView(l);
+        t.addView(col, Ui.weight(1));
         return t;
     }
 
