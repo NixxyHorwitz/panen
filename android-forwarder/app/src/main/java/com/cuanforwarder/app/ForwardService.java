@@ -1,4 +1,4 @@
-package com.mancingcuan.forwarder;
+package com.cuanforwarder.app;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -53,7 +53,7 @@ public class ForwardService extends Service {
     public void onCreate() {
         super.onCreate();
         NotificationManager nm = getSystemService(NotificationManager.class);
-        NotificationChannel ch = new NotificationChannel(CHANNEL, "Forwarder aktif", NotificationManager.IMPORTANCE_LOW);
+        NotificationChannel ch = new NotificationChannel(CHANNEL, "Status forwarder", NotificationManager.IMPORTANCE_LOW);
         ch.setShowBadge(false);
         nm.createNotificationChannel(ch);
 
@@ -108,12 +108,13 @@ public class ForwardService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         long last = Prefs.getLong(this, "last_sent");
         int q = Prefs.queue(this).length();
-        String listener = NotifListener.isEnabled(this) ? "Membaca notifikasi" : "⚠ Izin baca notifikasi belum aktif";
+        boolean on = Prefs.enabled(this);
+        String listener = !on ? "Dijeda" : NotifListener.isEnabled(this) ? "Membaca notifikasi" : "Izin baca notifikasi belum aktif";
         String sub = "Terakhir kirim " + (last > 0 ? new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(last)) : "-")
                 + (q > 0 ? " · antrian " + q : "");
         return new Notification.Builder(this, CHANNEL)
                 .setSmallIcon(R.drawable.ic_stat)
-                .setContentTitle("Cuan Forwarder aktif")
+                .setContentTitle(on ? "CuanForwarder aktif" : "CuanForwarder dijeda")
                 .setContentText(listener + " · " + sub)
                 .setContentIntent(open)
                 .setOngoing(true)

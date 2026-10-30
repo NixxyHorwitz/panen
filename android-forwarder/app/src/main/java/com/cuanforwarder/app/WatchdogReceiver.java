@@ -1,4 +1,4 @@
-package com.mancingcuan.forwarder;
+package com.cuanforwarder.app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

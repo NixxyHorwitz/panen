@@ -16,7 +16,7 @@
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_app"
-        android:label="Cuan Forwarder"
+        android:label="CuanForwarder"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
 
@@ -34,7 +34,7 @@
         <service
             android:name=".NotifListener"
             android:exported="true"
-            android:label="Cuan Forwarder"
+            android:label="CuanForwarder"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
@@ -48,7 +48,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Meneruskan notifikasi pembayaran ke server deposit secara terus-menerus" />
+                android:value="Meneruskan notifikasi pembayaran ke webhook pilihan pengguna secara terus-menerus" />
         </service>
 
         <receiver

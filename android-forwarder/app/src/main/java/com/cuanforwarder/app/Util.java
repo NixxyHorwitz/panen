@@ -1,4 +1,4 @@
-package com.mancingcuan.forwarder;
+package com.cuanforwarder.app;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -15,10 +15,16 @@ import android.provider.Settings;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 final class Util {
     private Util() {}
+
+    /** 150000 → "Rp150.000" */
+    static String rp(long v) {
+        return "Rp" + String.format(Locale.ROOT, "%,d", v).replace(',', '.');
+    }
 
     static boolean batteryExempt(Context c) {
         PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
@@ -82,7 +88,7 @@ final class Util {
         Intent i = new Intent();
         i.setComponent(new ComponentName("com.miui.powerkeeper", "com.miui.powerkeeper.ui.HiddenAppsConfigActivity"));
         i.putExtra("package_name", c.getPackageName());
-        i.putExtra("package_label", "Cuan Forwarder");
+        i.putExtra("package_label", "CuanForwarder");
         if (!tryStart(c, i)) openAppDetails(c);
     }
 

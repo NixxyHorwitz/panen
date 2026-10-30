@@ -1,4 +1,4 @@
-package com.mancingcuan.forwarder;
+package com.cuanforwarder.app;
 
 import android.app.Notification;
 import android.content.ComponentName;
@@ -11,11 +11,14 @@ import android.service.notification.StatusBarNotification;
 import org.json.JSONObject;
 
 import java.security.MessageDigest;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
  * Menerima setiap notifikasi yang muncul di HP. Notifikasi dari aplikasi yang dipilih
- * dan berisi nominal (Rp/IDR) langsung dimasukkan antrian lalu dikirim ke server.
+ * dan berisi nominal (Rp/IDR) langsung dimasukkan antrian lalu dikirim ke webhook.
+ * Saat saklar utama mati, notifikasi hanya dicatat di daftar terbaru dan tidak diteruskan.
  * Layanan ini diikat oleh sistem Android, jadi tetap berjalan walau layar mati.
  */
 public class NotifListener extends NotificationListenerService {
@@ -78,13 +81,28 @@ public class NotifListener extends NotificationListenerService {
         Prefs.addRecent(this, pkg, app, title.isEmpty() ? joined : title + " — " + (big.isEmpty() ? text : big));
 
         Set<String> apps = Prefs.apps(this);
-        if (!apps.contains(pkg)) return;
+        if (!apps.contains(pkg) || !Prefs.enabled(this)) return;
 
         long amount = Forwarder.parseAmount(big.isEmpty() ? text : big);
         if (amount <= 0) amount = Forwarder.parseAmount(joined);
         if (amount <= 0) {
             Prefs.log(this, "info", app + ": notifikasi tanpa nominal, dilewati");
             return;
+        }
+        long min = Prefs.minAmount(this);
+        if (min > 0 && amount < min) {
+            Prefs.log(this, "info", app + ": " + Util.rp(amount) + " di bawah minimum " + Util.rp(min) + ", dilewati");
+            return;
+        }
+        List<String> kws = Prefs.keywordList(this);
+        if (!kws.isEmpty()) {
+            String low = joined.toLowerCase(Locale.ROOT);
+            boolean hit = false;
+            for (String k : kws) if (low.contains(k)) { hit = true; break; }
+            if (!hit) {
+                Prefs.log(this, "info", app + ": " + Util.rp(amount) + " tanpa kata kunci, dilewati");
+                return;
+            }
         }
 
         // ID unik per notifikasi (sama dengan yang dicek server untuk duplikat)
@@ -103,7 +121,8 @@ public class NotifListener extends NotificationListenerService {
         item.put("amount", amount);
         item.put("posted_at", sbn.getPostTime() / 1000);
         item.put("queued_at", System.currentTimeMillis());
-        Prefs.log(this, "in", app + ": Rp" + String.format("%,d", amount).replace(',', '.') + " masuk antrian");
+        Prefs.log(this, "in", app + ": " + Util.rp(amount) + " masuk antrian");
+        Prefs.bump(this, Prefs.ST_IN, 1);
         Forwarder.enqueueAndFlush(this, item);
         Util.startService(this);
     }
