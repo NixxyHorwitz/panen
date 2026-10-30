@@ -107,9 +107,7 @@ $_final_og_desc  = setting($pdo, 'seo_og_description', $_seo_desc);
 <meta name="twitter:image" content="<?= htmlspecialchars($absolute_og) ?>">
 <meta name="twitter:image:alt" content="<?= htmlspecialchars($_final_og_title) ?>">
 
-<link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($fav_url) ?>">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-<link rel="shortcut icon" href="/assets/favicon.ico">
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

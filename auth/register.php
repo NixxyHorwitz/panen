@@ -468,7 +468,7 @@ $current_url = base_url('register' . (!empty($ref_from_url) ? '/' . urlencode($r
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#67e8f9">
 <title><?= htmlspecialchars($_page_title) ?></title>
-<link rel="canonical" href="<?= htmlspecialchars($current_url) ?>">
+<link rel="canonical" href="<?= htmlspecialchars(base_url('register')) ?>">
 <meta name="description" content="<?= htmlspecialchars($_final_og_desc) ?>">
 <?php if ($_seo_kw): ?><meta name="keywords" content="<?= htmlspecialchars($_seo_kw) ?>"><?php endif; ?>
 <?php if ($_seo_author): ?><meta name="author" content="<?= htmlspecialchars($_seo_author) ?>"><?php endif; ?>
@@ -499,9 +499,7 @@ $current_url = base_url('register' . (!empty($ref_from_url) ? '/' . urlencode($r
 <meta name="twitter:image:alt" content="<?= htmlspecialchars($_final_og_title) ?>">
 
 <!-- Favicon -->
-<link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($fav_url) ?>">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-<link rel="shortcut icon" href="/assets/favicon.ico">
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
 
 <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets -->
 <script type="application/ld+json">

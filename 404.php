@@ -10,6 +10,8 @@ $user = auth_user($pdo);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>404 — Nyasar Bosku!</title>
+<meta name="robots" content="noindex">
+<?php require __DIR__ . '/partials/head_icons.php'; ?>
 <link rel="stylesheet" href="/assets/css/app.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'].'/assets/css/app.css') ?: time() ?>">
 <style>
   body, html { height: 100%; margin: 0; }

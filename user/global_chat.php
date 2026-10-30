@@ -108,7 +108,8 @@ $_title = setting($pdo, 'site_name', 'PanenCuan');
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#ffb46b">
 <title>Komunitas — <?= htmlspecialchars($_title) ?></title>
-<link rel="icon" href="<?= htmlspecialchars('/' . ltrim((string)$_fav, '/')) ?>">
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
+<meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <style>

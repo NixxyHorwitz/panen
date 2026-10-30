@@ -248,7 +248,7 @@ if (!empty($cms['farm_spotlight']['enabled'])) {
 }
 $quests_done = count(array_filter($daily_quests, fn($q) => $q[3] >= $q[4]));
 
-$pageTitle = 'Home';
+$pageTitle = $is_guest ? '' : 'Home'; // tamu (halaman publik /) memakai judul SEO penuh
 $activePage = 'home';
 require dirname(__DIR__) . '/partials/header.php';
 ?>

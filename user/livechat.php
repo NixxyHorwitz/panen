@@ -32,10 +32,9 @@ error_log('[LiveChat] page loaded, user=' . ($user['username'] ?? 'null')
 <?php
 $_abs_fav = $_favicon ? (preg_match('~^https?://~', $_favicon) ? $_favicon : '/' . ltrim($_favicon, '/')) : '';
 $_logo    = site_logo($pdo);
-if ($_abs_fav): ?>
-<link rel="icon" href="<?= htmlspecialchars($_abs_fav) ?>">
-<link rel="apple-touch-icon" href="<?= htmlspecialchars($_abs_fav) ?>">
-<?php endif; ?>
+?>
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
+<meta name="robots" content="noindex">
 <link rel="stylesheet" href="/assets/css/app.css?v=<?= @filemtime($_SERVER['DOCUMENT_ROOT'].'/assets/css/app.css') ?: time() ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">

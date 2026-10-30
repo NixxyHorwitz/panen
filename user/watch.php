@@ -395,6 +395,9 @@ $other_videos = $others->fetchAll();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title><?= htmlspecialchars($video['title']) ?> — Nonton &amp; Dapatkan Saldo</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#ffb46b">
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
 
 <!-- Fonts & Phosphor Icons -->
 <link rel="preconnect" href="https://fonts.googleapis.com">

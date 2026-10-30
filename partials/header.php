@@ -21,7 +21,7 @@ if (!$_seo_og || !file_exists($og_disk)) {
 $absolute_og = preg_match('~^https?://~', $_seo_og) ? $_seo_og : base_url(ltrim($_seo_og, '/'));
 $og_mime = str_ends_with(strtolower($absolute_og), '.png') ? 'image/png' : 'image/jpeg';
 $fav_url = $_favicon ? (preg_match('~^https?://~', $_favicon) ? $_favicon : '/' . ltrim($_favicon, '/')) : '/assets/favicon.png';
-$current_url = base_url(ltrim($_SERVER['REQUEST_URI'] ?? '', '/'));
+$current_url = base_url(ltrim((string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/'));
 $final_og_title = $_seo_og_title ?: (($pageTitle ?? '') ? $pageTitle . ' · ' . $_site_name : $_seo_title);
 $final_og_desc = $_seo_og_desc ?: $_seo_desc;
 ?>
@@ -31,6 +31,7 @@ $final_og_desc = $_seo_og_desc ?: $_seo_desc;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffd9a8">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="<?= htmlspecialchars($_site_name) ?>">
 <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($_site_name) ?>">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,7 +40,8 @@ $final_og_desc = $_seo_og_desc ?: $_seo_desc;
 <?php if ($_seo_desc): ?><meta name="description" content="<?= htmlspecialchars($_seo_desc) ?>"><?php endif; ?>
 <?php if ($_seo_kw):   ?><meta name="keywords"    content="<?= htmlspecialchars($_seo_kw) ?>"><?php endif; ?>
 <?php if ($_seo_author):?><meta name="author"     content="<?= htmlspecialchars($_seo_author) ?>"><?php endif; ?>
-<meta name="robots" content="<?= htmlspecialchars($_seo_robots) ?>">
+<meta name="robots" content="<?= htmlspecialchars(!empty($user['id']) ? 'noindex,follow' : $_seo_robots) ?>">
+<meta name="googlebot" content="<?= htmlspecialchars(!empty($user['id']) ? 'noindex,follow' : $_seo_robots . ',max-image-preview:large,max-snippet:-1') ?>">
 <link rel="canonical" href="<?= htmlspecialchars($current_url) ?>">
 <meta property="og:locale" content="id_ID">
 <meta property="og:site_name" content="<?= htmlspecialchars($_site_name) ?>">
@@ -66,11 +68,7 @@ $final_og_desc = $_seo_og_desc ?: $_seo_desc;
 <meta name="twitter:image" content="<?= htmlspecialchars($absolute_og) ?>">
 <meta name="twitter:image:alt" content="<?= htmlspecialchars($_site_name) ?>">
 <?php endif; ?>
-<?php if ($fav_url): ?>
-<link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($fav_url) ?>?v=<?= @filemtime(dirname(__DIR__) . '/' . ltrim($_favicon, '/')) ?: time() ?>">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=<?= @filemtime(dirname(__DIR__) . '/assets/apple-touch-icon.png') ?: time() ?>">
-<link rel="shortcut icon" href="/assets/favicon.ico">
-<?php endif; ?>
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
 <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets -->
 <script type="application/ld+json">
 {
@@ -94,7 +92,7 @@ $final_og_desc = $_seo_og_desc ?: $_seo_desc;
       "url": "<?= htmlspecialchars(base_url()) ?>",
       "logo": {
         "@type": "ImageObject",
-        "url": "<?= htmlspecialchars(base_url('assets/logo.png')) ?>",
+        "url": "<?= htmlspecialchars(preg_match('~^https?://~', $_site_logo) ? $_site_logo : base_url(ltrim(preg_replace('~\?.*$~', '', $_site_logo), '/'))) ?>",
         "width": 512,
         "height": 512
       }

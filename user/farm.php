@@ -35,7 +35,7 @@ $asset_v    = (string)(@filemtime(dirname(__DIR__) . '/assets/js/farm_engine.js'
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Sawah Panen Cuan — <?= htmlspecialchars($_site_name) ?></title>
-<link rel="icon" type="image/png" href="<?= htmlspecialchars($_fav_url) ?>">
+<?php require dirname(__DIR__) . '/partials/head_icons.php'; ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">

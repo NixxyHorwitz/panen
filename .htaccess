@@ -13,6 +13,11 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
+# ── SEO: robots, sitemap & manifest dinamis (domain dari base_url) ──
+RewriteRule ^robots\.txt$       seo.php?f=robots   [L]
+RewriteRule ^sitemap\.xml$      seo.php?f=sitemap  [L]
+RewriteRule ^site\.webmanifest$ seo.php?f=manifest [L]
+
 # ── Auth routes ────────────────────────────
 RewriteRule ^login/?$    auth/login.php    [L,QSA]
 RewriteRule ^register/?$ auth/register.php [L,QSA]
