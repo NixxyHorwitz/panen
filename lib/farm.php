@@ -255,7 +255,7 @@ function farm_log(PDO $pdo, int $uid, string $action, ?int $plot, ?int $ref, int
 function farm_charge_dep(PDO $pdo, array $u, int $uid, float $amount): void {
     if ($amount <= 0) return;
     if ((float)$u['balance_dep'] < $amount) {
-        throw new FarmUserError('Saldo Beli tidak cukup (butuh ' . format_rp($amount) . '). Top up dulu ya!', 'no_balance');
+        throw new FarmUserError('Saldo Modal tidak cukup (butuh ' . format_rp($amount) . '). Top up dulu ya!', 'no_balance');
     }
     $pdo->prepare("UPDATE users SET balance_dep = balance_dep - ? WHERE id = ?")->execute([$amount, $uid]);
 }

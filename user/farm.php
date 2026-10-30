@@ -419,8 +419,8 @@ img { -webkit-user-drag: none; }
     </div>
   </div>
   <div class="wallets">
-    <div class="wallet dep" id="wal-dep"><span class="wal-ic" data-icon="coins"></span><div class="wal-tx"><small>Saldo Beli</small><b id="bal-dep">Rp 0</b></div><a class="wal-add" href="/deposit" aria-label="Top up Saldo Beli"><i class="ph-bold ph-plus"></i></a></div>
-    <div class="wallet wd" id="wal-wd"><span class="wal-ic" data-icon="basket"></span><div class="wal-tx"><small>Saldo Tarik</small><b id="bal-wd">Rp 0</b></div></div>
+    <div class="wallet dep" id="wal-dep"><span class="wal-ic" data-icon="coins"></span><div class="wal-tx"><small>Saldo Modal</small><b id="bal-dep">Rp 0</b></div><a class="wal-add" href="/deposit" aria-label="Top up Saldo Modal"><i class="ph-bold ph-plus"></i></a></div>
+    <div class="wallet wd" id="wal-wd"><span class="wal-ic" data-icon="basket"></span><div class="wal-tx"><small>Keuntungan</small><b id="bal-wd">Rp 0</b></div></div>
   </div>
 </header>
 
@@ -450,7 +450,7 @@ img { -webkit-user-drag: none; }
   <div class="sheet-head">
     <span class="hic" data-icon="shop"></span>
     <h3 class="ribbon">Toko Tani</h3>
-    <p>Bayar pakai Saldo Beli</p>
+    <p>Bayar pakai Saldo Modal</p>
     <button class="close" type="button" data-close aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
   <div class="sheet-body" id="shop-body"></div>
@@ -472,7 +472,7 @@ img { -webkit-user-drag: none; }
   <div class="sheet-head">
     <span class="hic" data-icon="coins"></span>
     <h3 class="ribbon">Pasar Pengepul</h3>
-    <p>Hasil panen jadi Saldo Tarik</p>
+    <p>Hasil panen jadi Keuntungan</p>
     <button class="close" type="button" data-close aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
   <div class="sheet-body" id="market-body"></div>
@@ -673,7 +673,7 @@ img { -webkit-user-drag: none; }
         <div class="act">${lock ? `<span class="lock-badge">${img('lock', 'ph-lock')}Lv ${c.min_level}</span>`
           : `<button class="nb-btn green" type="button" data-plant="${c.id}" ${target ? '' : 'disabled'}>Tanam</button>`}</div>
       </div>`;
-    }).join('') + `<p class="note">Bibit di kantong dipakai lebih dulu. Bila kosong, 1 bibit otomatis dibeli dengan Saldo Beli. Untung = hasil panen × harga pasar − harga bibit.</p>`;
+    }).join('') + `<p class="note">Bibit di kantong dipakai lebih dulu. Bila kosong, 1 bibit otomatis dibeli dengan Saldo Modal. Untung = hasil panen × harga pasar − harga bibit.</p>`;
     $('seeds-body').querySelectorAll('[data-plant]').forEach((b) => b.addEventListener('click', () => plant(target, +b.dataset.plant)));
   }
 
@@ -732,7 +732,7 @@ img { -webkit-user-drag: none; }
       : '<div class="empty-note">Belum ada hasil panen untuk dijual.</div>') +
       `<div class="total"><span class="ic sm">${img('coins', 'ph-coins')}</span><span>Total diterima</span><b>${fmtRp(total)}</b></div>
        <button class="nb-btn yellow block" type="button" id="sell-all" ${rows.length ? '' : 'disabled'}>JUAL SEMUA HASIL PANEN</button>
-       <p class="note">Uang hasil penjualan langsung masuk ke Saldo Tarik dan bisa ditarik.</p>`;
+       <p class="note">Uang hasil penjualan langsung masuk ke Keuntungan dan bisa ditarik.</p>`;
     $('sell-all').addEventListener('click', sellAll);
   }
 
@@ -742,10 +742,10 @@ img { -webkit-user-drag: none; }
     $('unlock-sub').textContent = 'Petak #' + plotCardIdx;
     $('unlock-body').innerHTML = `
       <div class="big-cost"><span class="ic">${img('lock', 'ph-lock-key')}</span><div><small>Biaya buka lahan</small><b>${fmtRp(cost)}</b></div></div>
-      <div class="row"><span class="ic sm">${img('coins', 'ph-coins')}</span><div class="grow">Saldo Beli kamu</div><b>${fmtRp(S.balance_dep)}</b></div>
+      <div class="row"><span class="ic sm">${img('coins', 'ph-coins')}</span><div class="grow">Saldo Modal kamu</div><b>${fmtRp(S.balance_dep)}</b></div>
       <p class="note">Lahan baru dibersihkan dari rumput liar &amp; batu, siap ditanami. Harga petak berikutnya naik bertahap.</p>
       ${enough ? `<button class="nb-btn green block" type="button" id="do-unlock">Buka Petak</button>`
-        : `<a class="nb-btn yellow block" href="/deposit" style="text-decoration:none">Deposit Saldo Beli</a>`}`;
+        : `<a class="nb-btn yellow block" href="/deposit" style="text-decoration:none">Deposit Saldo Modal</a>`}`;
     if (enough) $('do-unlock').addEventListener('click', () => unlock(plotCardIdx));
   }
 
@@ -772,7 +772,7 @@ img { -webkit-user-drag: none; }
           <div class="info"><b>${esc(speed ? speed.name : 'Pupuk Kilat')}</b><span class="note">Siram pupuk ajaib, tanaman langsung siap panen.</span></div>
           <div class="act"><button class="nb-btn sky" type="button" id="do-speed" ${speed ? '' : 'disabled'}>${stockS > 0 ? 'Pakai' : (speed ? U.fmtShort(speed.price) : '-')}</button></div></div>` : ''}
       ${ready && p.pest ? `<button class="nb-btn yellow block" type="button" id="do-harvest">Panen Saja (hasil 50%)</button>` : ''}
-      <p class="note">${stockS > 0 || stockC > 0 ? 'Memakai stok dari Lumbung lebih dulu.' : 'Stok kosong: item dibeli otomatis dengan Saldo Beli.'}</p>`;
+      <p class="note">${stockS > 0 || stockC > 0 ? 'Memakai stok dari Lumbung lebih dulu.' : 'Stok kosong: item dibeli otomatis dengan Saldo Modal.'}</p>`;
     $('do-speed')?.addEventListener('click', () => speedUp(p.plotIndex));
     $('do-cure')?.addEventListener('click', () => cureIt(p.plotIndex));
     $('do-harvest')?.addEventListener('click', () => { closeLayer(); harvest(p.plotIndex); });
@@ -869,7 +869,7 @@ img { -webkit-user-drag: none; }
       if (last) { setState(res.state); audio.soundHarvest(); engine.celebrate(); }
     });
     document.querySelectorAll('.fly-icon').forEach((el) => el.classList.add('coin'));
-    toast(res.sold_count + ' hasil panen terjual · +' + fmtRp(res.credited) + ' Saldo Tarik', 'gold', 'ph-coins');
+    toast(res.sold_count + ' hasil panen terjual · +' + fmtRp(res.credited) + ' Keuntungan', 'gold', 'ph-coins');
   }
 
   async function buy(kind, id, n, btn) {
