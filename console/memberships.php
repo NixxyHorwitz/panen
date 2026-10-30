@@ -91,6 +91,16 @@ if ($edit_id) {
     foreach ($plans as $p) { if ((int)$p['id'] === $edit_id) { $edit_plan = $p; break; } }
 }
 
+$avg_reward = (float)($pdo->query("SELECT AVG(reward_amount) FROM videos WHERE is_active=1")->fetchColumn() ?: 8250);
+
+function render_plan_icon(string $icon): string {
+    $icon = trim($icon);
+    if (str_starts_with($icon, 'ph-')) {
+        return '<i class="ph-bold ' . htmlspecialchars($icon) . '" style="font-size:18px"></i>';
+    }
+    return html_entity_decode($icon ?: '⭐', ENT_HTML5, 'UTF-8');
+}
+
 $total_plans   = count($plans);
 $active_plans  = count(array_filter($plans, fn($p) => $p['is_active']));
 $total_members = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE membership_id != 1 AND membership_expires_at > NOW()")->fetchColumn();
@@ -263,23 +273,26 @@ require __DIR__ . '/partials/header.php';
 <div class="ms-field-row col2">
   <div class="ms-field">
     <label>Nama Paket</label>
-    <input type="text" name="name" value="<?= htmlspecialchars((string)$v('name')) ?>" placeholder="Contoh: Gold" required>
+    <input type="text" name="name" value="<?= htmlspecialchars((string)$v('name')) ?>" placeholder="Contoh: Juragan Sawah" required>
   </div>
   <div class="ms-field">
-    <label>Icon (Emoji)</label>
-    <input type="text" name="icon" value="<?= htmlspecialchars((string)$v('icon','⭐')) ?>" required>
+    <label>Icon (Phosphor Icon Class atau Emoji)</label>
+    <input type="text" name="icon" value="<?= htmlspecialchars((string)$v('icon','⭐')) ?>" placeholder="ph-plant, ph-leaf, ph-basket, ph-crown, ph-sketch-logo atau emoji 🌱" required>
+    <small>Gunakan class Phosphor: <code>ph-plant</code>, <code>ph-leaf</code>, <code>ph-basket</code>, <code>ph-crown</code>, <code>ph-sketch-logo</code> atau emoji (🌱, 🌾, 🧺, 👑, 💎)</small>
   </div>
 </div>
 
-<div class="ms-section-label">💰 Harga</div>
+<div class="ms-section-label">💰 Harga (Bait & Anchoring Psikologis)</div>
 <div class="ms-field-row col2">
   <div class="ms-field">
     <label>Harga Jual (Rp)</label>
     <input type="number" name="price" value="<?= (float)$v('price',0) ?>" min="0" step="1">
+    <small>Gunakan charm pricing (misal: 49000, 189000, 249000) untuk memicu pembelian impulsif.</small>
   </div>
   <div class="ms-field">
     <label>Harga Coret/Asli (Rp)</label>
     <input type="number" name="original_price" value="<?= (float)$v('original_price',0) ?>" min="0" step="1">
+    <small>Harga jangkar tinggi (anchoring) agar badge diskon hemat (60%-75%) muncul mencolok bagi user.</small>
   </div>
 </div>
 
@@ -465,7 +478,7 @@ require __DIR__ . '/partials/header.php';
     <?= csrf_field() ?><input type="hidden" name="action" value="save_level_perf">
     <?php foreach ($plans as $m): ?>
     <div class="ms-perf-row">
-      <div class="ms-perf-name"><?= html_entity_decode($m['icon'], ENT_HTML5, 'UTF-8') ?> <?= htmlspecialchars($m['name']) ?></div>
+      <div class="ms-perf-name"><?= render_plan_icon((string)$m['icon']) ?> <?= htmlspecialchars($m['name']) ?></div>
       <div class="ms-field-row col3">
         <div class="ms-field">
           <label>AVG Kinerja (%)</label>
@@ -515,28 +528,38 @@ require __DIR__ . '/partials/header.php';
       </thead>
       <tbody>
         <?php foreach ($plans as $p):
-          $ucount = (int)$pdo->prepare("SELECT COUNT(*) FROM users WHERE membership_id=? AND membership_expires_at>NOW()")->execute([$p['id']]) ?: 0;
           $cnt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE membership_id=? AND membership_expires_at>NOW()");
-          $cnt->execute([$p['id']]); $ucount = (int)$cnt->fetchColumn();
+          $cnt->execute([$p['id']]);
+          $ucount = (int)$cnt->fetchColumn();
           $is_editing = ($edit_id === (int)$p['id']);
+          $price = (float)$p['price'];
+          $orig_price = (float)$p['original_price'];
+          $discount_pct = ($orig_price > $price && $orig_price > 0) ? round((1 - $price / $orig_price) * 100) : 0;
+          $daily_est = round(($p['watch_limit'] * $avg_reward) / 1000) * 1000;
+          $break_even = ($price > 0 && $daily_est > 0) ? max(1, (int)ceil($price / ($p['watch_limit'] * $avg_reward))) : 0;
         ?>
         <tr style="<?= $is_editing ? 'background:rgba(78,155,255,.06)' : '' ?>">
           <td>
             <div class="ms-plan-badge">
-              <div class="ms-plan-icon"><?= html_entity_decode($p['icon']?:'⭐', ENT_HTML5, 'UTF-8') ?></div>
+              <div class="ms-plan-icon"><?= render_plan_icon((string)($p['icon'] ?? '⭐')) ?></div>
               <div>
                 <div class="ms-plan-name"><?= htmlspecialchars($p['name']) ?></div>
-                <div class="ms-plan-sort">Urutan: <?= $p['sort_order'] ?></div>
+                <div class="ms-plan-sort">ID: <?= $p['id'] ?> · Urutan: <?= $p['sort_order'] ?></div>
               </div>
             </div>
           </td>
           <td>
-            <?php if ((float)$p['price'] === 0.0): ?>
+            <?php if ($price === 0.0): ?>
               <span class="ms-badge ms-badge--on">GRATIS</span>
             <?php else: ?>
-              <div class="ms-price-main"><?= format_rp((float)$p['price']) ?></div>
-              <?php if ((float)$p['original_price'] > 0): ?>
-              <div class="ms-price-orig"><?= format_rp((float)$p['original_price']) ?></div>
+              <div class="ms-price-main"><?= format_rp($price) ?></div>
+              <?php if ($orig_price > 0): ?>
+              <div class="ms-price-orig" style="display:flex;align-items:center;gap:4px">
+                <?= format_rp($orig_price) ?>
+                <?php if ($discount_pct > 0): ?>
+                <span class="ms-badge" style="background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);font-size:9px;padding:1px 6px">-<?= $discount_pct ?>%</span>
+                <?php endif; ?>
+              </div>
               <?php endif; ?>
               <?php if ($p['is_genjutsu']): ?>
               <div class="ms-price-genjutsu">👁️ Price: <?= format_rp((float)$p['price_genjutsu']) ?></div>
@@ -551,7 +574,13 @@ require __DIR__ . '/partials/header.php';
             <div style="color:#4CAF82;font-weight:700">Min: <?= format_rp((float)$p['min_wd']) ?></div>
             <div style="color:#aaa;font-weight:600">Max: <?= (float)$p['max_wd']>0 ? format_rp((float)$p['max_wd']) : '<em style="color:#555">Bebas</em>' ?></div>
           </td>
-          <td style="font-weight:700"><?= $p['watch_limit'] ?>×/hari</td>
+          <td style="font-size:12px">
+            <div style="font-weight:800;color:#e0e0f0"><?= $p['watch_limit'] ?>× / hari</div>
+            <div style="font-size:11px;color:#4CAF82;font-weight:700">±<?= format_rp($daily_est) ?>/hr</div>
+            <?php if ($break_even > 0): ?>
+            <div style="font-size:10px;color:#888">Balik modal: ~<?= $break_even ?> hr</div>
+            <?php endif; ?>
+          </td>
           <td>
             <div style="display:flex;flex-wrap:wrap;gap:4px">
               <span class="ms-badge <?= $p['is_active']?'ms-badge--on':'ms-badge--off' ?>"><?= $p['is_active']?'Aktif':'Nonaktif' ?></span>
@@ -609,7 +638,7 @@ require __DIR__ . '/partials/header.php';
     <div class="col-md-6">
       <div class="c-card">
         <div class="c-card-header" style="display:flex;align-items:center;justify-content:space-between">
-          <span class="c-card-title"><?= html_entity_decode($p['icon'], ENT_HTML5, 'UTF-8') ?> <?= htmlspecialchars($p['name']) ?></span>
+          <span class="c-card-title"><?= render_plan_icon((string)$p['icon']) ?> <?= htmlspecialchars($p['name']) ?></span>
           <span class="ms-user-count">👥 <?= $planUserCount ?> aktif</span>
         </div>
         <div class="c-card-body" style="padding:12px 16px">

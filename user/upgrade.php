@@ -342,14 +342,15 @@ end_post:
 
 // Migrasi nama pangkat lama (tema Amber, lalu tema nelayan) -> tema sawah PanenCuan (hanya jika masih bernama lama)
 $rankRename = [
-  'Raw Amber'         => ['Petani Pemula', 'ph-plant',  'Pangkat awal. Kuota nonton harian dasar.'],
-  'Golden Amber'      => ['Juragan Sawah', 'ph-leaf',   'Kuota nonton lebih banyak & batas tarik lebih tinggi.'],
-  'Royal Amber'       => ['Mandor Panen',  'ph-basket', 'Pilihan favorit: kuota besar & tarik lebih cepat.'],
-  'Imperial Amber'    => ['Tuan Tanah',    'ph-crown',  'Pangkat tertinggi: kuota maksimal & pencairan prioritas.'],
-  'Nelayan Pemula'    => ['Petani Pemula', 'ph-plant',  'Pangkat awal. Kuota nonton harian dasar.'],
-  'Juragan Perahu'    => ['Juragan Sawah', 'ph-leaf',   'Kuota nonton lebih banyak & batas tarik lebih tinggi.'],
-  'Kapten Kapal'      => ['Mandor Panen',  'ph-basket', 'Pilihan favorit: kuota besar & tarik lebih cepat.'],
-  'Laksamana Samudra' => ['Tuan Tanah',    'ph-crown',  'Pangkat tertinggi: kuota maksimal & pencairan prioritas.'],
+  'Raw Amber'         => ['Petani Pemula', 'ph-plant',  'Pangkat awal gratis. Kuota tontonan harian dasar untuk pemula.'],
+  'Golden Amber'      => ['Juragan Sawah', 'ph-leaf',   'Pangkat favorit pemula. Cuan harian berlipat, balik modal secepat kilat!'],
+  'Royal Amber'       => ['Mandor Panen',  'ph-basket', 'Kuota panen besar harian & batas penarikan hingga 1 juta/hari.'],
+  'Imperial Amber'    => ['Tuan Tanah',    'ph-crown',  'Pilihan paling laris! Durasi 2 bulan penuh, kuota masif & bebas ubah rekening.'],
+  'Nelayan Pemula'    => ['Petani Pemula', 'ph-plant',  'Pangkat awal gratis. Kuota tontonan harian dasar untuk pemula.'],
+  'Juragan Perahu'    => ['Juragan Sawah', 'ph-leaf',   'Pangkat favorit pemula. Cuan harian berlipat, balik modal secepat kilat!'],
+  'Juragan Desa'      => ['Juragan Sawah', 'ph-leaf',   'Pangkat favorit pemula. Cuan harian berlipat, balik modal secepat kilat!'],
+  'Kapten Kapal'      => ['Mandor Panen',  'ph-basket', 'Kuota panen besar harian & batas penarikan hingga 1 juta/hari.'],
+  'Laksamana Samudra' => ['Tuan Tanah',    'ph-crown',  'Pilihan paling laris! Durasi 2 bulan penuh, kuota masif & bebas ubah rekening.'],
 ];
 $renStmt = $pdo->prepare("UPDATE memberships SET name = ?, icon = ?, description = ? WHERE name = ?");
 foreach ($rankRename as $old => [$new, $icon, $desc]) $renStmt->execute([$new, $icon, $desc, $old]);
@@ -498,7 +499,7 @@ $paid = array_values(array_filter($memberships, fn($m) => (float)$m['price'] > 0
 usort($paid, fn($a, $b) => (float)$a['price'] <=> (float)$b['price']);
 $free_rank  = current(array_filter($memberships, fn($m) => (float)$m['price'] == 0)) ?: null;
 $cur_id     = $active_membership ? (int)$active_membership['id'] : 0;
-$hot_idx    = count($paid) >= 3 ? 1 : -1;
+$hot_idx    = count($paid) >= 4 ? 2 : (count($paid) >= 3 ? 1 : -1);
 // Pangkat terpilih awal: satu tingkat di atas pangkat aktif, atau yang populer
 $sel_idx = $hot_idx >= 0 ? $hot_idx : 0;
 foreach ($paid as $i => $m) { if ((int)$m['id'] === $cur_id) { $sel_idx = min($i + 1, count($paid) - 1); break; } }
