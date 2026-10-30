@@ -367,7 +367,7 @@ $activePage = 'upgrade';
 require dirname(__DIR__) . '/partials/header.php';
 ?>
 <style>
-/* ══ LEVEL UP — Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
+/* ══ LEVEL UP — Etalase Pangkat · Golden Hour game UI (komponen dasar: assets/css/pc-game.css) ══ */
 .pk-flash { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 16px; font-size: 12px; font-weight: 800; }
 .pk-flash.success { background: #dcfce7; color: #14532d; box-shadow: inset 0 0 0 2px #bbf7d0; }
 .pk-flash.error { background: #ffe4e6; color: #9f1239; box-shadow: inset 0 0 0 2px #fecdd3; }
@@ -383,44 +383,71 @@ require dirname(__DIR__) . '/partials/header.php';
 .pk-st .add { flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; text-decoration: none; color: #fff; font-size: 15px; background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 2px 0 #11622f; }
 .pk-refund { flex-shrink: 0; width: 28px; height: 28px; border: 0; border-radius: 9px; cursor: pointer; display: grid; place-items: center; color: #be123c; font-size: 15px; background: #ffe4e6; }
 
-/* Pemilih pangkat */
-.pk-tiers { grid-auto-columns: minmax(0, 1fr); }
-.pk-tier.g-tier { position: relative; flex-direction: column; gap: 1px; min-height: 52px; padding: 5px 2px; line-height: 1.05; }
-.pk-tier b { font-size: 12.5px; font-weight: 600; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
-.pk-tier small { font-family: 'Nunito', sans-serif; font-size: 10.5px; font-weight: 900; opacity: .85; }
-.pk-tier .hot { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 7px; border-radius: 999px; font-family: 'Nunito', sans-serif; font-size: 9px; font-weight: 900; color: #fff; background: linear-gradient(180deg, #fb7185, #e11d48); box-shadow: 0 2px 0 #9f1239; white-space: nowrap; text-shadow: none; }
-.pk-tier .cur { position: absolute; top: 3px; right: 4px; font-size: 13px; color: #16a34a; }
-.pk-tier.on .cur { color: #ffd54f; }
-.pk-tiers .pk-tier.on { color: #fff; background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
+/* ── Etalase geser ── */
+.pk-shelf { --cw: min(290px, 78vw); display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -12px; padding: 16px calc(50% + 12px - var(--cw) / 2) 18px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.pk-shelf::-webkit-scrollbar { display: none; }
+.pk-item { --c1: #22c55e; --c2: #15803d; --lip: #11622f; --glow: rgba(22, 163, 74, .28); --tx: #fff;
+  position: relative; flex: 0 0 var(--cw); scroll-snap-align: center; display: flex; flex-direction: column; border-radius: 26px; background: #fff;
+  box-shadow: 0 0 0 2px #f6e2b0, 0 6px 0 #ecd59c, 0 16px 26px rgba(120, 70, 10, .12);
+  transform: scale(.93); opacity: .72; transition: transform .45s var(--pc-ease), opacity .3s, box-shadow .3s; }
+.pk-item.on { transform: none; opacity: 1; }
+.pk-item.t1 { --c1: #ffd54f; --c2: #f6b70a; --lip: #b07800; --glow: rgba(246, 183, 10, .4); --tx: #4a3000; }
+.pk-item.t2 { --c1: #a78bfa; --c2: #6d28d9; --lip: #4c1d95; --glow: rgba(124, 58, 237, .3); }
+.pk-item.hot { box-shadow: 0 0 0 3px #f6b70a, 0 6px 0 #b07800, 0 18px 34px rgba(246, 183, 10, .35); }
+.pk-item.hot.on::after { content: ''; position: absolute; inset: -3px; z-index: -1; border-radius: 28px; background: conic-gradient(from var(--a, 0deg), #ffd54f, #fff3c4, #f6b70a, #ffd54f); filter: blur(8px); opacity: .7; animation: pkSpin 4s linear infinite; }
+@property --a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes pkSpin { to { --a: 360deg; } }
+.pk-badge { position: absolute; z-index: 3; top: -11px; left: 50%; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px; white-space: nowrap; font-family: var(--pc-font); font-size: 12.5px; font-weight: 700; letter-spacing: .5px; color: #fff; background: linear-gradient(180deg, #fb7185, #e11d48); box-shadow: 0 3px 0 #9f1239; }
+.pk-badge.cur { background: linear-gradient(180deg, #22c55e, #15803d); box-shadow: 0 3px 0 #11622f; }
 
-/* Kartu pangkat */
-.pk-card { display: none; overflow: hidden; border-radius: 24px; background: #fff; box-shadow: 0 0 0 2px #f6e2b0, 0 5px 0 #ecd59c, 0 14px 24px rgba(120, 70, 10, .1); }
-.pk-card.on { display: block; animation: pkIn .4s var(--pc-out); }
-@keyframes pkIn { from { opacity: 0; transform: translateY(10px) scale(.98); } }
-.pk-top { position: relative; overflow: hidden; display: flex; align-items: center; gap: 11px; padding: 13px 14px; }
-.pk-card.t0 .pk-top { color: #fff; background: radial-gradient(circle at 92% 120%, rgba(255, 230, 120, .5) 0, transparent 45%), linear-gradient(135deg, #15803d, #22c55e); }
-.pk-card.t1 .pk-top { color: #4a3000; background: radial-gradient(circle at 92% 120%, rgba(255, 255, 255, .55) 0, transparent 45%), linear-gradient(135deg, #f6b70a, #ffd54f); }
-.pk-card.t2 .pk-top { color: #fff; background: radial-gradient(circle at 92% 120%, rgba(255, 213, 79, .5) 0, transparent 45%), linear-gradient(135deg, #6d28d9, #a78bfa); }
-.pk-emb { position: relative; flex-shrink: 0; width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; background: rgba(255, 255, 255, .3); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .7); }
-.pk-emb img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .25)); animation: gBob 3s ease-in-out infinite; }
-.pk-name { flex: 1; min-width: 0; }
-.pk-name b { display: block; font-family: var(--pc-font); font-size: 19px; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pk-name span { display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 900; background: rgba(255, 255, 255, .3); }
-.pk-price { flex-shrink: 0; text-align: right; }
-.pk-price s { display: block; font-size: 11px; font-weight: 800; opacity: .8; }
-.pk-price b { display: block; font-family: var(--pc-font); font-size: 20px; font-weight: 700; line-height: 1.1; }
-.pk-price em { display: inline-block; margin-top: 2px; padding: 0 7px; border-radius: 999px; font-style: normal; font-size: 10px; font-weight: 900; color: #fff; background: #e11d48; }
-.pk-body { padding: 11px 12px 12px; }
-.pk-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.pk-num { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 7px 8px; border-radius: 14px; background: #fffaf0; box-shadow: inset 0 0 0 1.5px #f1dfb4; }
-.pk-num img { width: 28px; height: 28px; flex-shrink: 0; object-fit: contain; }
-.pk-num > span { min-width: 0; }
-.pk-num b { display: block; font-size: 12.5px; font-weight: 900; color: var(--pc-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pk-num small { display: block; font-size: 10px; font-weight: 800; color: var(--pc-muted); }
-.pk-perks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-.pk-perks .g-chip { background: #dcfce7; color: #14532d; }
-.pk-cta { margin-top: 10px; }
-.pk-note { margin-top: 6px; text-align: center; font-size: 10.5px; font-weight: 700; color: var(--pc-muted); }
+.pk-head { position: relative; overflow: hidden; padding: 14px 14px 11px; border-radius: 26px 26px 18px 18px; text-align: center; color: var(--tx);
+  background: radial-gradient(120% 70% at 50% 120%, rgba(255, 255, 255, .45) 0 40%, transparent 41%), linear-gradient(160deg, var(--c1), var(--c2)); }
+.pk-head::before { content: ''; position: absolute; inset: 0; background: repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 255, 255, .14) 0 10deg, transparent 10deg 20deg); animation: pkRays 22s linear infinite; }
+@keyframes pkRays { to { transform: rotate(360deg); } }
+.pk-head > * { position: relative; }
+.pk-art { display: block; width: 66px; height: 66px; margin: 0 auto 2px; object-fit: contain; filter: drop-shadow(0 8px 8px rgba(0, 0, 0, .25)); }
+.pk-item.on .pk-art { animation: gBob 3s ease-in-out infinite; }
+.pk-head b { display: block; font-family: var(--pc-font); font-size: 21px; font-weight: 700; line-height: 1.1; text-shadow: 0 1px 0 rgba(0, 0, 0, .15); }
+.pk-head span { display: inline-flex; align-items: center; gap: 3px; margin-top: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 900; background: rgba(255, 255, 255, .3); }
+
+.pk-price { padding: 12px 14px 4px; text-align: center; }
+.pk-price .was { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 18px; }
+.pk-price s { font-size: 12px; font-weight: 800; color: var(--pc-muted); }
+.pk-price em { padding: 0 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 900; color: #fff; background: #e11d48; }
+.pk-price strong { display: block; font-family: var(--pc-font); font-size: 30px; font-weight: 700; line-height: 1.1; color: #4a2b00; letter-spacing: -.5px; }
+.pk-price small { font-size: 11.5px; font-weight: 800; color: var(--pc-muted); }
+.pk-earn { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 14px 0; padding: 7px 10px; border-radius: 14px; background: linear-gradient(180deg, #fff3c4, #ffe9a0); box-shadow: inset 0 0 0 1.5px rgba(246, 183, 10, .5); font-size: 12px; font-weight: 800; color: #6b4300; }
+.pk-earn img { width: 24px; height: 24px; object-fit: contain; }
+.pk-earn b { font-family: var(--pc-font); font-size: 15px; font-weight: 700; color: #15803d; }
+
+.pk-list { list-style: none; margin: 10px 14px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pk-list li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--pc-muted); }
+.pk-list li img { width: 24px; height: 24px; flex-shrink: 0; object-fit: contain; }
+.pk-list li b { margin-left: auto; font-weight: 900; color: var(--pc-ink); white-space: nowrap; }
+.pk-list li.perk { color: #15803d; font-weight: 800; }
+.pk-list li.perk i { width: 24px; flex-shrink: 0; font-size: 17px; text-align: center; }
+.pk-foot { margin-top: auto; padding: 12px 14px 14px; }
+.pk-foot .g-btn { min-height: 46px; }
+
+.g-sec .g-ribbon { white-space: nowrap; }
+
+/* Titik indikator */
+.pk-dots { display: flex; justify-content: center; gap: 6px; margin-top: -8px; }
+.pk-dots button { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 999px; cursor: pointer; background: #ecd59c; transition: width .3s var(--pc-ease), background .3s; }
+.pk-dots button.on { width: 24px; background: linear-gradient(90deg, #22c55e, #15803d); }
+
+/* Tabel banding */
+.pk-cmp { overflow: hidden; padding: 0; }
+.pk-cmp table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.pk-cmp th, .pk-cmp td { padding: 8px 4px; text-align: center; border-bottom: 1.5px dashed #f1dfb4; }
+.pk-cmp tr:last-child td { border-bottom: 0; }
+.pk-cmp th { font-family: var(--pc-font); font-size: 13px; font-weight: 600; color: #4a2b00; background: #fff7e0; line-height: 1.1; }
+.pk-cmp th:first-child, .pk-cmp td:first-child { width: 31%; padding-left: 12px; text-align: left; }
+.pk-cmp td:first-child { font-weight: 800; color: var(--pc-muted); }
+.pk-cmp td { font-weight: 900; color: var(--pc-ink); }
+.pk-cmp .col-on { background: rgba(34, 197, 94, .1); }
+.pk-cmp th.col-on { color: #15803d; }
+.pk-cmp td.best { color: #15803d; }
 
 .pk-trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .pk-trust span { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border-radius: 16px; text-align: center; font-size: 11px; font-weight: 900; color: var(--pc-ink); background: linear-gradient(180deg, #fffaf0, #fff); box-shadow: 0 0 0 2px #f6e2b0, 0 3px 0 #ecd59c; }
@@ -434,7 +461,7 @@ require dirname(__DIR__) . '/partials/header.php';
 .pk-guide[open] summary .chev { transform: rotate(180deg); }
 .pk-steps { list-style: none; margin: 0; padding: 0 12px 11px; display: flex; flex-direction: column; gap: 7px; }
 .pk-steps li { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 700; color: var(--pc-muted); }
-.pk-steps li > span { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-family: var(--pc-font); font-size: 13px; font-weight: 700; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
+.pk-steps li > span:first-child { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; font-family: var(--pc-font); font-size: 13px; font-weight: 700; color: #4a3000; background: linear-gradient(180deg, #ffd54f, #f6b70a); box-shadow: 0 2px 0 #b07800; }
 .pk-steps b { color: var(--pc-ink); }
 
 /* Modal */
@@ -461,6 +488,9 @@ require dirname(__DIR__) . '/partials/header.php';
 .cg-btn-row { display: flex; gap: 8px; margin-top: 12px; }
 .cg-btn-row .g-btn { flex: 1; }
 .cg-sub { margin-top: 4px; text-align: center; font-size: 12px; font-weight: 700; color: var(--pc-muted); line-height: 1.45; }
+
+@media (max-width: 350px) { .pk-shelf { --cw: 84vw; } .pk-hint { display: none; } .pk-price strong { font-size: 26px; } .pk-cmp table { font-size: 11px; } }
+@media (prefers-reduced-motion: reduce) { .pk-head::before, .pk-item.hot.on::after, .pk-item.on .pk-art { animation: none; } }
 </style>
 
 <?php
@@ -475,6 +505,20 @@ foreach ($paid as $i => $m) { if ((int)$m['id'] === $cur_id) { $sel_idx = min($i
 $short = static fn(float $n): string => $n >= 1000000 ? rtrim(rtrim(number_format($n / 1000000, 1, ',', '.'), '0'), ',') . 'jt' : ($n >= 1000 ? number_format($n / 1000, 0, ',', '.') . 'rb' : number_format($n, 0, ',', '.'));
 $ic = static fn(string $n): string => '/assets/img/icons3d/' . $n . '.png';
 $tier_art = ['padi', 'basket', 'barn', 'chest_open'];
+// Data per pangkat (dipakai kartu & tabel banding)
+$rows = [];
+foreach ($paid as $i => $m) {
+    $ap = get_active_price($m, $user);
+    $h  = get_harvest_calc($m, $avg_video_reward);
+    $orig = (float)$m['original_price'];
+    $rows[] = [
+        'm' => $m, 'price' => $ap, 'h' => $h, 'orig' => $orig,
+        'off' => $orig > $ap && $orig > 0 ? (int)round((1 - $ap / $orig) * 100) : 0,
+        'daily' => $h ? round($h['daily_income'] / 1000) * 1000 : 0,
+        'is_cur' => (int)$m['id'] === $cur_id, 'can' => (float)$user['balance_dep'] >= $ap, 'top' => $i === count($paid) - 1,
+    ];
+}
+$best = static fn(string $k) => $rows ? max(array_map(fn($r) => (float)$r[$k], $rows)) : 0;
 ?>
 <div class="g-page">
 
@@ -511,73 +555,80 @@ $tier_art = ['padi', 'basket', 'barn', 'chest_open'];
     </div>
   </section>
 
-  <?php if (!$paid): ?>
-    <div class="g-panel g-empty"><img src="<?= $ic('upgrade') ?>" alt=""><b>Belum ada pangkat</b><p>Belum ada pangkat berbayar yang tersedia.</p></div>
-  <?php else: ?>
-
-  <div class="g-seg pk-tiers" role="tablist" data-rv style="--d:.05s">
-    <?php foreach ($paid as $i => $m): ?>
-      <button type="button" class="pk-tier g-tier <?= $i === $sel_idx ? 'on' : '' ?>" data-tier="<?= $i ?>" onclick="pickTier(<?= $i ?>)" role="tab">
-        <?php if ($i === $hot_idx): ?><span class="hot">FAVORIT</span><?php endif; ?>
-        <?php if ((int)$m['id'] === $cur_id): ?><i class="ph-fill ph-check-circle cur"></i><?php endif; ?>
-        <b><?= htmlspecialchars($m['name']) ?></b>
-        <small><?= $short(get_active_price($m, $user)) ?></small>
-      </button>
-    <?php endforeach; ?>
-  </div>
-
   <form method="POST" id="upgrade-form">
     <?= csrf_field() ?>
     <input type="hidden" name="membership_id" id="chosen-id" value="">
     <input type="hidden" name="voucher_code" id="applied-voucher-code" value="">
   </form>
 
-  <?php foreach ($paid as $i => $m):
-    $active_price = get_active_price($m, $user);
-    $can_afford   = (float)$user['balance_dep'] >= $active_price;
-    $h            = get_harvest_calc($m, $avg_video_reward);
-    $orig         = (float)$m['original_price'];
-    $off          = $orig > $active_price && $orig > 0 ? (int)round((1 - $active_price / $orig) * 100) : 0;
-    $is_cur       = (int)$m['id'] === $cur_id;
-    $is_top       = $i === count($paid) - 1;
-  ?>
-    <div class="pk-card t<?= $i % 3 ?> <?= $i === $sel_idx ? 'on' : '' ?>" data-card="<?= $i ?>">
-      <div class="pk-top">
-        <div class="pk-emb"><img src="<?= $ic($tier_art[min($i, count($tier_art) - 1)]) ?>" alt=""></div>
-        <div class="pk-name">
+  <?php if (!$paid): ?>
+    <div class="g-panel g-empty"><img src="<?= $ic('upgrade') ?>" alt=""><b>Belum ada pangkat</b><p>Belum ada pangkat berbayar yang tersedia.</p></div>
+  <?php else: ?>
+
+  <div class="g-sec"><span class="g-ribbon gold"><img src="<?= $ic('shop') ?>" alt="">Etalase Pangkat</span><small class="pk-hint">geser untuk lihat</small></div>
+
+  <div class="pk-shelf" id="pk-shelf" data-sel="<?= $sel_idx ?>">
+    <?php foreach ($rows as $i => $r): $m = $r['m']; $h = $r['h']; ?>
+      <article class="pk-item t<?= $i % 3 ?> <?= $i === $hot_idx ? 'hot' : '' ?> <?= $i === $sel_idx ? 'on' : '' ?>" data-card="<?= $i ?>">
+        <?php if ($r['is_cur']): ?><span class="pk-badge cur">PANGKATMU</span>
+        <?php elseif ($i === $hot_idx): ?><span class="pk-badge">★ FAVORIT</span><?php endif; ?>
+
+        <div class="pk-head">
+          <img class="pk-art" src="<?= $ic($tier_art[min($i, count($tier_art) - 1)]) ?>" alt="">
           <b><?= htmlspecialchars($m['name']) ?></b>
-          <span><i class="ph-bold ph-hourglass"></i> <?= (int)$m['duration_days'] ?> hari</span>
+          <span><i class="ph-bold ph-hourglass"></i><?= (int)$m['duration_days'] ?> hari</span>
         </div>
+
         <div class="pk-price">
-          <?php if ($orig > $active_price): ?><s><?= format_rp($orig) ?></s><?php endif; ?>
-          <b><?= format_rp($active_price) ?></b>
-          <?php if ($off > 0): ?><em>-<?= $off ?>%</em><?php endif; ?>
+          <div class="was"><?php if ($r['orig'] > $r['price']): ?><s><?= format_rp($r['orig']) ?></s><?php endif; ?><?php if ($r['off'] > 0): ?><em>HEMAT <?= $r['off'] ?>%</em><?php endif; ?></div>
+          <strong><?= format_rp($r['price']) ?></strong>
+          <small>sekali bayar · <?= (int)$m['duration_days'] ?> hari</small>
         </div>
-      </div>
-      <div class="pk-body">
-        <div class="pk-nums">
-          <div class="pk-num"><img src="<?= $ic('watch') ?>" alt=""><span><b><?= (int)$m['watch_limit'] ?> video</b><small>Per hari</small></span></div>
-          <div class="pk-num"><img src="<?= $ic('coins') ?>" alt=""><span><b><?= $h ? '±' . format_rp(round($h['daily_income'] / 1000) * 1000) : '-' ?></b><small>Estimasi/hari</small></span></div>
-          <div class="pk-num"><img src="<?= $ic('piggy') ?>" alt=""><span><b><?= format_rp((float)$m['min_wd']) ?></b><small>Min withdraw</small></span></div>
-          <div class="pk-num"><img src="<?= $ic('moneybag') ?>" alt=""><span><b><?= (float)$m['max_wd'] > 0 ? format_rp((float)$m['max_wd']) : 'Tanpa batas' ?></b><small>Maks withdraw</small></span></div>
-        </div>
-        <?php if (!empty($m['allow_edit_bank']) || $is_top || ($h && $h['break_even_days'] > 0)): ?>
-        <div class="pk-perks">
-          <?php if ($h && $h['break_even_days'] > 0): ?><span class="g-chip"><i class="ph-bold ph-lightning"></i>Balik modal ±<?= (int)$h['break_even_days'] ?> hari</span><?php endif; ?>
-          <?php if (!empty($m['allow_edit_bank'])): ?><span class="g-chip"><i class="ph-bold ph-pencil-simple"></i>Bebas ganti rekening</span><?php endif; ?>
-          <?php if ($is_top): ?><span class="g-chip"><i class="ph-bold ph-crown"></i>Pencairan prioritas</span><?php endif; ?>
-        </div>
+
+        <?php if ($h): ?>
+        <div class="pk-earn"><img src="<?= $ic('coins') ?>" alt="">Estimasi <b>±<?= format_rp($r['daily']) ?></b>/hari</div>
         <?php endif; ?>
-        <button type="button" class="g-btn full pk-cta <?= $is_cur ? '' : ($can_afford ? 'gold shine' : 'soft') ?>"
-          onclick="<?= !$can_afford && !$is_cur ? "location.href='/deposit'" : 'openConfirm(' . (int)$m['id'] . ", '" . htmlspecialchars($m['name'], ENT_QUOTES) . "', " . $active_price . ', ' . (int)$m['duration_days'] . ')' ?>">
-          <?php if ($is_cur): ?><i class="ph-bold ph-arrows-clockwise"></i>Perpanjang pangkat
-          <?php elseif ($can_afford): ?><img src="<?= $ic('upgrade') ?>" alt="">Naik ke <?= htmlspecialchars($m['name']) ?>
-          <?php else: ?><img src="<?= $ic('piggy') ?>" alt="">Deposit · kurang <?= format_rp($active_price - (float)$user['balance_dep']) ?><?php endif; ?>
-        </button>
-        <?php if ($h): ?><div class="pk-note">Estimasi dari rata-rata <?= format_rp($avg_video_reward) ?>/video</div><?php endif; ?>
-      </div>
-    </div>
-  <?php endforeach; ?>
+
+        <ul class="pk-list">
+          <li><img src="<?= $ic('watch') ?>" alt="">Video per hari<b><?= (int)$m['watch_limit'] ?></b></li>
+          <li><img src="<?= $ic('piggy') ?>" alt="">Min withdraw<b><?= $short((float)$m['min_wd']) ?></b></li>
+          <li><img src="<?= $ic('moneybag') ?>" alt="">Maks withdraw<b><?= (float)$m['max_wd'] > 0 ? $short((float)$m['max_wd']) : 'Bebas' ?></b></li>
+          <?php if ($h && $h['break_even_days'] > 0): ?><li class="perk"><i class="ph-fill ph-lightning"></i>Balik modal ±<?= (int)$h['break_even_days'] ?> hari</li><?php endif; ?>
+          <?php if (!empty($m['allow_edit_bank'])): ?><li class="perk"><i class="ph-fill ph-check-circle"></i>Bebas ganti rekening</li><?php endif; ?>
+          <?php if ($r['top']): ?><li class="perk"><i class="ph-fill ph-crown"></i>Pencairan prioritas</li><?php endif; ?>
+        </ul>
+
+        <div class="pk-foot">
+          <button type="button" class="g-btn full pk-cta <?= $r['is_cur'] ? '' : ($r['can'] ? 'gold shine' : 'soft') ?>"
+            onclick="<?= !$r['can'] && !$r['is_cur'] ? "location.href='/deposit'" : 'openConfirm(' . (int)$m['id'] . ", '" . htmlspecialchars($m['name'], ENT_QUOTES) . "', " . $r['price'] . ', ' . (int)$m['duration_days'] . ')' ?>">
+            <?php if ($r['is_cur']): ?><i class="ph-bold ph-arrows-clockwise"></i>Perpanjang
+            <?php elseif ($r['can']): ?><img src="<?= $ic('upgrade') ?>" alt="">Pilih pangkat ini
+            <?php else: ?><img src="<?= $ic('piggy') ?>" alt="">Kurang <?= format_rp($r['price'] - (float)$user['balance_dep']) ?><?php endif; ?>
+          </button>
+        </div>
+      </article>
+    <?php endforeach; ?>
+  </div>
+
+  <div class="pk-dots" id="pk-dots" role="tablist">
+    <?php foreach ($rows as $i => $r): ?><button type="button" class="<?= $i === $sel_idx ? 'on' : '' ?>" onclick="pickTier(<?= $i ?>)" aria-label="<?= htmlspecialchars($r['m']['name']) ?>"></button><?php endforeach; ?>
+  </div>
+
+  <?php if (count($rows) > 1): ?>
+  <div class="g-sec"><span class="g-ribbon sky"><img src="<?= $ic('star') ?>" alt="">Bandingkan</span></div>
+  <div class="g-panel pk-cmp" data-rv>
+    <table>
+      <thead><tr><th></th><?php foreach ($rows as $i => $r): ?><th class="<?= $i === $sel_idx ? 'col-on' : '' ?>" data-col="<?= $i ?>"><?= htmlspecialchars($r['m']['name']) ?></th><?php endforeach; ?></tr></thead>
+      <tbody>
+        <tr><td>Harga</td><?php foreach ($rows as $i => $r): ?><td data-col="<?= $i ?>"><?= $short($r['price']) ?></td><?php endforeach; ?></tr>
+        <tr><td>Video/hari</td><?php foreach ($rows as $i => $r): ?><td data-col="<?= $i ?>"><?= (int)$r['m']['watch_limit'] ?></td><?php endforeach; ?></tr>
+        <tr><td>Cuan/hari</td><?php foreach ($rows as $i => $r): ?><td data-col="<?= $i ?>" class="<?= $r['daily'] > 0 && (float)$r['daily'] === $best('daily') ? 'best' : '' ?>"><?= $r['daily'] > 0 ? '±' . $short($r['daily']) : '-' ?></td><?php endforeach; ?></tr>
+        <tr><td>Maks WD</td><?php foreach ($rows as $i => $r): ?><td data-col="<?= $i ?>"><?= (float)$r['m']['max_wd'] > 0 ? $short((float)$r['m']['max_wd']) : 'Bebas' ?></td><?php endforeach; ?></tr>
+        <tr><td>Masa aktif</td><?php foreach ($rows as $i => $r): ?><td data-col="<?= $i ?>"><?= (int)$r['m']['duration_days'] ?> hr</td><?php endforeach; ?></tr>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
   <?php endif; ?>
 
   <div class="pk-trust" data-rv>
@@ -590,9 +641,10 @@ $tier_art = ['padi', 'basket', 'barn', 'chest_open'];
     <summary><img src="<?= $ic('compass') ?>" alt="">Cara level up <i class="ph-bold ph-caret-down chev"></i></summary>
     <ol class="pk-steps">
       <li><span>1</span><span>Isi <b>Saldo Beli</b> lewat tombol +</span></li>
-      <li><span>2</span><span>Pilih pangkat, tekan tombol, konfirmasi</span></li>
+      <li><span>2</span><span>Geser etalase, pilih pangkat, konfirmasi</span></li>
       <li><span>3</span><span>Pangkat aktif, kuota nonton &amp; bonus langsung berlaku</span></li>
     </ol>
+    <?php if ($avg_video_reward > 0): ?><div class="pk-steps" style="padding-top:0;font-size:11px;font-weight:700;color:var(--pc-muted)">Estimasi cuan dari rata-rata <?= format_rp($avg_video_reward) ?>/video.</div><?php endif; ?>
   </details>
 </div>
 
@@ -642,12 +694,42 @@ $tier_art = ['padi', 'basket', 'barn', 'chest_open'];
 </div>
 
 <script>
-function pickTier(i) {
-  document.querySelectorAll('.pk-tier').forEach((b) => b.classList.toggle('on', +b.dataset.tier === i));
-  document.querySelectorAll('.pk-card').forEach((c) => c.classList.toggle('on', +c.dataset.card === i));
-}
+/* Etalase geser: kartu tengah aktif, titik & kolom tabel ikut */
+(function () {
+  const shelf = document.getElementById('pk-shelf');
+  if (!shelf) return;
+  const cards = [...shelf.querySelectorAll('.pk-item')];
+  const dots = [...document.querySelectorAll('#pk-dots button')];
+  let cur = +shelf.dataset.sel || 0;
+  const mark = (i) => {
+    cur = i;
+    cards.forEach((c, k) => c.classList.toggle('on', k === i));
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    document.querySelectorAll('.pk-cmp [data-col]').forEach((c) => c.classList.toggle('col-on', +c.dataset.col === i));
+  };
+  const center = (i, smooth) => {
+    const c = cards[i]; if (!c) return;
+    const s = shelf.getBoundingClientRect(), r = c.getBoundingClientRect();
+    const from = shelf.scrollLeft, to = from + (r.left + r.width / 2) - (s.left + s.width / 2);
+    shelf.scrollTo({ left: to, behavior: smooth ? 'smooth' : 'auto' });
+    // Sebagian WebView mengabaikan scroll halus: lompat langsung bila belum bergerak
+    if (smooth) setTimeout(() => { if (Math.abs(shelf.scrollLeft - from) < 2 && Math.abs(to - from) > 2) shelf.scrollLeft = to; }, 250);
+  };
+  window.pickTier = (i) => { mark(i); center(i, true); };
+  let t;
+  shelf.addEventListener('scroll', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const s = shelf.getBoundingClientRect(), mid = s.left + s.width / 2;
+      let best = 0, d = Infinity;
+      cards.forEach((c, k) => { const r = c.getBoundingClientRect(), dd = Math.abs(r.left + r.width / 2 - mid); if (dd < d) { d = dd; best = k; } });
+      if (best !== cur) mark(best);
+    }, 60);
+  }, { passive: true });
+  cards.forEach((c, k) => c.addEventListener('click', (e) => { if (k !== cur && !e.target.closest('button')) pickTier(k); }));
+  center(cur, false);
+})();
 </script>
-
 <script>
 const userBal = <?= (float)$user['balance_dep'] ?>;
 let currentPrice = 0;
