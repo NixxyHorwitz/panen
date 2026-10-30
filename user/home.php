@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__) . '/lib/farm.php';
+require_once dirname(__DIR__) . '/lib/checkin.php';
 
 $user = auth_user($pdo);
 $is_guest = false;
@@ -217,15 +218,8 @@ if (!$is_guest) {
         $xs->execute([$user['id']]);
         $farm_lv = farm_level((int)$xs->fetchColumn());
     } catch (\Throwable) {}
-    // Streak dihitung sama seperti halaman check-in
-    $lc = (string)($user['last_checkin'] ?? '');
-    if ($lc !== '' && (int)((strtotime(date('Y-m-d')) - strtotime($lc)) / 86400) <= 1) {
-        try {
-            $sq = $pdo->prepare("SELECT COUNT(DISTINCT DATE(watched_at)) FROM watch_history WHERE user_id = ? AND watched_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
-            $sq->execute([$user['id']]);
-            $streak = max(1, (int)$sq->fetchColumn());
-        } catch (\Throwable) { $streak = 1; }
-    }
+    // Streak = hari check-in beruntun (Kalender Panen)
+    $streak = checkin_state($user)['streak'];
     try {
         $hs = $pdo->prepare("SELECT COUNT(*) FROM farm_logs WHERE user_id = ? AND action = 'harvest' AND created_at >= CURDATE()");
         $hs->execute([$user['id']]);
@@ -957,7 +951,7 @@ require dirname(__DIR__) . '/partials/header.php';
     <span class="h-modal-ic"><img src="<?= $ic3d('basket') ?>" alt=""></span>
     <button type="button" class="h-modal-x" onclick="closeCheckinModal()" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
     <h3 id="mdl-ci">Hadiah harianmu siap dipetik!</h3>
-    <p>Check-in sekarang untuk bonus saldo tarik. Makin panjang streak-nya, makin besar hadiahnya.</p>
+    <p>Hadiah Kalender Panen hari ini sudah menunggu. Datang tiap hari, hadiahnya naik terus sampai peti emas Hari 7.</p>
     <div class="h-modal-acts">
       <a href="/checkin" class="h-btn gold full shine rp">Ambil hadiah</a>
       <button type="button" onclick="closeCheckinModal()" class="h-btn soft full">Nanti saja</button>

@@ -182,7 +182,7 @@ require dirname(__DIR__) . '/partials/header.php';
       <a href="/missions" class="pd-tile" data-rv style="--d:.08s"><?php if (!empty($mission_sum)): ?><span class="g-coin"><?= array_sum(array_column($mission_sum, 'n')) ?> quest</span><?php endif; ?>
         <span class="g-slot sm"><img src="<?= $ic('missions') ?>" alt=""></span><b>Quest</b><p>Harian, mingguan &amp; pencapaian.</p></a>
       <a href="/checkin" class="pd-tile" data-rv style="--d:.12s"><span class="g-coin"><?= $rp_short($ci_min) ?>–<?= $rp_short($ci_max) ?></span>
-        <span class="g-slot sm"><img src="<?= $ic('checkin') ?>" alt=""></span><b>Bonus Harian</b><p>Klaim hadiah acak sekali sehari.</p></a>
+        <span class="g-slot sm"><img src="<?= $ic('checkin') ?>" alt=""></span><b>Bonus Harian</b><p>Hadiah naik tiap hari, 7 hari beruntun.</p></a>
       <a href="/referral" class="pd-tile" data-rv style="--d:.16s"><span class="g-coin"><?= $rp_short($ref_bonus) ?>/teman</span>
         <span class="g-slot sm"><img src="<?= $ic('referral') ?>" alt=""></span><b>Referral</b><p>+<?= rtrim(rtrim(number_format($ref_pct, 1, ',', ''), '0'), ',') ?>% dari deposit mereka.</p></a>
       <a href="/redeem" class="pd-tile" data-rv style="--d:.2s"><span class="g-slot sm"><img src="<?= $ic('redeem') ?>" alt=""></span><b>Kode Redeem</b><p>Tukar kode dari event &amp; pengumuman.</p></a>
