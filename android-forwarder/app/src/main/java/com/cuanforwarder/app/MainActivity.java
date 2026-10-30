@@ -136,8 +136,9 @@ public class MainActivity extends Activity {
     private LinearLayout buildHeader() {
         LinearLayout h = ui.hrow();
         h.setPadding(ui.dp(16), ui.dp(12), ui.dp(16), ui.dp(10));
-        Ui.Box logo = ui.tile(R.drawable.ic_bolt, Ui.YELLOW, 40, 24, Ui.INK);
-        h.addView(logo);
+        android.widget.ImageView logo = new android.widget.ImageView(this);
+        logo.setImageResource(R.drawable.logo);
+        h.addView(logo, new LinearLayout.LayoutParams(ui.dp(42), ui.dp(42)));
         LinearLayout col = ui.vcol();
         col.setPadding(ui.dp(10), 0, ui.dp(8), 0);
         col.addView(ui.text("CuanForwarder", 19, Ui.INK, Ui.BLACK));

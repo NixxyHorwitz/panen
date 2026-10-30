@@ -15,7 +15,8 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_app"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="CuanForwarder"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
