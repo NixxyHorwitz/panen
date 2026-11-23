@@ -40,6 +40,14 @@
   const FLAG = new THREE.Vector3(2.5, 0, 5.3);         // tiang bendera merah putih
   const SCARECROW = new THREE.Vector3(-8.3, 0, -3.6);
   const PAN_LIMIT = 6;
+  // ── Pulau tropis di tengah laut ──
+  // Garis pantai tidak bulat sempurna: jari-jari rumput bergantung sudut (a = atan2(z, x)).
+  // Rumus yang sama dipakai di shader laut (OCEAN_GLSL) agar buih ombak pas di bibir pantai.
+  const islandR = (a) => 25 + 1.6 * Math.sin(3 * a + 0.7) + 1.1 * Math.sin(5 * a + 2.0) + 0.6 * Math.sin(9 * a);
+  const islandAt = (x, z) => islandR(Math.atan2(z, x));
+  const SEA_Y = -0.3;                // permukaan laut
+  const SHORE = 2.1;                 // jarak garis air dari tepi rumput
+  const DOCK = { r0: 20.5, len: 12.5, w: 2.2, y: 0.35 };   // dermaga kayu ke arah kanan layar (SIDE)
   const SAIL_SPEED = 0.012;          // putaran kincir air, rad per frame @60fps
   const OUTLINE_SCALE = 0.6;         // ketebalan outline (1 = tebal ala kartun, 0.6 = halus)
 
@@ -434,6 +442,21 @@
     { type: 'banana', x: 2.6, z: -9.6 }, { type: 'banana', x: 12.0, z: -0.9 },
   ];
   const BAMBOO = [{ x: -12.6, z: -4.4 }, { x: 12.8, z: 2.2 }, { x: -6.6, z: 11.6 }, { x: 13.4, z: -6.0 }];
+  const PERP = V(1, 0, 1).normalize();
+  /** Jarak titik ke koridor dermaga (sepanjang SIDE). */
+  const nearDock = (x, z, m = 0) => {
+    const along = (x * SIDE.x + z * SIDE.z), across = Math.abs(x * PERP.x + z * PERP.z);
+    return along > DOCK.r0 - 2 - m && across < DOCK.w / 2 + 1.6 + m;
+  };
+  /** Pulau-pulau kecil di kejauhan (satu bermercusuar). */
+  const ISLETS = [
+    { p: BACK.clone().multiplyScalar(44).addScaledVector(SIDE, -19), r: 4.6, h: 3.2, light: true },
+    { p: BACK.clone().multiplyScalar(38).addScaledVector(SIDE, 27), r: 3.6, h: 2.6 },
+    { p: BACK.clone().multiplyScalar(10).addScaledVector(SIDE, 50), r: 5.5, h: 4.5 },
+    { p: BACK.clone().multiplyScalar(14).addScaledVector(SIDE, -47), r: 4.8, h: 3.6 },
+    { p: BACK.clone().multiplyScalar(-14).addScaledVector(SIDE, 44), r: 3.2, h: 2.2 },
+    { p: BACK.clone().multiplyScalar(58).addScaledVector(SIDE, 2), r: 3.0, h: 2.0 },
+  ];
 
   /** Petak sawah tergenang di lembah (di luar pagar kebun). stage: <.3 baru tanam · <.75 hijau · selebihnya menguning. */
   const PADDIES = (() => {
@@ -442,7 +465,8 @@
     for (let gx = -8; gx <= 8; gx++) {
       for (let gz = -10; gz <= 9; gz++) {
         const x = gx * W + 0.35, z = gz * D + 0.2, d = Math.hypot(x, z);
-        if (d < 9.5 || d > 26) continue;
+        if (d < 9.5 || d > islandAt(x, z) - 3.2) continue;                                                     // tetap di daratan pulau
+        if (nearDock(x, z, 1)) continue;                                                                        // pangkal dermaga
         if (x > FENCE.x0 - 2.7 && x < FENCE.x1 + 2.7 && z > FENCE.z0 - 2.6 && z < STREAM.z1 + 2.2) continue; // kebun, jalan, sungai depan
         if (z > STREAM.z0 - 2.0 && z < STREAM.z1 + 2.0) continue;                                            // sungai
         if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 2.8) continue;                                       // kolam
@@ -467,15 +491,55 @@
     const g = new Geo(11), R = g.rand;
     const tmp = new THREE.Color();
 
-    // Hamparan rumput lembah tropis (luas, menghilang di kabut)
-    const g1 = new THREE.Color('#4c9532'), g2 = new THREE.Color('#5ea33a'), g3 = new THREE.Color('#3a7a2e');
-    g.add(new THREE.CircleGeometry(95, 64, 0, Math.PI * 2), (l, w) => {
+    // ── Pulau: rumput (tepi bergelombang) + pantai pasir yang landai masuk ke laut ──
+    const g1 = new THREE.Color('#5fae3c'), g2 = new THREE.Color('#79c247'), g3 = new THREE.Color('#e9d9a0');
+    const grass = new THREE.RingGeometry(0.0001, 1, 160, 10);
+    grass.rotateX(-Math.PI / 2);
+    {
+      const P = grass.attributes.position;
+      for (let i = 0; i < P.count; i++) {
+        const x = P.getX(i), z = P.getZ(i), f = Math.hypot(x, z), a = Math.atan2(z, x), r = f * (islandAt(x, z) + 0.05);
+        P.setXYZ(i, Math.cos(a) * r, 0, Math.sin(a) * r);
+      }
+    }
+    g.add(grass, (l, w) => {
       const n = Math.sin(w.x * 0.21) * Math.cos(w.z * 0.17) + Math.sin(w.x * 0.07 + w.z * 0.09);
-      const far = clamp((Math.hypot(w.x, w.z) - 22) / 30, 0, 1);
-      return tmp.copy(g1).lerp(g2, clamp(n * 0.25 + 0.25, 0, 0.5)).lerp(g3, far * 0.45);
-    }, { r: [-Math.PI / 2, 0, 0], ol: false, jitter: 0.03 });
+      const edge = clamp((Math.hypot(w.x, w.z) - (islandAt(w.x, w.z) - 1.6)) / 1.6, 0, 1); // rumput menipis ke pasir
+      return tmp.copy(g1).lerp(g2, clamp(n * 0.25 + 0.25, 0, 0.5)).lerp(g3, edge * 0.55);
+    }, { ol: false, jitter: 0.03 });
 
-    // Dua gunung berapi (latar) — lereng hutan, alur lahar, kawah gelap
+    // Pantai: 4 cincin (tepi rumput → pasir kering → pasir basah → dasar laut)
+    {
+      const SEG = 160, rings = [[0, 0.02], [1.3, -0.05], [SHORE + 0.4, SEA_Y - 0.12], [7, -1.6]];
+      const pos = [];
+      const pt = (k, j) => { const a = (k / SEG) * Math.PI * 2, r = islandR(a) + rings[j][0]; return [Math.cos(a) * r, rings[j][1], Math.sin(a) * r]; };
+      for (let k = 0; k < SEG; k++) for (let j = 0; j < rings.length - 1; j++) {
+        const a0 = pt(k, j), a1 = pt(k + 1, j), b0 = pt(k, j + 1), b1 = pt(k + 1, j + 1);
+        pos.push(...a0, ...b0, ...a1, ...a1, ...b0, ...b1);
+      }
+      const beach = new THREE.BufferGeometry();
+      beach.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const dry = new THREE.Color('#f6e3a8'), wet = new THREE.Color('#d9b878'), sea = new THREE.Color('#9fd8cf');
+      g.add(beach, (l, w) => (w.y > -0.12 ? tmp.copy(dry) : w.y > SEA_Y - 0.2 ? tmp.copy(wet) : tmp.copy(wet).lerp(sea, 0.5)), { ol: false, jitter: 0.04 });
+    }
+    // Batu karang, bintang laut & kerang di sepanjang pantai
+    for (let i = 0; i < 46; i++) {
+      const a = R() * Math.PI * 2, rr = islandR(a) + 0.6 + R() * 1.6, x = Math.cos(a) * rr, z = Math.sin(a) * rr;
+      if (nearDock(x, z)) continue;
+      const k = R();
+      if (k < 0.5) g.add(new THREE.DodecahedronGeometry(0.25 + R() * 0.45, 0), R() < 0.5 ? C.stone : C.stoneDark, { p: [x, -0.08, z], r: [R() * 3, R() * 3, 0], s: [1, 0.6, 1], ol: 0.03 });
+      else if (k < 0.75) g.add(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 5), '#fb923c', { p: [x, 0.0, z], r: [0, R() * 3, 0], ol: 0.015 });
+      else g.add(new THREE.SphereGeometry(0.12, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2), R() < 0.5 ? '#fde2e4' : '#fff7ed', { p: [x, -0.02, z], s: [1, 0.55, 1.2], ol: 0.012 });
+    }
+    // Kelapa di bibir pantai (sisi belakang saja, agar kebun tidak tertutup)
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + R() * 0.25, rr = islandR(a) - 0.4 + R() * 0.8, x = Math.cos(a) * rr, z = Math.sin(a) * rr;
+      if (nearDock(x, z, 1) || (x + z) * Math.SQRT1_2 > 12) continue;
+      if (Math.hypot(x - (STREAM.x0 - 2), z - 7) < 6 || Math.abs(z - 7) < 2.5) continue;
+      palmTrunk(g, x, z, 0, R, 0.9);
+    }
+
+    // Dua gunung berapi kini jadi pulau vulkanik di cakrawala
     const vLow = new THREE.Color('#3f8f3a'), vMid = new THREE.Color('#2d6a3e'), vHigh = new THREE.Color('#7b7564'), vTop = new THREE.Color('#5d554c'), vGully = new THREE.Color('#25573a');
     VOLCANOES.forEach((v, i) => {
       g.add(new THREE.CylinderGeometry(v.top, v.r, v.h, 26, 7), (l, w, n) => {
@@ -487,38 +551,50 @@
         if (Math.sin(ang * 13 + i) > 0.55 && t < 0.8) tmp.lerp(vGully, 0.5);
         return tmp;
       }, { p: [v.p.x, v.h / 2 - 0.4, v.p.z], ol: 0.22, jitter: 0.05 });
-      // Kaki gunung bergelombang
-      for (let k = 0; k < 5; k++) {
-        const a = R() * Math.PI * 2, rr = v.r * (0.85 + R() * 0.2);
-        g.add(new THREE.DodecahedronGeometry(6 + R() * 4, 1), (l, w) => tmp.copy(vLow).lerp(vMid, clamp(w.y / 6, 0, 1)),
-          { p: [v.p.x + Math.cos(a) * rr, -1, v.p.z + Math.sin(a) * rr], s: [1.5, 0.55, 1.3], ol: 0.12 });
-      }
+      g.add(new THREE.CylinderGeometry(v.r + 1, v.r + 4, 1.4, 26), '#f3dfa2', { p: [v.p.x, -0.6, v.p.z], ol: false });
     });
 
-    // Barisan pegunungan hijau di sekeliling (tanpa salju, berkabut biru di kejauhan)
-    const mBase = new THREE.Color('#3d7d3a'), mTop = new THREE.Color('#5b8f63'), mFar = new THREE.Color('#7fa99a');
-    for (let i = 0; i < 30; i++) {
-      const a = (i / 30) * Math.PI * 2 + R() * 0.15;
-      let da = Math.abs(((a - Math.atan2(BACK.z, BACK.x)) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI);
-      if (da < 0.62) continue; // beri ruang gunung berapi
-      const r = 48 + R() * 12, h = 9 + R() * 10, br = 9 + R() * 6;
-      g.add(new THREE.ConeGeometry(br, h, 7, 2), (l, w) => tmp.copy(mBase).lerp(mTop, clamp(w.y / h, 0, 1)).lerp(mFar, 0.25),
-        { p: [Math.cos(a) * r, h / 2 - 0.5, Math.sin(a) * r], r: [0, R() * 3, 0], ol: 0.16, jitter: 0.06 });
-    }
-
-    // Bukit terasering (subak) mengelilingi lembah
-    const tierTops = ['#86d052', '#a2df6a', '#9ad3cf', '#e0c556', '#79c447'];
-    for (let i = 0; i < 20; i++) {
-      const a = (i / 20) * Math.PI * 2 + R() * 0.2, r = 31 + R() * 6;
-      const hx = Math.cos(a) * r, hz = Math.sin(a) * r;
-      if (Math.abs(hz - 7) < 5 && hx > 13) continue; // kolam timur
-      const br = 6 + R() * 3, tiers = 4 + Math.floor(R() * 3), sx = 1.25 + R() * 0.3, rot = R() * 3;
-      for (let k = 0; k < tiers; k++) {
-        const rk = br * (1 - k * (0.8 / tiers));
-        g.add(new THREE.CylinderGeometry(rk, rk + 0.35, 0.72, 16), topSide(tierTops[Math.floor(R() * tierTops.length)], k % 2 ? '#6b7a34' : '#5f6d2e'),
-          { p: [hx, k * 0.72 - 0.2, hz], s: [sx, 1, 1], r: [0, rot, 0], ol: 0.06, jitter: 0.03 });
+    // Pulau-pulau kecil (pasir + bukit hijau + kelapa), satu bermercusuar
+    ISLETS.forEach((it, i) => {
+      const x = it.p.x, z = it.p.z, r2 = rng(500 + i);
+      g.add(new THREE.CylinderGeometry(it.r + 1.2, it.r + 3, 1.0, 18), '#f3dfa2', { p: [x, -0.45, z], ol: false, jitter: 0.04 });
+      g.add(new THREE.DodecahedronGeometry(it.r, 1), (l, w) => tmp.set(w.y > it.h * 0.55 ? '#5fae3c' : '#4c9532'), { p: [x, -it.r + it.h, z], s: [1, it.h / it.r, 1], ol: 0.08 });
+      for (let k = 0; k < 3; k++) g.add(new THREE.DodecahedronGeometry(0.6 + r2() * 0.6, 0), C.stoneDark, { p: [x + (r2() - 0.5) * it.r * 2.2, -0.1, z + (r2() - 0.5) * it.r * 2.2], s: [1, 0.7, 1], ol: 0.04 });
+      if (!it.light) { for (let k = 0; k < 2; k++) palmTrunk(g, x + (r2() - 0.5) * it.r, z + (r2() - 0.5) * it.r, it.h * 0.7, r2, 0.85); return; }
+      // Mercusuar belang merah-putih
+      const y0 = it.h - 0.2;
+      for (let k = 0; k < 5; k++) {
+        const ra = 1.0 - k * 0.11, rb = 1.0 - (k + 1) * 0.11;
+        g.add(new THREE.CylinderGeometry(rb, ra, 1.5, 12), k % 2 ? '#ffffff' : '#e11d48', { p: [x, y0 + 0.75 + k * 1.5, z], ol: 0.06 });
       }
-      if (R() < 0.6) palmTrunk(g, hx + (R() - 0.5) * 3, hz + (R() - 0.5) * 3, tiers * 0.72 - 0.2, R, 0.8); // pohon kelapa di puncak
+      const yt = y0 + 7.5;
+      g.add(new THREE.CylinderGeometry(0.9, 0.9, 0.18, 12), '#334155', { p: [x, yt + 0.05, z], ol: 0.04 });
+      g.add(new THREE.CylinderGeometry(0.42, 0.42, 0.9, 8), '#fde047', { p: [x, yt + 0.6, z], ol: 0.04 });
+      g.add(new THREE.ConeGeometry(0.62, 0.7, 8), '#b91c1c', { p: [x, yt + 1.4, z], ol: 0.04 });
+      g.add(new THREE.BoxGeometry(1.0, 0.9, 0.9), '#fff7ed', { p: [x + 1.3, y0 + 0.45, z + 0.4], ol: 0.04 });
+      g.add(new THREE.ConeGeometry(0.85, 0.6, 4), '#b45309', { p: [x + 1.3, y0 + 1.2, z + 0.4], r: [0, Math.PI / 4, 0], ol: 0.04 });
+    });
+
+    // Dermaga kayu (pangkal di pantai kanan, menjorok ke laut) + tong & peti muatan
+    {
+      const grp = new THREE.Group();
+      grp.position.copy(SIDE).multiplyScalar(DOCK.r0); grp.rotation.y = Math.PI / 4; grp.updateMatrixWorld();
+      const at = (geo, color, p, o = {}) => { const v = V(...p).applyMatrix4(grp.matrixWorld); const r = o.r || [0, 0, 0]; g.add(geo, color, Object.assign({}, o, { p: [v.x, v.y, v.z], r: [r[0], r[1] + Math.PI / 4, r[2]] })); };
+      const n = Math.floor(DOCK.len / 0.34);
+      for (let k = 0; k < n; k++) at(new THREE.BoxGeometry(0.3, 0.1, DOCK.w), k % 3 ? '#c08a52' : '#a8743f', [k * 0.34, DOCK.y, 0], { ol: 0.02 });
+      for (let x = 0.2; x < DOCK.len; x += 1.7) [-1, 1].forEach((sd) => {
+        at(new THREE.CylinderGeometry(0.11, 0.13, 2.6, 7), '#7c4a1f', [x, DOCK.y - 0.9, sd * (DOCK.w / 2 - 0.05)], { ol: 0.025 });
+        at(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 6), '#8a5a2b', [x, DOCK.y + 0.25, sd * (DOCK.w / 2 - 0.05)], { ol: 0.015 });
+      });
+      [-1, 1].forEach((sd) => at(new THREE.BoxGeometry(DOCK.len, 0.08, 0.08), '#8a5a2b', [DOCK.len / 2, DOCK.y + 0.5, sd * (DOCK.w / 2 - 0.05)], { ol: 0.015 }));
+      [-1, 1].forEach((sd) => at(new THREE.CylinderGeometry(0.16, 0.2, 0.5, 8), '#334155', [DOCK.len - 0.3, DOCK.y + 0.3, sd * 0.6], { ol: 0.02 }));
+      at(new THREE.BoxGeometry(0.62, 0.62, 0.62), '#b07a3e', [DOCK.len - 2.0, DOCK.y + 0.36, 0.55], { r: [0, 0.3, 0], ol: 0.03 });
+      at(new THREE.BoxGeometry(0.46, 0.46, 0.46), '#c99556', [DOCK.len - 2.0, DOCK.y + 0.9, 0.5], { r: [0, -0.2, 0], ol: 0.025 });
+      at(new THREE.CylinderGeometry(0.28, 0.28, 0.62, 10), '#9a5b2a', [DOCK.len - 3.2, DOCK.y + 0.36, -0.5], { ol: 0.025 });
+      at(new THREE.TorusGeometry(0.29, 0.03, 4, 12), '#475569', [DOCK.len - 3.2, DOCK.y + 0.5, -0.5], { r: [Math.PI / 2, 0, 0], ol: false });
+      at(new THREE.TorusGeometry(0.26, 0.09, 6, 14), (l) => tmp.set(Math.sin(Math.atan2(l.y, l.x) * 4) > 0 ? '#f97316' : '#ffffff'), [4.5, DOCK.y + 0.42, DOCK.w / 2 + 0.08], { ol: 0.02 });
+      at(new THREE.CylinderGeometry(0.05, 0.06, 1.8, 6), '#3f2a14', [DOCK.len - 0.4, DOCK.y + 0.9, -0.95], { ol: 0.015 });
+      at(new THREE.BoxGeometry(0.26, 0.3, 0.26), '#fde68a', [DOCK.len - 0.4, DOCK.y + 1.9, -0.95], { ol: 0.02 });
     }
 
     // Tebing batu & air terjun sumber sungai (barat), rimbun paku-pakuan
@@ -722,7 +798,7 @@
     const blocked = (x, z) => (x > FENCE.x0 - 0.6 && x < FENCE.x1 + 0.6 && z > FENCE.z0 - 0.6 && z < FENCE.z1 + 0.5)
       || (z > STREAM.z0 - 0.7 && z < STREAM.z1 + 0.7) || V(x, 0, z).distanceTo(HUT) < 2.4 || V(x, 0, z).distanceTo(SCARECROW) < 1
       || V(x, 0, z).distanceTo(LUMBUNG) < 2 || V(x, 0, z).distanceTo(WHEEL) < 2.2 || inPaddy(x, z, 0.2)
-      || TREES.some((t) => Math.hypot(t.x - x, t.z - z) < 1.2) || Math.hypot(x, z) > 27 || Math.hypot(x - POND.x, z - POND.z) < POND.r + 0.8;
+      || TREES.some((t) => Math.hypot(t.x - x, t.z - z) < 1.2) || Math.hypot(x, z) > islandAt(x, z) - 1.2 || nearDock(x, z) || Math.hypot(x - POND.x, z - POND.z) < POND.r + 0.8;
     let placed = 0;
     for (let k = 0; k < 1500 && placed < 150; k++) {
       const x = (R() * 2 - 1) * 27, z = (R() * 2 - 1) * 27;
@@ -802,7 +878,8 @@
     const list = FIXED_TREES.map((t) => Object.assign({}, t));
     const R = rng(77);
     for (let k = 0; k < 600 && list.length < 44; k++) {
-      const a = R() * Math.PI * 2, r = 13 + R() * 15, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      const a = R() * Math.PI * 2, r = 13 + R() * 13, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (r > islandR(a) - 1.8 || nearDock(x, z, 0.5)) continue;                         // tetap di darat, bebas dermaga
       if (Math.abs(z - 7) < 2.2 && x > STREAM.x0 - 2 && x < STREAM.x1) continue;       // sungai
       if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 1.5) continue;                   // kolam
       if (Math.hypot(x - STREAM.x0 + 2, z - 7) < 6) continue;                            // tebing air terjun
@@ -917,6 +994,28 @@
     g.add(new THREE.BoxGeometry(0.14, 0.04, 0.08), '#f59e0b', { p: [0.4, 0.34, 0], ol: 0.01 });
     [-1, 1].forEach((sd) => g.add(new THREE.SphereGeometry(0.02, 4, 3), C.ink, { p: [0.33, 0.39, sd * 0.07], ol: false }));
     return g.build();
+  }
+  /** Perahu layar kayu (haluan ke +x, titik asal = garis air). */
+  function buildBoat() {
+    const g = new Geo(52);
+    const hull = (l, w) => new THREE.Color(l.y > 0.22 ? '#fef3c7' : '#9a4f1f');
+    g.add(new THREE.BoxGeometry(3.6, 0.8, 1.5), hull, { p: [0, 0.15, 0], ol: 0.04 });
+    g.add(new THREE.CylinderGeometry(0.75, 0.62, 0.8, 3), hull, { p: [1.8, 0.15, 0], r: [0, Math.PI / 2, 0], s: [1, 1, 1.9], ol: 0.04 });
+    g.add(new THREE.BoxGeometry(3.65, 0.1, 1.55), '#0e7490', { p: [0, 0.32, 0], ol: false });
+    g.add(new THREE.BoxGeometry(3.4, 0.06, 1.3), '#d9a066', { p: [0, 0.56, 0], ol: false });
+    g.add(new THREE.BoxGeometry(1.05, 0.55, 0.95), '#fff7ed', { p: [-1.05, 0.85, 0], ol: 0.03 });
+    g.add(new THREE.BoxGeometry(1.2, 0.09, 1.1), '#b45309', { p: [-1.05, 1.17, 0], ol: 0.025 });
+    [-1, 1].forEach((sd) => g.add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 10), '#7dd3fc', { p: [-1.05, 0.9, sd * 0.49], r: [Math.PI / 2, 0, 0], ol: 0.012 }));
+    g.add(new THREE.CylinderGeometry(0.06, 0.08, 3.9, 6), '#7c4a1f', { p: [0.25, 2.45, 0], ol: 0.02 });
+    g.add(new THREE.BoxGeometry(1.9, 0.06, 0.06), '#7c4a1f', { p: [-0.65, 1.0, 0], ol: 0.015 });
+    const tri = (pts) => new THREE.ShapeGeometry(new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y))));
+    const sail = (l) => new THREE.Color(l.y > 1.0 && l.y < 1.35 ? '#f87171' : '#fffbeb');
+    [1, -1].forEach((sz) => {
+      g.add(tri([[0, 0], [-1.85, 0], [0, 3.1]]), sail, { p: [0.2, 1.05, sz * 0.02], s: [1, 1, sz], ol: false });
+      g.add(tri([[0, 0], [2.4, 0], [0, 2.7]]), '#fde68a', { p: [0.32, 1.0, sz * 0.02], s: [1, 1, sz], ol: false });
+    });
+    g.add(new THREE.BoxGeometry(0.5, 0.28, 0.02), '#dc2626', { p: [0.5, 4.35, 0], ol: 0.01 });
+    return g.build(0.04);
   }
   /** Gumpalan asap kawah. */
   function buildPuff() {
@@ -1307,7 +1406,7 @@
 
     _initScene() {
       const s = this.scene = new THREE.Scene();
-      s.fog = new THREE.Fog('#e6f1df', 50, 125);
+      s.fog = new THREE.Fog('#cdeef5', 70, 175);
       const grad = this.gradient = toonGradient();
       // Material terpisah untuk mesh ber-instanceColor: three r128 tidak mengompilasi
       // ulang program bila satu material dipakai mesh instanced dengan & tanpa instanceColor.
@@ -1336,8 +1435,14 @@
       stat.castShadow = stat.receiveShadow = true;
       world.add(stat);
 
-      // 2) Sungai irigasi + air terjun (shader UV bergerak)
+      // 2) Sungai irigasi + air terjun (shader UV bergerak) + laut di sekeliling pulau
       world.add(this._buildWater());
+      world.add(this._buildOcean());
+
+      // 2b) Perahu layar: satu tertambat di dermaga, satu berlayar mengitari pulau
+      const boatGeo = buildBoat();
+      this.boats = [0, 1].map(() => { const b = new THREE.Mesh(boatGeo, this.mat); b.castShadow = true; world.add(b); return b; });
+      this.boatDock = SIDE.clone().multiplyScalar(DOCK.r0 + DOCK.len - 1.6).addScaledVector(PERP, DOCK.w / 2 + 1.35);
 
       // 3) Roda kincir air (berputar mengikuti arus sungai)
       this.sailPivot = new THREE.Group();
@@ -1527,13 +1632,50 @@
       return mesh;
     }
 
+    /** Laut lepas: dangkal toska di dekat pantai → biru tua, buih ombak di garis pantai, kilau matahari. */
+    _buildOcean() {
+      const geo = new THREE.CircleGeometry(190, 96);
+      geo.rotateX(-Math.PI / 2);
+      geo.translate(0, SEA_Y, 0);
+      this.oceanMat = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 }, uHorizon: { value: new THREE.Color('#cdeef5') } },
+        vertexShader: `
+          varying vec2 vP;
+          void main() { vP = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform float uTime; uniform vec3 uHorizon; varying vec2 vP;
+          float isl(float a) { return 25.0 + 1.6 * sin(3.0 * a + 0.7) + 1.1 * sin(5.0 * a + 2.0) + 0.6 * sin(9.0 * a); }
+          void main() {
+            float r = length(vP), a = atan(vP.y, vP.x);
+            float d = r - (isl(a) + ${SHORE.toFixed(2)});
+            vec3 shallow = vec3(0.40, 0.90, 0.86), mid = vec3(0.12, 0.66, 0.86), deep = vec3(0.04, 0.38, 0.72);
+            vec3 col = mix(shallow, mid, smoothstep(0.0, 7.0, d));
+            col = mix(col, deep, smoothstep(7.0, 40.0, d));
+            float w = sin(vP.x * 0.35 + uTime * 1.1) * sin(vP.y * 0.3 - uTime * 0.9) + 0.5 * sin((vP.x + vP.y) * 0.8 + uTime * 1.7);
+            col += vec3(0.045) * w * smoothstep(0.0, 4.0, d);
+            float sp = smoothstep(0.93, 1.0, sin(vP.x * 1.7 + uTime * 2.0) * sin(vP.y * 1.9 - uTime * 1.6));
+            col += vec3(0.55) * sp * smoothstep(3.0, 10.0, d) * (1.0 - smoothstep(35.0, 70.0, d));
+            float swell = 0.7 + 0.55 * sin(uTime * 1.3 + a * 5.0);
+            float foam = smoothstep(0.45, 0.0, abs(d - swell)) * 0.9 + smoothstep(0.9, 0.0, d) * 0.75;
+            foam += smoothstep(0.3, 0.0, abs(d - swell - 1.6)) * 0.35 * (0.5 + 0.5 * sin(a * 23.0 + uTime));
+            col = mix(col, vec3(1.0), clamp(foam, 0.0, 1.0) * 0.85);
+            col = mix(col, uHorizon, smoothstep(70.0, 185.0, r));
+            gl_FragColor = vec4(col, 1.0);
+          }`,
+      });
+      const mesh = new THREE.Mesh(geo, this.oceanMat);
+      mesh.receiveShadow = false;
+      mesh.renderOrder = -1;
+      return mesh;
+    }
+
     _initControls() {
       const c = this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
       c.target.set(0, 0, 0);
       c.enableDamping = true;
       c.dampingFactor = 0.05;
       c.minDistance = 14;
-      c.maxDistance = 30;
+      c.maxDistance = 40;              // cukup jauh untuk melihat pulau & laut di sekelilingnya
       c.minPolarAngle = Math.PI / 6;
       c.maxPolarAngle = Math.PI / 2.5;
       c.screenSpacePanning = false;
@@ -1703,6 +1845,7 @@
       this._adaptQuality(dt);
       this.controls.update();
       this.waterMat.uniforms.uTime.value = t;
+      this.oceanMat.uniforms.uTime.value = t;
       this.sails.rotation.z += SAIL_SPEED * dt * 60;
       this.windMat.userData.uTime.value = t;
       this.birdMat.userData.uTime.value = t;
@@ -1771,6 +1914,15 @@
       P.needsUpdate = true;
 
       this.sunDisc.quaternion.copy(this.camera.quaternion);
+
+      // Perahu: tertambat (terayun ombak) & berlayar mengitari pulau
+      const [moored, sailing] = this.boats;
+      moored.position.set(this.boatDock.x, SEA_Y + 0.08 + Math.sin(t * 1.3) * 0.07, this.boatDock.z);
+      moored.rotation.set(Math.sin(t * 1.1) * 0.05, Math.PI / 4 + Math.sin(t * 0.4) * 0.04, Math.sin(t * 0.9 + 1) * 0.025);
+      const th = -t * 0.022 + 2.2, R0 = 39;
+      sailing.position.set(Math.cos(th) * R0, SEA_Y + 0.08 + Math.sin(t * 1.6) * 0.09, Math.sin(th) * R0);
+      sailing.rotation.set(Math.sin(t * 1.4) * 0.06, Math.atan2(Math.cos(th), Math.sin(th)), Math.sin(t * 1.1) * 0.04);
+      sailing.scale.setScalar(1.25);
     }
 
     /** Turunkan pixel ratio bila FPS rata-rata < 45 (HP lemah). */

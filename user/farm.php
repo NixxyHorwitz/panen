@@ -31,7 +31,7 @@ $asset_v    = (string)(@filemtime(dirname(__DIR__) . '/assets/js/farm_engine.js'
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#4fb6f0">
+<meta name="theme-color" content="#5ec2ec">
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Sawah Panen Cuan — <?= htmlspecialchars($_site_name) ?></title>
@@ -43,24 +43,29 @@ $asset_v    = (string)(@filemtime(dirname(__DIR__) . '/assets/js/farm_engine.js'
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 <style>
 /* ══════════════════════════════════════════════════════════
-   SAWAH PANEN CUAN — UI GAYA GAME (panel kayu & perkamen,
-   pita judul, slot item, tombol 3D "berbibir" yang bisa ditekan)
+   SAWAH PANEN CUAN — TEMA PULAU BAHARI
+   Kebun di pulau tropis: bingkai panel navy kapal + tali tambang,
+   isi kertas peta, jendela kapal (porthole) kuningan, dock dermaga
+   kayu dengan tombol pelampung, judul berbentuk bendera layar.
    ══════════════════════════════════════════════════════════ */
 :root {
-  --ink: #3b2414;
-  --muted: #8a6a4a;
-  --parch: #fff6e0;
-  --parch-2: #fdebc4;
-  --wood: #b8763a;
-  --wood-d: #7c4a1f;
-  --wood-l: #d9a066;
+  --ink: #12324f;
+  --muted: #5d7a94;
+  --parch: #fdf5e1;
+  --parch-2: #f1dfb6;
+  --wood: #8b5a2b;
+  --wood-d: #4e2c10;
+  --wood-l: #b9803f;
   --slot: #fffaf0;
-  --slot-bd: #ecc98c;
+  --slot-bd: #e5cf9c;
+  --navy: #13395c; --navy-d: #0a2238; --navy-l: #1f5486;
+  --brass1: #f8dc84; --brass2: #c8922a; --brass3: #7f5310;
+  --rope: #dcbc80; --rope-d: #a8823f;
   /* tombol: warna muka / warna bibir bawah */
-  --g1: #6dd047; --g2: #3f9a24;
-  --y1: #ffd43b; --y2: #d69a0b;
-  --b1: #4cc0f7; --b2: #1f84c6;
-  --r1: #ff6b6b; --r2: #c9373b;
+  --g1: #2fc28a; --g2: #17855b;
+  --y1: #ffd24a; --y2: #c98f0b;
+  --b1: #2fb5e0; --b2: #1677a6;
+  --r1: #ff7a6b; --r2: #cc4436;
   --font-game: 'Fredoka', 'Nunito', sans-serif;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -69,7 +74,7 @@ $asset_v    = (string)(@filemtime(dirname(__DIR__) . '/assets/js/farm_engine.js'
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
   font-family: 'Nunito', sans-serif; font-weight: 700; color: var(--ink);
-  background: linear-gradient(180deg, #4fb6f0 0%, #9ad7f5 38%, #d9efe8 72%, #e6f1df 100%);
+  background: linear-gradient(180deg, #5ec2ec 0%, #a5def3 34%, #cdeef5 56%, #cdeef5 100%);
   -webkit-user-select: none; user-select: none;
 }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
@@ -109,24 +114,41 @@ img { -webkit-user-drag: none; }
   display: flex; align-items: flex-start; gap: 8px; pointer-events: none;
 }
 .topbar > * { pointer-events: auto; }
+/* Tombol bulat = jendela kapal (porthole) berbingkai kuningan */
 .icon-btn {
-  width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; font-size: 20px; color: #fff;
-  background: linear-gradient(180deg, var(--wood-l), var(--wood)); border-radius: 14px;
-  box-shadow: 0 4px 0 var(--wood-d), 0 6px 10px rgba(60, 30, 5, .3), inset 0 2px 0 rgba(255, 255, 255, .35);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, .3); transition: transform .08s, box-shadow .08s;
+  width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; font-size: 19px; color: #fff; border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 45%, #2a6aa0 0 50%, var(--navy) 51% 56%, transparent 57%),
+    radial-gradient(circle at 35% 28%, #fff4c4 0%, var(--brass1) 30%, var(--brass2) 70%, var(--brass3) 100%);
+  box-shadow: 0 3px 0 var(--brass3), 0 6px 10px rgba(5, 30, 50, .35), inset 0 0 0 1.5px rgba(255, 255, 255, .45);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .35); transition: transform .08s, box-shadow .08s;
 }
-.icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--wood-d), inset 0 2px 0 rgba(255, 255, 255, .3); }
+.icon-btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--brass3), inset 0 0 0 1.5px rgba(255, 255, 255, .4); }
 .top-left { display: flex; flex-direction: column; gap: 8px; }
 
 .lvl {
-  flex: 1; min-width: 0; max-width: 230px; margin: 4px auto 0; display: flex; align-items: center;
-  background: rgba(59, 36, 20, .62); border-radius: 999px; padding: 4px 12px 4px 4px; position: relative;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25), 0 3px 8px rgba(0, 0, 0, .2); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  flex: 1; min-width: 0; max-width: 236px; margin: 4px auto 0; display: flex; align-items: center;
+  background: rgba(10, 34, 56, .66); border-radius: 999px; padding: 4px 12px 4px 4px; position: relative;
+  box-shadow: inset 0 0 0 1.5px rgba(248, 220, 132, .55), 0 3px 8px rgba(0, 0, 0, .25); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
-.lvl-star { position: relative; width: 46px; height: 46px; flex: 0 0 46px; margin: -10px 4px -10px -6px; display: grid; place-items: center; }
-.lvl-star img { position: absolute; inset: 0; }
-.lvl-star > i { font-size: 30px; color: #fcd34d; position: absolute; }
-.lvl-star b { position: relative; z-index: 1; font-family: var(--font-game); font-weight: 700; font-size: 16px; color: #7c2d12; text-shadow: 0 1px 0 rgba(255, 255, 255, .7); margin-top: 2px; }
+/* Lencana level = kemudi kapal (jari-jari kayu + pusat kuningan) */
+.lvl-star { position: relative; width: 50px; height: 50px; flex: 0 0 50px; margin: -12px 4px -12px -8px; display: grid; place-items: center; }
+.lvl-star::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(from -4deg, var(--wood-l) 0 8deg, transparent 8deg 45deg);
+  -webkit-mask: radial-gradient(circle, #000 0 70%, transparent 71%); mask: radial-gradient(circle, #000 0 70%, transparent 71%);
+  animation: helm 14s linear infinite;
+}
+.lvl-star::after {
+  content: ''; position: absolute; inset: 7px; border-radius: 50%; border: 4px solid var(--wood);
+  box-shadow: 0 0 0 1.5px var(--wood-d), inset 0 0 0 1.5px var(--wood-d), 0 3px 5px rgba(0, 0, 0, .3);
+}
+.lvl-star b {
+  position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 35% 30%, #fff4c4, var(--brass1) 35%, var(--brass2)); box-shadow: 0 0 0 1.5px var(--brass3);
+  font-family: var(--font-game); font-weight: 700; font-size: 13.5px; color: var(--navy-d); text-shadow: 0 1px 0 rgba(255, 255, 255, .6);
+}
+@keyframes helm { to { transform: rotate(360deg); } }
 .lvl-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .lvl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
 .lvl-name { font-family: var(--font-game); font-weight: 600; font-size: 13px; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
@@ -137,8 +159,8 @@ img { -webkit-user-drag: none; }
 .wallets { display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; margin-top: 4px; }
 .wallet {
   position: relative; display: flex; align-items: center; min-width: 128px; height: 36px; padding: 0 8px 0 34px;
-  background: rgba(59, 36, 20, .62); border-radius: 999px; color: #fff;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .25), 0 3px 8px rgba(0, 0, 0, .2); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  background: rgba(10, 34, 56, .66); border-radius: 999px; color: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(248, 220, 132, .55), 0 3px 8px rgba(0, 0, 0, .25); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
 .wal-ic { position: absolute; left: -10px; top: 50%; width: 44px; height: 44px; transform: translateY(-50%); display: grid; place-items: center; }
 .wal-ic > i { font-size: 26px; color: #fcd34d; }
@@ -153,27 +175,39 @@ img { -webkit-user-drag: none; }
 .wallet.bump { animation: bump .45s cubic-bezier(.34,1.56,.64,1); }
 @keyframes bump { 40% { transform: scale(1.1); } }
 
-/* ── DOCK BAWAH (papan kayu) ── */
+/* ── DOCK BAWAH (dermaga papan kayu bertali tambang, tombol = pelampung) ── */
 .dock {
   position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + 10px);
-  width: min(460px, calc(100% - 16px)); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 6px 7px;
-  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, .04) 0 2px, transparent 2px 46px), linear-gradient(180deg, var(--wood-l) 0%, var(--wood) 60%, #a5652d 100%);
-  border-radius: 22px; box-shadow: 0 5px 0 var(--wood-d), 0 10px 22px rgba(60, 30, 5, .35), inset 0 2px 0 rgba(255, 255, 255, .35), inset 0 -2px 0 rgba(0, 0, 0, .12);
+  width: min(460px, calc(100% - 16px)); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 10px 6px 7px;
+  background:
+    repeating-linear-gradient(90deg, rgba(40, 20, 5, .22) 0 2px, transparent 2px 33px),
+    linear-gradient(180deg, var(--wood-l) 0%, var(--wood) 55%, #6f441d 100%);
+  border-radius: 18px; box-shadow: 0 5px 0 var(--wood-d), 0 10px 22px rgba(5, 30, 50, .35), inset 0 2px 0 rgba(255, 255, 255, .28), inset 0 -2px 0 rgba(0, 0, 0, .15);
+}
+.dock::before { /* tali tambang di tepi atas */
+  content: ''; position: absolute; left: 12px; right: 12px; top: -4px; height: 8px; border-radius: 999px;
+  background: repeating-linear-gradient(-55deg, var(--rope) 0 4px, var(--rope-d) 4px 6px); box-shadow: 0 2px 2px rgba(0, 0, 0, .25);
+}
+.dock::after { /* tiang tambat di kedua ujung */
+  content: ''; position: absolute; inset: -9px -4px auto -4px; height: 18px; pointer-events: none;
+  background: radial-gradient(circle at 9px 9px, var(--wood-d) 0 6px, transparent 7px), radial-gradient(circle at calc(100% - 9px) 9px, var(--wood-d) 0 6px, transparent 7px);
 }
 .dock-btn { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 2px; }
 .dock-ic {
   --f: #fff; --l: #ccc;
-  width: 54px; height: 50px; margin-top: -22px; border-radius: 18px; display: grid; place-items: center; font-size: 26px; color: #fff;
-  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--f) 55%, #fff), var(--f) 70%);
-  box-shadow: 0 4px 0 var(--l), 0 6px 12px rgba(60, 30, 5, .3), inset 0 2px 0 rgba(255, 255, 255, .6);
-  transition: transform .1s, box-shadow .1s; padding: 4px;
+  width: 58px; height: 58px; margin-top: -28px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; color: #fff;
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--f) 50%, #fff) 0%, var(--f) 46%, transparent 47.5%),
+    repeating-conic-gradient(from 22.5deg, #fff 0 45deg, var(--r1) 45deg 90deg);
+  box-shadow: 0 4px 0 var(--l), 0 6px 12px rgba(5, 30, 50, .3), inset 0 0 0 2px rgba(0, 0, 0, .12), inset 0 3px 0 rgba(255, 255, 255, .5);
+  transition: transform .1s, box-shadow .1s; padding: 9px;
 }
-.dock-ic img { width: 46px; height: 46px; }
-.dock-btn:active .dock-ic { transform: translateY(3px); box-shadow: 0 1px 0 var(--l), inset 0 2px 0 rgba(255, 255, 255, .5); }
+.dock-ic img { width: 40px; height: 40px; }
+.dock-btn:active .dock-ic { transform: translateY(3px) rotate(-8deg); box-shadow: 0 1px 0 var(--l), inset 0 0 0 2px rgba(0, 0, 0, .12); }
 .dock-btn.t-green .dock-ic { --f: var(--g1); --l: var(--g2); }
 .dock-btn.t-sky .dock-ic { --f: var(--b1); --l: var(--b2); }
 .dock-btn.t-gold .dock-ic { --f: var(--y1); --l: var(--y2); }
-.dock-btn.t-red .dock-ic { --f: var(--r1); --l: var(--r2); }
+.dock-btn.t-red .dock-ic { --f: var(--navy-l); --l: var(--navy-d); }
 .dock-lbl { font-family: var(--font-game); font-weight: 600; font-size: 12.5px; color: #fff; text-shadow: 0 1px 0 var(--wood-d), 0 0 3px rgba(60, 30, 5, .4); white-space: nowrap; }
 .dock-chip {
   position: absolute; top: -26px; right: 0; background: #fff; border-radius: 999px; color: var(--ink); font-family: var(--font-game); font-weight: 600;
@@ -182,18 +216,32 @@ img { -webkit-user-drag: none; }
 .dock-chip.full { background: var(--r1); color: #fff; box-shadow: 0 2px 0 var(--r2); }
 #dock-barn { will-change: transform; }
 
+/* ── Aksi cepat di atas dock ── */
+.quick { position: fixed; z-index: 19; left: 50%; transform: translateX(-50%); bottom: calc(var(--safe-b) + 128px); display: flex; gap: 8px; pointer-events: none; }
+.quick .nb-btn { pointer-events: auto; font-size: 16px; padding: 10px 14px 11px 16px; animation: qin .4s cubic-bezier(.34, 1.56, .64, 1); }
+.quick .nb-btn[hidden] { display: none; }
+.quick .nb-btn i { font-size: 20px; }
+.quick .nb-btn b { min-width: 24px; padding: 0 7px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 13px; text-shadow: none; line-height: 22px; }
+.quick .nb-btn.busy { filter: saturate(.6); pointer-events: none; }
+@keyframes qin { from { opacity: 0; transform: translateY(14px) scale(.85); } }
+
+/* ── Pilihan mode tanam (1 petak / semua petak kosong) ── */
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(19, 57, 92, .08); box-shadow: inset 0 0 0 2px var(--slot-bd); }
+.seg button { flex: 1; padding: 7px 10px; border-radius: 999px; font-family: var(--font-game); font-weight: 600; font-size: 13.5px; color: var(--muted); transition: background .15s, color .15s; }
+.seg button.on { background: var(--navy); color: #fff; box-shadow: 0 2px 0 var(--navy-d); }
+
 /* ── LABEL 3D (timer radial dsb.) ── */
 .plot-tag { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; will-change: transform; }
 .pt-ring {
   --c: #4ade80;
   width: 38px; height: 38px; border-radius: 50%; position: relative; padding: 4px;
-  background: conic-gradient(var(--c) calc(var(--p, 0) * 1turn), rgba(59, 36, 20, .55) 0); display: grid; place-items: center;
-  box-shadow: 0 3px 0 rgba(59, 36, 20, .45), 0 4px 10px rgba(0, 0, 0, .25);
+  background: conic-gradient(var(--c) calc(var(--p, 0) * 1turn), rgba(10, 34, 56, .55) 0); display: grid; place-items: center;
+  box-shadow: 0 3px 0 rgba(10, 34, 56, .45), 0 4px 10px rgba(0, 0, 0, .25);
 }
 .pt-ring::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--parch); }
 .pt-ring i { position: relative; z-index: 1; font-size: 16px; color: #16a34a; }
 .pt-text {
-  font-family: var(--font-game); font-weight: 600; background: rgba(59, 36, 20, .78); color: #fff; border-radius: 999px; padding: 1px 9px 2px;
+  font-family: var(--font-game); font-weight: 600; background: rgba(10, 34, 56, .8); color: #fff; border-radius: 999px; padding: 1px 9px 2px;
   font-size: 12.5px; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .plot-tag.is-pest .pt-ring { --c: var(--r1); animation: wob .5s ease-in-out infinite; }
@@ -218,7 +266,7 @@ img { -webkit-user-drag: none; }
 .gift-btn.ready::before { content: ''; position: absolute; inset: -6px; border-radius: 18px; background: radial-gradient(circle, rgba(255, 230, 120, .9), transparent 70%); animation: giftGlow 1.6s ease-in-out infinite; z-index: -1; }
 .gift-btn .dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--r1); box-shadow: 0 0 0 2px #fff; display: none; }
 .gift-btn.ready .dot { display: block; animation: giftDot 1.2s ease-in-out infinite; }
-.gift-btn .cd { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); white-space: nowrap; padding: 0 6px; border-radius: 999px; font-family: var(--font-game); font-size: 10.5px; font-weight: 600; color: #fff; background: rgba(59, 36, 20, .78); }
+.gift-btn .cd { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); white-space: nowrap; padding: 0 6px; border-radius: 999px; font-family: var(--font-game); font-size: 10.5px; font-weight: 600; color: #fff; background: rgba(10, 34, 56, .8); }
 .gift-btn:not(.ready) img { filter: grayscale(.55) drop-shadow(0 2px 2px rgba(0, 0, 0, .25)); opacity: .85; }
 @keyframes giftShake { 0%, 70%, 100% { transform: none; } 74% { transform: rotate(-12deg) scale(1.08); } 78% { transform: rotate(12deg) scale(1.08); } 82% { transform: rotate(-8deg); } 86% { transform: rotate(6deg); } }
 @keyframes giftGlow { 50% { opacity: .45; transform: scale(1.1); } }
@@ -254,14 +302,15 @@ img { -webkit-user-drag: none; }
 
 /* ── BACKDROP, SHEET & MODAL (panel kayu berisi perkamen) ── */
 .backdrop {
-  position: fixed; inset: 0; z-index: 40; background: rgba(30, 18, 8, .5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  position: fixed; inset: 0; z-index: 40; background: rgba(5, 25, 45, .5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   opacity: 0; pointer-events: none; transition: opacity .2s;
 }
 .backdrop.show { opacity: 1; pointer-events: auto; }
 .sheet, .modal {
   --rb1: var(--g1); --rb2: var(--g2);
   position: fixed; z-index: 50; display: flex; flex-direction: column;
-  background: var(--wood); padding: 7px 7px 0; box-shadow: 0 -6px 30px rgba(30, 18, 8, .4), inset 0 2px 0 rgba(255, 255, 255, .3);
+  background: linear-gradient(180deg, var(--navy-l), var(--navy) 40%, var(--navy-d)); padding: 7px 7px 0;
+  box-shadow: 0 -6px 30px rgba(5, 25, 45, .45), inset 0 2px 0 rgba(255, 255, 255, .18), inset 0 0 0 2px rgba(248, 220, 132, .35);
 }
 .t-sky { --rb1: var(--b1); --rb2: var(--b2); }
 .t-gold { --rb1: var(--y1); --rb2: var(--y2); }
@@ -274,19 +323,26 @@ img { -webkit-user-drag: none; }
 .modal {
   left: 50%; top: 50%; width: min(370px, calc(100% - 28px)); border-radius: 26px; padding-bottom: 7px;
   transform: translate(-50%, -46%) scale(.85); opacity: 0; pointer-events: none; transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s;
-  box-shadow: 0 6px 0 var(--wood-d), 0 18px 40px rgba(30, 18, 8, .45), inset 0 2px 0 rgba(255, 255, 255, .3);
+  box-shadow: 0 6px 0 #061626, 0 18px 40px rgba(5, 25, 45, .5), inset 0 2px 0 rgba(255, 255, 255, .18), inset 0 0 0 2px rgba(248, 220, 132, .35);
 }
 .modal.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
 .sheet-head {
   position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: 26px 16px 8px; margin-top: 18px; border-radius: 22px 22px 0 0;
   background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .7), transparent 40%), var(--parch);
+  border: 2.5px dashed var(--rope-d); border-bottom: 0;
 }
 .modal .sheet-head { border-radius: 20px 20px 0 0; }
+/* Ikon judul = jendela kapal kuningan berpaku keling */
 .hic {
   position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 68px; height: 68px; display: grid; place-items: center;
-  border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fff, var(--parch-2) 70%); font-size: 32px; color: var(--wood-d);
-  box-shadow: 0 0 0 5px var(--wood), 0 4px 0 6px var(--wood-d), inset 0 -3px 6px rgba(160, 100, 40, .25); padding: 6px;
+  border-radius: 50%; background: radial-gradient(circle at 40% 30%, #ffffff, #d7f1fb 45%, #9fd8ef 100%); font-size: 32px; color: var(--navy);
+  box-shadow: 0 0 0 5px var(--brass2), 0 0 0 7px var(--brass3), 0 5px 0 7px var(--navy-d), inset 0 -4px 8px rgba(20, 90, 140, .25); padding: 6px;
+}
+.hic::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 50% 3px, var(--brass1) 0 2px, transparent 2.5px), radial-gradient(circle at 50% calc(100% - 3px), var(--brass1) 0 2px, transparent 2.5px),
+              radial-gradient(circle at 3px 50%, var(--brass1) 0 2px, transparent 2.5px), radial-gradient(circle at calc(100% - 3px) 50%, var(--brass1) 0 2px, transparent 2.5px);
 }
 .ribbon {
   position: relative; z-index: 1; margin: 0 26px; padding: 5px 22px 7px; font-family: var(--font-game); font-weight: 700; font-size: 20px; line-height: 1.1; color: #fff;
@@ -301,14 +357,20 @@ img { -webkit-user-drag: none; }
 .sheet-head p { margin-top: 8px; font-size: 12.5px; color: var(--muted); font-weight: 800; }
 .close {
   position: absolute; top: -12px; right: 4px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 18px;
-  background: radial-gradient(circle at 50% 30%, #ff9a9a, var(--r1) 65%); box-shadow: 0 3px 0 var(--r2), 0 0 0 4px var(--wood), 0 5px 10px rgba(0, 0, 0, .25);
+  background: radial-gradient(circle at 50% 30%, #ffa99c, var(--r1) 65%); box-shadow: 0 3px 0 var(--r2), 0 0 0 4px var(--brass2), 0 0 0 5.5px var(--brass3), 0 5px 10px rgba(0, 0, 0, .3);
   text-shadow: 0 1px 0 rgba(0, 0, 0, .25); transition: transform .08s;
 }
 .close:active { transform: translateY(2px) scale(.95); }
 .sheet-body {
   overflow-y: auto; padding: 8px 14px 18px; display: flex; flex-direction: column; gap: 10px; -webkit-overflow-scrolling: touch;
-  background: var(--parch); border-radius: 0 0 0 0;
+  border: 2.5px dashed var(--rope-d); border-top: 0; border-bottom: 0;
+  /* kertas peta bergaris kisi tipis */
+  background:
+    repeating-linear-gradient(0deg, rgba(120, 90, 40, .07) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(90deg, rgba(120, 90, 40, .07) 0 1px, transparent 1px 28px),
+    var(--parch);
 }
+.modal .sheet-body { border-bottom: 2.5px dashed var(--rope-d); }
 .modal .sheet-body { border-radius: 0 0 20px 20px; padding: 10px 16px 16px; }
 .sec-title { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font-family: var(--font-game); font-weight: 600; font-size: 14px; color: var(--wood-d); }
 .sec-title::before, .sec-title::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--slot-bd)); }
@@ -411,7 +473,7 @@ img { -webkit-user-drag: none; }
 /* Toast */
 #toasts { position: fixed; z-index: 80; top: calc(var(--safe-t) + 110px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 24px)); }
 .toast {
-  background: rgba(59, 36, 20, .9); color: #fff; border-radius: 999px; padding: 9px 16px; font-size: 13.5px; display: flex; gap: 8px; align-items: center;
+  background: rgba(10, 34, 56, .92); color: #fff; border-radius: 999px; padding: 9px 16px; box-shadow: inset 0 0 0 1.5px rgba(248, 220, 132, .45); font-size: 13.5px; display: flex; gap: 8px; align-items: center;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .3); animation: tin .35s cubic-bezier(.34,1.56,.64,1); pointer-events: auto; text-shadow: 0 1px 0 rgba(0, 0, 0, .3);
 }
 .toast i { font-size: 18px; } .toast.ok i { color: #a6f08a; } .toast.err i { color: #ff9a9a; } .toast.gold i { color: #fde047; }
@@ -421,28 +483,30 @@ img { -webkit-user-drag: none; }
 @keyframes tin { from { opacity: 0; transform: translateY(-12px) scale(.9); } }
 
 /* Loader */
-#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: linear-gradient(180deg, #8fd3ff, #dcefff); transition: opacity .4s; }
+#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(circle at 50% 120%, #2b9fd0, transparent 60%), linear-gradient(180deg, #5ec2ec, #cdeef5); transition: opacity .4s; }
 #loader.hide { opacity: 0; pointer-events: none; }
-.load-card { text-align: center; background: var(--parch); border-radius: 26px; padding: 22px 30px 20px; box-shadow: 0 0 0 7px var(--wood), 0 11px 0 7px var(--wood-d), 0 20px 40px rgba(30, 18, 8, .35); }
-.load-ic { font-size: 48px; color: var(--g2); display: inline-block; animation: wob 1s ease-in-out infinite; }
+.load-card { text-align: center; background: var(--parch); border-radius: 26px; padding: 22px 30px 20px; box-shadow: 0 0 0 7px var(--navy), 0 0 0 9px var(--brass2), 0 11px 0 9px var(--navy-d), 0 20px 40px rgba(5, 25, 45, .35); }
+.load-ic { font-size: 52px; color: var(--brass2); display: inline-block; animation: compass 2.4s cubic-bezier(.5,-.4,.5,1.4) infinite; }
+@keyframes compass { 0% { transform: rotate(-30deg); } 50% { transform: rotate(40deg); } 100% { transform: rotate(-30deg); } }
 .load-card h1 { font-family: var(--font-game); font-size: 24px; font-weight: 700; margin-top: 4px; }
 .load-card p { font-size: 13px; color: var(--muted); }
 .load-bar { margin-top: 12px; height: 12px; border-radius: 999px; background: rgba(120, 80, 30, .2); overflow: hidden; }
 .load-bar i { display: block; height: 100%; width: 40%; border-radius: 999px; background: linear-gradient(180deg, #a6f08a, var(--g1)); animation: loadbar 1.1s ease-in-out infinite; }
 @keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
 
+@media (max-width: 430px) { .lvl-row small { display: none; } }
 @media (max-width: 380px) {
   .wallet { min-width: 112px; } .wal-tx b { font-size: 13.5px; }
   .lvl-row small { display: none; }
   .dock-ic { width: 50px; height: 46px; } .dock-ic img { width: 42px; height: 42px; }
   .shop-item .ic { width: 64px; height: 64px; flex-basis: 64px; }
 }
-@media (prefers-reduced-motion: reduce) { .plot-tag.is-pest .pt-ring, .load-ic, .load-bar i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .plot-tag.is-pest .pt-ring, .load-ic, .load-bar i, .lvl-star::before { animation: none; } }
 </style>
 </head>
 <body>
 
-<div id="loader"><div class="load-card"><span class="load-ic"><i class="ph-fill ph-plant"></i></span><h1>Sawah Panen Cuan</h1><p>Menyiapkan lahan&hellip;</p><div class="load-bar"><i></i></div></div></div>
+<div id="loader"><div class="load-card"><span class="load-ic"><i class="ph-fill ph-compass"></i></span><h1>Sawah Panen Cuan</h1><p>Berlayar menuju pulau&hellip;</p><div class="load-bar"><i></i></div></div></div>
 
 <div id="farm-stage" aria-label="Sawah 3D"></div>
 <div id="farm-labels"></div>
@@ -455,9 +519,9 @@ img { -webkit-user-drag: none; }
     <button class="icon-btn gift-btn" id="btn-gift" type="button" aria-label="Hadiah bibit harian"><img src="/assets/img/icons3d/chest.png" alt="" draggable="false"><span class="dot"></span><span class="cd" id="gift-cd" hidden></span></button>
   </div>
   <div class="lvl">
-    <span class="lvl-star" data-icon="star"><b id="lvl-num">1</b></span>
+    <span class="lvl-star" aria-hidden="true"><b id="lvl-num">1</b></span>
     <div class="lvl-info">
-      <div class="lvl-row"><span class="lvl-name">Petani</span><small id="xp-txt">0/50 XP</small></div>
+      <div class="lvl-row"><span class="lvl-name">Juragan</span><small id="xp-txt">0/50 XP</small></div>
       <div class="xp"><div class="xp-fill" id="xp-fill"></div></div>
     </div>
   </div>
@@ -470,10 +534,15 @@ img { -webkit-user-drag: none; }
 <!-- ── DOCK ── -->
 <nav class="dock">
   <button class="dock-btn t-green" type="button" data-open="seeds"><span class="dock-ic" data-icon="seed"><i class="ph-fill ph-plant"></i></span><span class="dock-lbl">Tanam</span></button>
-  <button class="dock-btn t-sky" type="button" data-open="shop"><span class="dock-ic" data-icon="shop"><i class="ph-fill ph-storefront"></i></span><span class="dock-lbl">Toko Tani</span></button>
+  <button class="dock-btn t-sky" type="button" data-open="shop"><span class="dock-ic" data-icon="shop"><i class="ph-fill ph-storefront"></i></span><span class="dock-lbl">Toko</span></button>
   <button class="dock-btn t-gold" type="button" data-open="barn" id="dock-barn"><span class="dock-ic" data-icon="barn"><i class="ph-fill ph-warehouse"></i></span><span class="dock-lbl">Lumbung</span><span class="dock-chip" id="barn-chip">0/30</span></button>
-  <button class="dock-btn t-red" type="button" data-open="market"><span class="dock-ic" data-icon="coins"><i class="ph-fill ph-hand-coins"></i></span><span class="dock-lbl">Pasar</span></button>
+  <button class="dock-btn t-red" type="button" data-open="market"><span class="dock-ic"><i class="ph-fill ph-sailboat"></i></span><span class="dock-lbl">Kapal Dagang</span></button>
 </nav>
+
+<!-- Aksi cepat: muncul bila ada tanaman siap panen -->
+<div class="quick">
+  <button class="nb-btn yellow" id="btn-harvest-all" type="button" hidden><i class="ph-fill ph-basket"></i>Panen Semua<b id="ha-n">0</b></button>
+</div>
 
 <div class="backdrop" id="backdrop"></div>
 
@@ -489,10 +558,10 @@ img { -webkit-user-drag: none; }
 </section>
 
 <!-- Sheet: Toko Tani -->
-<section class="sheet t-sky" id="sheet-shop" aria-label="Toko Tani">
+<section class="sheet t-gold" id="sheet-shop" aria-label="Toko Pelabuhan">
   <div class="sheet-head">
     <span class="hic" data-icon="shop"></span>
-    <h3 class="ribbon">Toko Tani</h3>
+    <h3 class="ribbon">Toko Pelabuhan</h3>
     <p>Bayar pakai Saldo Modal</p>
     <button class="close" type="button" data-close aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
@@ -511,11 +580,11 @@ img { -webkit-user-drag: none; }
 </section>
 
 <!-- Sheet: Pasar Pengepul -->
-<section class="sheet t-red" id="sheet-market" aria-label="Pasar Pengepul">
+<section class="sheet t-sky" id="sheet-market" aria-label="Kapal Dagang">
   <div class="sheet-head">
     <span class="hic" data-icon="coins"></span>
-    <h3 class="ribbon">Pasar Pengepul</h3>
-    <p>Hasil panen jadi Keuntungan</p>
+    <h3 class="ribbon">Kapal Dagang</h3>
+    <p>Muat hasil panen ke kapal, terima Keuntungan</p>
     <button class="close" type="button" data-close aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
   </div>
   <div class="sheet-body" id="market-body"></div>
@@ -580,6 +649,7 @@ img { -webkit-user-drag: none; }
   const audio = new FarmAudio();
   let S = BOOT.state;           // state server terbaru
   let seedTarget = null;        // petak tujuan sheet bibit
+  let plantAll = false;         // mode tanam: true = semua petak kosong sekaligus
   let openEl = null;            // sheet/modal yang sedang terbuka
   let plotCardIdx = null, plotTimer = null;
   const pending = new Set();    // petak yang sedang menunggu server
@@ -686,7 +756,7 @@ img { -webkit-user-drag: none; }
     audio.soundTick();
     switch (plot.state) {
       case 'LOCKED': plotCardIdx = idx; return openLayer('unlock');
-      case 'EMPTY': seedTarget = idx; return openLayer('seeds');
+      case 'EMPTY': seedTarget = idx; plantAll = false; return openLayer('seeds');
       case 'READY': if (!plot.pest) return harvest(idx); // eslint-disable-line no-fallthrough
       default: plotCardIdx = idx; openLayer('plot');
     }
@@ -711,12 +781,19 @@ img { -webkit-user-drag: none; }
 
   /* ── Render: Pilih Bibit ─────────────────────────────── */
   function firstEmpty() { const p = engine.plots.find((p) => p.state === 'EMPTY' && !pending.has(p.plotIndex)); return p ? p.plotIndex : null; }
+  function emptyPlots() { return engine.plots.filter((p) => p.state === 'EMPTY' && !pending.has(p.plotIndex)).map((p) => p.plotIndex); }
   function renderSeeds() {
-    const target = seedTarget || firstEmpty();
-    $('seeds-target').textContent = target ? 'Tanam di Petak #' + target : 'Semua petak sedang terisi';
-    $('seeds-body').innerHTML = S.crops.filter((c) => c.is_active !== 0).map((c) => {
-      const lock = S.level.level < c.min_level, stock = qty('seeds', c.id);
+    const target = seedTarget || firstEmpty(), empties = emptyPlots();
+    const many = plantAll && empties.length > 1, n = many ? empties.length : 1;
+    $('seeds-target').textContent = many ? 'Tanam di ' + n + ' petak kosong sekaligus' : target ? 'Tanam di Petak #' + target : 'Semua petak sedang terisi';
+    const seg = empties.length > 1 ? `<div class="seg" role="group" aria-label="Mode tanam">
+        <button type="button" data-mode="one" class="${many ? '' : 'on'}">1 Petak</button>
+        <button type="button" data-mode="all" class="${many ? 'on' : ''}">Semua Kosong (${empties.length})</button></div>` : '';
+    $('seeds-body').innerHTML = seg + S.crops.filter((c) => c.is_active !== 0).map((c) => {
+      const lock = S.level.level < c.min_level, stock = qty('seeds', c.id), buyN = Math.max(0, n - stock);
       const pMin = c.yield_min * c.unit_price - c.seed_price, pMax = c.yield_max * c.unit_price - c.seed_price;
+      const cost = buyN === 0 ? '<span class="stock">Pakai stok kantong</span>'
+        : many ? `${price(buyN * c.seed_price)} <span class="note">${buyN} bibit dibeli${stock > 0 ? ', ' + Math.min(stock, n) + ' dari kantong' : ''}</span>` : price(c.seed_price);
       return `<div class="card ${lock ? 'locked' : ''}" style="--c:${esc(c.color)}">
         <span class="ic">${cropImg(c)}${stock > 0 ? `<em class="qty">×${stock}</em>` : ''}</span>
         <div class="info"><b>${esc(c.name)}</b>
@@ -724,13 +801,14 @@ img { -webkit-user-drag: none; }
             <span class="chip s"><i class="ph-bold ph-timer"></i>${U.fmtTime(c.growth_secs)}</span>
             <span class="chip g"><i class="ph-bold ph-trend-up"></i>${fmtRp(pMin)}–${U.fmtShort(pMax).replace('Rp ', '')}</span>
           </div>
-          ${stock > 0 ? '<span class="stock">Pakai stok kantong</span>' : price(c.seed_price)}
+          ${cost}
         </div>
         <div class="act">${lock ? `<span class="lock-badge">${img('lock', 'ph-lock')}Lv ${c.min_level}</span>`
-          : `<button class="nb-btn green" type="button" data-plant="${c.id}" ${target ? '' : 'disabled'}>Tanam</button>`}</div>
+          : `<button class="nb-btn green" type="button" data-plant="${c.id}" ${target ? '' : 'disabled'}>Tanam${many ? ' ×' + n : ''}</button>`}</div>
       </div>`;
-    }).join('') + `<p class="note">Bibit di kantong dipakai lebih dulu. Bila kosong, 1 bibit otomatis dibeli dengan Saldo Modal. Untung = hasil panen × harga pasar − harga bibit.</p>`;
-    $('seeds-body').querySelectorAll('[data-plant]').forEach((b) => b.addEventListener('click', () => plant(target, +b.dataset.plant)));
+    }).join('') + `<p class="note">Bibit di kantong dipakai lebih dulu. Bila kosong, bibit otomatis dibeli dengan Saldo Modal (1 per petak). Untung = hasil panen × harga pasar − harga bibit.</p>`;
+    $('seeds-body').querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => { plantAll = b.dataset.mode === 'all'; audio.soundTick(); renderSeeds(); }));
+    $('seeds-body').querySelectorAll('[data-plant]').forEach((b) => b.addEventListener('click', () => (many ? plantMany(empties, +b.dataset.plant) : plant(target, +b.dataset.plant))));
   }
 
   /* ── Render: Toko Tani ───────────────────────────────── */
@@ -775,7 +853,7 @@ img { -webkit-user-drag: none; }
         : '<div class="empty-note">Lumbung masih kosong. Tanam &amp; panen dulu ya!</div>'}
       ${seeds.length ? `<div class="sec-title"><span>Kantong Bibit</span></div><div class="grid3">${seeds.map((c) => tile(img('seed', 'ph-plant'), qty('seeds', c.id), c.name)).join('')}</div>` : ''}
       ${items.length ? `<div class="sec-title"><span>Perlengkapan</span></div><div class="grid3">${items.map((i) => tile(itemImg(i), qty('items', i.id), i.name)).join('')}</div>` : ''}
-      <button class="nb-btn pink block" type="button" id="barn-to-market" ${harvest.length ? '' : 'disabled'}>${img('coins', 'ph-coins')} Jual di Pasar Pengepul</button>`;
+      <button class="nb-btn pink block" type="button" id="barn-to-market" ${harvest.length ? '' : 'disabled'}>${img('coins', 'ph-coins')} Muat ke Kapal Dagang</button>`;
     $('barn-to-market').addEventListener('click', () => openLayer('market'));
   }
 
@@ -787,7 +865,7 @@ img { -webkit-user-drag: none; }
         <div class="grow"><b>${esc(c.name)}</b> ×${qty('harvest', c.id)}<small>${fmtRp(c.unit_price)} / hasil</small></div>${price(qty('harvest', c.id) * c.unit_price)}</div>`).join('')
       : '<div class="empty-note">Belum ada hasil panen untuk dijual.</div>') +
       `<div class="total"><span class="ic sm">${img('coins', 'ph-coins')}</span><span>Total diterima</span><b>${fmtRp(total)}</b></div>
-       <button class="nb-btn yellow block" type="button" id="sell-all" ${rows.length ? '' : 'disabled'}>JUAL SEMUA HASIL PANEN</button>
+       <button class="nb-btn yellow block" type="button" id="sell-all" ${rows.length ? '' : 'disabled'}>MUAT &amp; JUAL SEMUA</button>
        <p class="note">Uang hasil penjualan langsung masuk ke Keuntungan dan bisa ditarik.</p>`;
     $('sell-all').addEventListener('click', sellAll);
   }
@@ -923,16 +1001,36 @@ img { -webkit-user-drag: none; }
     try { await fn(); } finally { if (idx) pending.delete(idx); }
   }
 
-  function plant(idx, cropId) {
-    if (!idx) return;
-    closeLayer();
-    guarded(idx, async () => {
-      const res = await api.call('plant', { plot_index: idx, crop_id: cropId });
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  /** Tanam di satu petak; resolve dengan respon server (null bila petak sedang sibuk). */
+  function plantOne(idx, cropId) {
+    let out = null;
+    return guarded(idx, async () => {
+      const res = out = await api.call('plant', { plot_index: idx, crop_id: cropId });
       if (!res.ok) return fail(res);
       setState(res.state);
       engine.playPlant(idx);
-      if (res.paid > 0) toast('1 bibit dibeli ' + fmtRp(res.paid), 'ok', 'ph-plant');
-    });
+    }).then(() => out);
+  }
+
+  function plant(idx, cropId) {
+    if (!idx) return;
+    closeLayer();
+    plantOne(idx, cropId).then((res) => { if (res && res.ok && res.paid > 0) toast('1 bibit dibeli ' + fmtRp(res.paid), 'ok', 'ph-plant'); });
+  }
+
+  /** Tanam bibit yang sama di beberapa petak kosong, berurutan (aturan & biaya per petak tetap sama). Berhenti di kegagalan pertama. */
+  async function plantMany(list, cropId) {
+    closeLayer();
+    let paid = 0, done = 0;
+    for (const idx of list) {
+      const res = await plantOne(idx, cropId);
+      if (!res || !res.ok) break;
+      paid += +res.paid || 0; done++;
+      await sleep(140);
+    }
+    if (done) toast(done + ' petak ditanami' + (paid > 0 ? ' · bibit dibeli ' + fmtRp(paid) : ''), 'ok', 'ph-plant');
   }
 
   function speedUp(idx) {
@@ -968,10 +1066,13 @@ img { -webkit-user-drag: none; }
     });
   }
 
+  /** Panen satu petak; resolve dengan respon server (null bila petak sedang sibuk). */
   function harvest(idx) {
-    guarded(idx, () => new Promise((resolve) => {
+    let out = null;
+    return guarded(idx, () => new Promise((resolve) => {
       const req = api.call('harvest', { plot_index: idx });
       engine.playHarvest(idx, req, (res) => {
+        out = res;
         resolve();
         if (!res || !res.ok) return fail(res);
         setState(res.state);
@@ -980,8 +1081,33 @@ img { -webkit-user-drag: none; }
           setTimeout(() => { audio.soundHarvest(); toast('Naik ke Level ' + res.level_up + '! Bibit baru mungkin sudah terbuka.', 'gold', 'ph-crown'); }, 600);
         }
       });
-    }));
+    })).then(() => out);
   }
+
+  /* ── Panen Semua: panen berurutan tiap petak siap (tanpa hama); berhenti bila lumbung penuh / gagal ── */
+  let harvestingAll = false;
+  const readyPlots = () => engine.plots.filter((p) => p.state === 'READY' && !p.pest && !pending.has(p.plotIndex));
+  function updateQuick() {
+    const btn = $('btn-harvest-all'), n = readyPlots().length;
+    btn.hidden = !harvestingAll && n < 2;            // 1 petak cukup diketuk langsung
+    btn.classList.toggle('busy', harvestingAll);
+    if (!harvestingAll) $('ha-n').textContent = n;
+  }
+  async function harvestAll() {
+    if (harvestingAll) return;
+    harvestingAll = true; updateQuick();
+    audio.unlock();
+    for (const p of readyPlots()) {
+      if (S.barn_used >= S.barn_capacity) { toast('Lumbung penuh! Muat dulu ke Kapal Dagang.', 'err', 'ph-warehouse'); openLayer('market'); break; }
+      const res = await harvest(p.plotIndex);
+      if (!res || !res.ok) break;
+      $('ha-n').textContent = readyPlots().length;
+      await sleep(160);
+    }
+    harvestingAll = false; updateQuick();
+  }
+  $('btn-harvest-all').addEventListener('click', harvestAll);
+  setInterval(updateQuick, 500);
 
   async function sellAll() {
     const btn = $('sell-all'); if (btn) btn.disabled = true;
